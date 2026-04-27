@@ -71,6 +71,16 @@ Once the file copy is complete, we can finalize the migration. This step will re
 * -finalize: (optional) perform final view renames
 * -pageCount: (optional) page size for directory quotas (default is 1000)
 
+## File Datalock Options
+
+* -lockMode: (optional) Compliance, Enterprise or None (default is None)
+* -defaultLockPeriod: (optional) default is 1 (lock unit)
+* -autoLockMinutes: (optional) default is 0 (lock unit)
+* -minimumLockPeriod: (optional) default is 0 (lock unit)
+* -maximumLockPeriod: (optional) default is 1 (lock unit)
+* -manualLockMode: (optional) ReadOnly or FutureATime (default is ReadOnly)
+* -lockUnit: (optional) minute, hour, day (default is minute)
+
 ## Authenticating to Helios
 
 The Test/Wrapper scripts can be configured to log onto clusters directly, or log onto Helios.

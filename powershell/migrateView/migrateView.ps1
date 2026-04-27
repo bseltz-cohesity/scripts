@@ -16,7 +16,14 @@ param (
     [Parameter(Mandatory=$True)][string]$suffix,
     [Parameter()][string]$newStorageDomainName = 'DefaultStorageDomain',
     [Parameter()][switch]$finalize,
-    [Parameter()][int64]$pageCount = 1000
+    [Parameter()][int64]$pageCount = 1000,
+    [Parameter()][ValidateSet('Compliance','Enterprise','None','compliance','enterprise','none')][string]$lockMode = 'None',
+    [Parameter()][int64]$defaultLockPeriod = 1,
+    [Parameter()][int64]$autoLockMinutes = 0,
+    [Parameter()][int64]$minimumLockPeriod = 0,
+    [Parameter()][int64]$maximumLockPeriod = 1,
+    [Parameter()][ValidateSet('ReadOnly','FutureATime','readonly','futureatime')][string]$manualLockMode = 'ReadOnly',
+    [Parameter()][ValidateSet('minute','hour','day','minutes','hours','days')][string]$lockUnit = 'minute'
 )
 
 # gather list from command line params and file
@@ -68,6 +75,29 @@ if($USING_HELIOS){
 }
 # end authentication =========================================
 
+# lock unit multiplier (all periods converted to milliseconds)
+$lockUnitMap = @{
+    'minute'  = 60000;
+    'minutes' = 60000;
+    'hour'    = 3600000;
+    'hours'   = 3600000;
+    'day'     = 86400000;
+    'days'    = 86400000
+}
+
+$lockUnitMultiplier = $lockUnitMap[$lockUnit.ToLower()]
+
+# validate lock period relationships when a lock mode is active
+if($lockMode.ToLower() -ne 'none'){
+    if($maximumLockPeriod -lt $defaultLockPeriod){
+        $maximumLockPeriod = $defaultLockPeriod
+    }
+    if($maximumLockPeriod -le $minimumLockPeriod -or $defaultLockPeriod -le $minimumLockPeriod){
+        Write-Host "default and maximum lock periods must be greater than the minimum lock period" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
 $viewNames = @(gatherList -Param $viewName -FilePath $viewList -Name 'views' -Required $True)
 
 $newStorageDomain = api get viewBoxes | Where-Object name -eq $newStorageDomainName
@@ -95,6 +125,53 @@ foreach($viewName in $viewNames){
             $newView.name = "$($view.name)-$suffix"
             $newView.storageDomainId = $newStorageDomain.id
             $newView.storageDomainName = $newStorageDomain.name
+
+            # apply fileLockConfig
+            if($lockMode.ToLower() -ne 'none'){
+                $fileLockConfig = @{}
+
+                # lock mode
+                if($lockMode.ToLower() -eq 'enterprise'){
+                    $fileLockConfig['mode'] = 'Enterprise'
+                }elseif($lockMode.ToLower() -eq 'compliance'){
+                    $fileLockConfig['mode'] = 'Compliance'
+                }
+
+                # auto-lock after idle
+                if($autoLockMinutes -gt 0){
+                    $fileLockConfig['autoLockAfterDurationIdleMsecs'] = $autoLockMinutes * 60000
+                }
+
+                # default retention
+                $fileLockConfig['defaultRetentionDurationMsecs'] = $defaultLockPeriod * $lockUnitMultiplier
+
+                # minimum retention (floor: 1 minute = 60000 ms)
+                $minimumLockMsecs = $minimumLockPeriod * $lockUnitMultiplier
+                if($minimumLockMsecs -eq 0){
+                    $minimumLockMsecs = 60000
+                }
+                $fileLockConfig['minRetentionDurationMsecs'] = $minimumLockMsecs
+
+                # maximum retention (must be at least minimumLockMsecs + 4 minutes)
+                $maximumLockMsecs = $maximumLockPeriod * $lockUnitMultiplier
+                if($maximumLockMsecs -le ($minimumLockMsecs + 240000)){
+                    $maximumLockMsecs = $minimumLockMsecs + 240000
+                }
+                $fileLockConfig['maxRetentionDurationMsecs'] = $maximumLockMsecs
+
+                # manual locking protocol
+                if($manualLockMode.ToLower() -eq 'readonly'){
+                    $fileLockConfig['lockingProtocol'] = 'SetReadOnly'
+                }else{
+                    $fileLockConfig['lockingProtocol'] = 'SetAtime'
+                }
+
+                $fileLockConfig['expiryTimestampMsecs'] = 0
+
+                setApiProperty -object $newView -name fileLockConfig -value $fileLockConfig
+            }
+            # $newView | toJson
+            # exit
             Write-Host "- Creating new view $($newView.name)"
             $thisNewView = api post -v2 file-services/views $newView
         }else{
