@@ -1,5 +1,5 @@
 ### process commandline arguments
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding=$false)]
 param (
     [Parameter()][string]$vip = 'helios.cohesity.com',
     [Parameter()][string]$username = 'helios',
@@ -12,7 +12,8 @@ param (
     [Parameter()][string]$mfaCode = $null,
     [Parameter()][string]$clusterName = $null,
     [Parameter()][int]$numRuns = 1000,
-    [Parameter()][int]$daysBack
+    [Parameter()][int]$daysBack,
+    [Parameter()][switch]$includeExpired
 )
 
 # source the cohesity-api helper code
@@ -46,7 +47,8 @@ if($USING_HELIOS){
 $cluster = api get cluster
 $dateString = (get-date).ToString('yyyy-MM-dd')
 $outfileName = "mediaInfo-$($cluster.name)-$dateString.csv"
-"""Cluster Name"",""Protection Group"",""Start Time"",""Object Name"",""Target"",""Barcode"",""Location"",""Online""" | Out-File -FilePath $outfileName -Encoding utf8
+"""Cluster Name"",""Protection Group"",""Start Time"",""Target"",""Barcode"",""Location"",""Online"",""Expiration Date""" | Out-File -FilePath $outfileName -Encoding utf8
+# """Cluster Name"",""Protection Group"",""Start Time"",""Object Name"",""Target"",""Barcode"",""Location"",""Online"",""Expiration Date""" | Out-File -FilePath $outfileName -Encoding utf8
 
 if($daysBack){
     $daysAgoUsecs = timeAgo $daysBack days
@@ -59,7 +61,13 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     $endUsecs = $nowUsecs
     $lastRunId = 0
     while($True){
-        $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&archivalRunStatus=Succeeded&endTimeUsecs=$endUsecs&excludeNonRestorableRuns=true&includeObjectDetails=true"
+        if($includeExpired){
+            $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&archivalRunStatus=Succeeded&endTimeUsecs=$endUsecs"
+        }else{
+            $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&archivalRunStatus=Succeeded&endTimeUsecs=$endUsecs&excludeNonRestorableRuns=true"
+        }
+        # $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&archivalRunStatus=Succeeded&endTimeUsecs=$endUsecs&excludeNonRestorableRuns=true&includeObjectDetails=true"
+        
         if(!$runs.runs -or $runs.runs.Count -eq 0 -or $runs.runs[-1].id -eq $lastRunId){
             break
         }
@@ -73,20 +81,21 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
             $runStartTime = usecsToDate $run.localBackupInfo.startTimeUsecs
             foreach($archive in $run.archivalInfo.archivalTargetResults){
                 $tid = $archive.archivalTaskId -split ':'
-                if($archive.targetType -eq 'Tape' -and $archive.status -eq 'Succeeded' -and $archive.expiryTimeUsecs -gt $nowUsecs){
+                if($archive.targetType -eq 'Tape' -and $archive.status -eq 'Succeeded' -and ($includeExpired -or $archive.expiryTimeUsecs -gt $nowUsecs)){
                     $archiveMediaInfo = api get "vaults/archiveMediaInfo?clusterId=$($tid[0])&clusterIncarnationId=$($tid[1])&qstarArchiveJobId=$($tid[2])"
                     foreach($info in $archiveMediaInfo){
                         Write-Host "    $runStartTime    $($info.barcode) $($info.location) $($info.online)"
-                        foreach($object in $run.objects){
-                            if($object.localSnapshotInfo.snapshotInfo.snapshotId){
-                                """$($cluster.name)"",""$($job.name)"",""$runStartTime"",""$($object.object.name)"",""$($archive.targetName)"",""$($info.barcode)"",""$($info.location)"",""$($info.online)""" | Out-File -FilePath $outfileName -Encoding utf8 -Append
-                            }
-                        }
+                        """$($cluster.name)"",""$($job.name)"",""$runStartTime"",""$($archive.targetName)"",""$($info.barcode)"",""$($info.location)"",""$($info.online)"",""$(usecsToDate $archive.expiryTimeUsecs)""" | Out-File -FilePath $outfileName -Encoding utf8 -Append
+                        # foreach($object in $run.objects){
+                        #     if($object.localSnapshotInfo.snapshotInfo.snapshotId){
+                        #         """$($cluster.name)"",""$($job.name)"",""$runStartTime"",""$($object.object.name)"",""$($archive.targetName)"",""$($info.barcode)"",""$($info.location)"",""$($info.online)"",""$(usecsToDate $archive.expiryTimeUsecs)""" | Out-File -FilePath $outfileName -Encoding utf8 -Append
+                        #     }
+                        # }
                     }
                 }
             }
         }
-        if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
+        if(@($runs.runs).Count -gt 0 -and $runs.runs[-1].PSObject.Properties['localBackupInfo']){
             $endUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs
         }
     }

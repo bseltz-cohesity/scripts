@@ -45,3 +45,4 @@ Place both files in a folder together and run the main script like so:
 
 * -numRuns: (optional) number of runs per API query (default is 1000)
 * -daysBack: (optional) number of days of history to search (default is all history)
+* -includeExpired: (optional) include expired archives
