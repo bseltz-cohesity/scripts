@@ -6,6 +6,7 @@ from pyhesity import *
 import codecs
 import os
 import smtplib
+import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -33,6 +34,9 @@ parser.add_argument('-ms', '--mailserver', type=str)
 parser.add_argument('-mp', '--mailport', type=int, default=25)
 parser.add_argument('-to', '--sendto', action='append', type=str)
 parser.add_argument('-fr', '--sendfrom', type=str)
+parser.add_argument('-tls', '--tls', action='store_true')
+parser.add_argument('-muser', '--mailuser', type=str)
+parser.add_argument('-mpwd', '--mailpassword', type=str)
 
 args = parser.parse_args()
 
@@ -55,6 +59,9 @@ mailserver = args.mailserver
 mailport = args.mailport
 sendto = args.sendto
 sendfrom = args.sendfrom
+tls = args.tls
+mailuser = args.mailuser
+mailpassword = args.mailpassword
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode)
@@ -174,6 +181,20 @@ if mailserver is not None and sendto is not None and sendfrom is not None:
     encoders.encode_base64(part)
     part.add_header('Content-Disposition', "attachment; filename= %s" % filename)
     msg.attach(part)
-    smtp = smtplib.SMTP(mailserver, mailport)
-    smtp.sendmail(sendfrom, sendto, msg.as_string())
-    print('\nSending email report to %s\n' % ', '.join(sendto))
+    try:
+        if tls is True:
+            if mailport == 25:
+                mailport = 465
+            context = ssl.create_default_context()
+            smtp = smtplib.SMTP_SSL(mailserver, mailport, context=context)
+            if mailuser is None:
+                mailuser = sendfrom
+            smtp.login(mailuser, pw(vip=mailserver, username=mailuser, password=mailpassword))
+        else:
+            smtp = smtplib.SMTP(mailserver, mailport)
+        smtp.sendmail(sendfrom, sendto, msg.as_string())
+        print('\nSending email report to %s\n' % ', '.join(sendto))
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        smtp.quit()

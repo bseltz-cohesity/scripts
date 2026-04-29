@@ -56,3 +56,6 @@ Place both files in a folder together and run the main script like so:
 * -mp, --mailport: (optional) SMTP port (default is 25)
 * -to, --sendto: (optional) email address to send to (repeat for multiple)
 * -fr, --sendfrom: (optional) email address to send from
+* -tls, --tls: (optional) use TLS encryption to send email
+* -muser, --mailuser: (optional) SMTP username (will use --sendfrom if omitted)
+* -mpwd, --mailpassword: (optional) SMTP password (will prompt or use cached password if omitted)
