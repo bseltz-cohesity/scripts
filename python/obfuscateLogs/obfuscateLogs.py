@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""obfuscate logs - version 2026-04-19"""
+"""obfuscate logs - version 2026-04-29"""
 
 import os
 import gzip
@@ -211,6 +211,15 @@ def targzdirectory(path, name):
 def process_file(root, filename, crlist, parallel=True, max_workers=None):
     filepath = os.path.join(root, filename)
     filename_short, file_extension = os.path.splitext(filename)
+    # rename .tgz to .tar.gz
+    if file_extension.lower() == '.tgz':
+        newfilename = '%s.tar.gz' % filename_short
+        newfilepath = os.path.join(root, newfilename)
+        os.rename(filepath, newfilepath)
+        filename = newfilename
+        filepath = os.path.join(root, filename)
+        filename_short, file_extension = os.path.splitext(filename)
+
     if file_extension.lower() == '.gz':
         # unzip gz file
         unzippedfile = os.path.join(root, filename_short)
@@ -219,6 +228,7 @@ def process_file(root, filename, crlist, parallel=True, max_workers=None):
                 shutil.copyfileobj(f_in, f_out)
         os.remove(filepath)
         unzipped_filename_short, unzipped_file_extension = os.path.splitext(unzippedfile)
+
         if unzipped_file_extension.lower() == '.tar':
             # untar tar file
             untarred_folder = unzippedfile[0:-4]
@@ -245,11 +255,10 @@ def process_file(root, filename, crlist, parallel=True, max_workers=None):
         walkdir(untarred_folder, crlist, parallel=parallel, max_workers=max_workers)
         targzdirectory(untarred_folder, '%s.gz' % filepath)
         shutil.rmtree(untarred_folder)
+    elif file_extension.lower() == 'zip':
+        print('*** unhandled zip file *** %s' % filepath)
     else:
-        if file_extension.lower() == 'zip':
-            print('*** unhandled zip file *** %s' % filepath)
-        else:
-            obfuscatefile(root, filepath, crlist)
+        obfuscatefile(root, filepath, crlist)
 
 def walkdir(thispath, crlist, parallel=False, max_workers=None):
     tasks = []
