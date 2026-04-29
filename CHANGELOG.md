@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-04-29`] [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`Update`] added support for .tgz
+* [`2026-04-28`] [archiveMediaInfo.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/archiveMediaInfo) [`Update`] added expiration date
+* [`2026-04-28`] [policyList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/policyList) [`Update`] modernized authentication
 * [`2026-04-28`] [sqlReprotectWithSourceSideDedup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/sqlReprotectWithSourceSideDedup) [`New`] recreate SQL file-based protection groups with source side dedup enabled
 * [`2026-04-27`] [restoreSQLDBs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLDBs) [`Update`] moved to deprecated folder
 * [`2026-04-27`] [restoreSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQL) [`Update`] moved to deprecated folder
