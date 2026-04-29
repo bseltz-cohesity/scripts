@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-04-29`] [activeSnapshots.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/activeSnapshots) [`Update`] added support for TLS encryption for SMTP
 * [`2026-04-29`] [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`Update`] added support for .tgz
 * [`2026-04-28`] [archiveMediaInfo.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/archiveMediaInfo) [`Update`] added expiration date
 * [`2026-04-28`] [policyList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/policyList) [`Update`] modernized authentication
