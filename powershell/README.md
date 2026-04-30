@@ -113,7 +113,7 @@ Please review the example scripts for data structures that are appropriate for v
 
 ### Date Functions
 
-Cohesity stores datetimes in UNIX microseconds, which is the number of microseconds since midnight, January 1st, 1970. cohesit-api.ps1 provides several functions to handle this date format.
+Cohesity stores datetimes in UNIX microseconds, which is the number of microseconds since midnight, January 1st, 1970. cohesity-api.ps1 provides several functions to handle this date format.
 
 ```powershell
 dateToUsecs '2019-04-15 13:20:15'

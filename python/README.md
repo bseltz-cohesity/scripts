@@ -39,7 +39,7 @@ apiauth('mycluster', 'myuser', 'mydomain.net') # specify an Active Directory dom
 
 ### Stored Passwords
 
-Although there is a password parameter, it is not recommended to use it. Instead, the fist time you attempt to authenticate to a cluster, you will be prompted for your password. The password will be encrypted and stored in <user's home folder>/.pyhesity. The stored password will then be used automatically so that scripts can run unattended.
+Although there is a password parameter, it is not recommended to use it. Instead, the first time you attempt to authenticate to a cluster, you will be prompted for your password. The password will be encrypted and stored in <user's home folder>/.pyhesity. The stored password will then be used automatically so that scripts can run unattended.
 
 If your password changes, you will be prompted again to re-enter it.
 

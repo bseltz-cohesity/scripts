@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This powershell script clones backup files to a Cohesity view.
+This PowerShell script clones backup files to a Cohesity view.
 
 Note: Consolidation and Refresh options require PowerShell to have SMB access to the Cohesity view.
 
