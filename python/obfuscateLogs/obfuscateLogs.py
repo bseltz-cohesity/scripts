@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""obfuscate logs - version 2026-04-29"""
+"""obfuscate logs - version 2026-04-30"""
 
 import os
 import gzip
@@ -93,6 +93,13 @@ match_paths = [
     '/tracez?component'
 ]
 
+IGNORE_PATHS = frozenset(ignore_paths)
+RE_MATCH_PATHS = re.compile('|'.join(re.escape(p) for p in match_paths))
+RE_TAGS = re.compile(r'(<.*?[\w:|\.|-|"|=]+>)')
+RE_SPLIT_LINE = re.compile(r'[="\[><]')
+RE_WIN_PATH = re.compile(r'(\\.+[\w:.|\\-]+)')
+RE_LINUX_PATH = re.compile(r'(\/.+[\w:.|\\-]+)')
+
 crlist = None
 
 def obfuscatefile(root, filepath, crlist):
@@ -123,11 +130,7 @@ def obfuscatefile(root, filepath, crlist):
                                     line = line.replace(match, redact)
                                 else:
                                     line = line.replace(match, 'redacted_rule_xxx')
-                skipline = False
-                for match_path in match_paths:
-                    if match_path in line:
-                        skipline = True
-                        break
+                skipline = bool(RE_MATCH_PATHS.search(line))
                 if skipline is False:
                     # rules for non-paths
                     if 'entity=' in line:
@@ -173,26 +176,22 @@ def obfuscatefile(root, filepath, crlist):
                                 if len(lineparts2) > 1:
                                     securefile = f'entry={lineparts2[0]}'
                                     line = line.replace(securefile, 'entry=redacted_entry_xxx')
-                        tags = ''.join(re.findall(r'(<.*?[\w:|\.|-|"|=]+>)', line))
-                        lineparts = re.split('=|\"|\[|\>|\<', line)
+                        tags = ''.join(re.findall(RE_TAGS, line))
+                        lineparts = re.split(RE_SPLIT_LINE, line)
                         for linepart in lineparts:
-                            windowspaths = re.findall(r'(\\.+[\w:|\.|-]+)', linepart)
-                            paths = [p for p in windowspaths if p not in tags and p not in [i for i in ignore_paths]]
-                            # print(paths)
+                            windowspaths = re.findall(RE_WIN_PATH, linepart)
+                            paths = [p for p in windowspaths if p not in tags and p not in [i for i in IGNORE_PATHS]]
                             for path in paths:
                                 line = line.replace(path, '\\redacted_path_xxx')
                         lineparts = re.split('=|\"|\[|\>|\<', line)
                         for linepart in lineparts:        
-                            linuxpaths = re.findall(r'(\/.+[\w:|\.|-]+)', linepart)
-                            paths = [p for p in linuxpaths if p not in tags and p not in [i for i in ignore_paths]]
-                            # print(paths)
+                            linuxpaths = re.findall(RE_LINUX_PATH, linepart)
+                            paths = [p for p in linuxpaths if p not in tags and p not in [i for i in IGNORE_PATHS]]
                             for path in paths:
                                 line = line.replace(path, '/redacted_path_xxx')
                 f_out.write('%s' % line)
-            f_out.close()
-            f_in.close()
             os.remove(filepath)
-            os.rename(outfile, filepath)
+            os.replace(outfile, filepath)
 
 def gzfile(path):
     with open(path, 'rb') as f_in:
@@ -215,7 +214,7 @@ def process_file(root, filename, crlist, parallel=True, max_workers=None):
     if file_extension.lower() == '.tgz':
         newfilename = '%s.tar.gz' % filename_short
         newfilepath = os.path.join(root, newfilename)
-        os.rename(filepath, newfilepath)
+        os.replace(filepath, newfilepath)
         filename = newfilename
         filepath = os.path.join(root, filename)
         filename_short, file_extension = os.path.splitext(filename)
@@ -335,7 +334,6 @@ if __name__ == '__main__':
         exit()
     start_time = time.time()
     walkdir(logpath, crlist, parallel=True, max_workers=args.workers)
-    # shutil.make_archive(os.path.join(outpath, 'redacted'), "gztar", logpath)
     end_time = time.time()
     
     # Calculate and print the execution time
