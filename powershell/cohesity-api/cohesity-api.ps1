@@ -125,7 +125,7 @@ function __writeLog($logmessage){
     if($Global:lastAPIerror -eq "($caller) line: $lineNumber $logmessage" -and $apiErrorDate -lt $Global:lastAPIerrorDate.AddSeconds(5)){
         Start-Sleep 5
     }
-    $Global:lastAPIerror = "($caller) $logmessage"
+    $Global:lastAPIerror = "($caller) line: $lineNumber $logmessage"
     $Global:lastAPIerrorDate = $apiErrorDate
 
     # output message
@@ -944,6 +944,7 @@ function api($method,
         $retryCounter = 0
         while($retryCounter -le 10){
             try {
+                $body = $null
                 if($data){
                     $body = ConvertTo-Json -Compress -Depth 99 $data
                 }
@@ -1457,7 +1458,7 @@ function storePasswordForUser($vip='helios.cohesity.com', $username='helios', $d
     }
 }
 
-function importStoredPassword($vip='helios.cohesity.com', $username='helios', $domain='local', $key, $useApiKey=$false){
+function importStoredPassword($vip='helios.cohesity.com', $username='helios', $domain='local', $key, $useApiKey=$false, $helios=$False){
     $userFile = $(Join-Path -Path $PSScriptRoot -ChildPath "pw-$vip-$username-$domain.txt")
     if(Test-Path -Path $userFile){
         $keyBytes = [byte[]]($key -split(''))
@@ -1480,7 +1481,8 @@ function ProcessOidcToken ([string]$username, [string]$password, [string]$client
     $tokenreturn=$null
     $tokenreturn=Invoke-RestConOIDCAzure -username ($username) -pwdx ($password) -cidx ($client_id) -tidx ($tenant_id) -scope ($scope)    
     If($tokenreturn.Exception) {
-        return Write-Host "Error Connection: $tokenreturn" -ForegroundColor red
+        Write-Host "Error Connection: $tokenreturn" -ForegroundColor red
+        return $null
     }else{
         return $tokenreturn
     }
