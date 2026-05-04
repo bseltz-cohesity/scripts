@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2026.03.25 - Brian Seltzer
+#  Version 2026.05.04 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2024-02-18 - fix - toJson function - handle null input
@@ -33,10 +33,11 @@
 # 2026-02-01 - added enableCohesityAPIDebugger function (cohesity-har-file.txt output)
 # 2026-02-03 - added pauseCohesityAPIDebugger and resumeCohesityAPIDebugger functions
 # 2026-03-25 - fixed support for orgs in Helios
+# 2026-05-04 - bug hunt - various minor fixes
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2026.03.25'
+$versionCohesityAPI = '2026.05.04'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -216,7 +217,7 @@ function apiauth([string] $vip='helios.cohesity.com',
         $setpasswd = $passwd
     }
     # update password
-    if($updatePassword -or $clearPassword){
+    if($updatePassword){
         $passwd = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -quiet -useApiKey $useApiKey -helios $helios
     }
     # get stored password
@@ -590,6 +591,8 @@ function apiauth([string] $vip='helios.cohesity.com',
                                     # 2023-04-05
                                     return $null
                                 }catch{
+                                    $cohesity_api.last_api_error = $_.ToString()
+                                    $thisError = $_
                                     if($thisError -match 'Too Many Requests'){
                                         reportError $thisError
                                         Write-Host "Sleeping for 20 seconds..."
@@ -801,7 +804,7 @@ function apidrop([switch] $quiet){
     $cohesity_api.clusterReadOnly = $false
     $cohesity_api.heliosConnectedClusters = $null
     $cohesity_api.session = $null
-    if(!$quiet){ Write-Host "Disonnected!" -foregroundcolor green }
+    if(!$quiet){ Write-Host "Disconnected!" -foregroundcolor green }
     $Global:AUTHORIZED = $cohesity_api.authorized
     $Global:AUTHORIZED | Out-Null
     $Global:USING_HELIOS = $false
@@ -1021,7 +1024,7 @@ function Get-Runs($jobId, $endTimeUsecs=$null, $startTimeUsecs=$null, [switch]$i
             if(!$runs.runs -or $runs.runs.Count -eq 0 -or $runs.runs[-1].id -eq $lastRunId){
                 break
             }
-            $runs.runs | Where-Object {$_.id -ne $lastRunId}
+            $runs.runs = $runs.runs | Where-Object {$_.id -ne $lastRunId}
             $lastRunId = $runs.runs[-1].id
             if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
                 $endTimeUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs
@@ -1154,7 +1157,7 @@ function dateToUsecs($datestring=(Get-Date)){
     $usecs
 }
 
-function dateToString($dt, $format='yyyy-MM-dd hh:mm'){
+function dateToString($dt, $format='yyyy-MM-dd HH:mm'){
     return ($dt.ToString($format) -replace [char]8239, ' ')
 }
 
@@ -1319,7 +1322,7 @@ function Clear-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios
             }
         }
         if($updatedContent -eq ''){
-            Remove-Item -FilePath $pwfile -ErrorAction SilentlyContinue
+            Remove-Item -Path $pwfile -ErrorAction SilentlyContinue
         }else{
             $updatedContent | out-file -FilePath $pwfile
         }
@@ -1422,7 +1425,7 @@ function Set-CohesityAPIPassword($vip='helios.cohesity.com', $username='helios',
     return $passwd
 }
 
-function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $domain='local', $passwd=$null, [switch]$useApiKey){
+function storePasswordInFile($vip='helios.cohesity.com', $username='helios', $domain='local', $passwd=$null, [switch]$useApiKey, [switch]$helios){
     $cohesity_api.pwscope = 'file'
     $null = Set-CohesityAPIPassword -vip $vip -username $username -domain $domain -passwd $passwd -useApiKey $useApiKey -helios $helios
     $cohesity_api.pwscope = 'user'
@@ -1741,11 +1744,12 @@ function toJson(){
 # self updater
 function cohesityAPIversion([switch]$update){
     if($update){
+        $myfile = Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1
         $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell'
         if($PSVersionTable.PSEdition -eq 'Core'){
-            (Invoke-WebRequest -UseBasicParsing -Uri "$repoURL/cohesity-api/cohesity-api.ps1" -SkipCertificateCheck).content | Out-File -Force cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+            (Invoke-WebRequest -UseBasicParsing -Uri "$repoURL/cohesity-api/cohesity-api.ps1" -SkipCertificateCheck).content | Out-File -Force $myfile; (Get-Content $myfile) | Set-Content $myfile
         }else{
-            (Invoke-WebRequest -UseBasicParsing -Uri "$repoURL/cohesity-api/cohesity-api.ps1").content | Out-File -Force cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+            (Invoke-WebRequest -UseBasicParsing -Uri "$repoURL/cohesity-api/cohesity-api.ps1").content | Out-File -Force $myfile; (Get-Content $myfile) | Set-Content $myfile
         }
         Write-Host "Cohesity-API version updated! Please restart PowerShell"
     }else{
@@ -1757,13 +1761,13 @@ function cohesityAPIversion([switch]$update){
 function getViews([switch]$includeInactive){
     $myViews = @()
     $views = $null
-    while(! $views){
+    # while(! $views){
         if($includeInactive){
             $views = api get views?includeInactive=true
         }else{
             $views = api get views
         }
-    }
+    # }
     $myViews += $views.views
     $lastResult = $views.lastResult
     while(! $lastResult){
