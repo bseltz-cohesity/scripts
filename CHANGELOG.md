@@ -1,5 +1,10 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-05-05`] [storagePerObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerObjectReport) [`Update`] bug fixes
+* [`2026-05-05`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] bug fixes
+* [`2026-05-05`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] bug fixes
+* [`2026-05-05`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] bug fixes
+* [`2026-05-01`] [heliosReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/python/heliosReport) [`Update`] added parallel proceessing
 * [`2026-04-29`] [activeSnapshots.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/activeSnapshots) [`Update`] added support for TLS encryption for SMTP
 * [`2026-04-29`] [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`Update`] added support for .tgz
 * [`2026-04-28`] [archiveMediaInfo.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/archiveMediaInfo) [`Update`] added expiration date
