@@ -406,7 +406,7 @@ if($action -eq 'addextension'){
         $frequencyUnit = 'days'
     }
     if(!$policy.PSObject.Properties['extendedRetention']){
-        setApiPropery -object $policy -name 'extendedRetention' -value @()
+        setApiProperty -object $policy -name 'extendedRetention' -value @()
         $existingRetention = $null
     }else{
         $existingRetention = $policy.extendedRetention | Where-Object {$_.schedule.unit -eq $frequencyUnit -and $_.schedule.frequency -eq $frequency}
@@ -709,7 +709,7 @@ if($action -eq 'addarchive'){
                 "unit" = $textInfo.ToTitleCase($retentionUnit.ToLower());
                 "duration" = $retention
             };
-            "copyOnRunSuccess" = $alse;
+            "copyOnRunSuccess" = $False;
             "targetId" = $thisVault.id;
             "targetName" = $thisVault.name;
             "targetType" = "Cloud"
@@ -774,7 +774,7 @@ if($action -eq 'deletearchive'){
             if($deleteAll){
                 $includeThisArchive = $false
             }else{
-                if($archivalTarget.schedule.unit -eq $frequencyUnit -and (!$archivalTarget.schedule.PSObject.Properties['frequency'] -or $archivalTarget.schedule.frequency -eq $frequency)){
+                if($archivalTarget.targetName -eq $targetName -and $archivalTarget.schedule.unit -eq $frequencyUnit -and (!$archivalTarget.schedule.PSObject.Properties['frequency'] -or $archivalTarget.schedule.frequency -eq $frequency)){
                     $includeThisArchive = $false
                 }
             }
@@ -1051,4 +1051,4 @@ foreach($policy in $policies){
     ""
 }
 
-"`nOutput saved to $outfilename`n"
+"`nOutput saved to $outfileName`n"
