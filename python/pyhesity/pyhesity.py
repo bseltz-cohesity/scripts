@@ -5,19 +5,6 @@
 # Change Log
 # ==========
 #
-# 2023.09.24 - web session authentication, added support for password reset. email MFA
-# 2023.10.03 - fixed 'forcePasswordChange' error on AD authentication
-# 2023.10.09 - set last error on cluster not connected to helios
-# 2023.10.13 - fixed password prompt for AD user
-# 2023.11.07 - updated password storage after validation
-# 2023.11.27 - fix useApiKey for helios/mcm
-# 2023.12.29 - added testProp function
-# 2024.01.14 - reenabled legacy access modes
-# 2024.02.28 - added support for helios.gov
-# 2024.03.15 - unhid value error
-# 2024.03.31 - fixed empty return
-# 2024.06.07 - added support for Entra ID (Open ID) authentication
-# 2024.08.10 - added text output mode
 # 2025.01.08 - added getRuns function
 # 2025.01.27 - added region parameter to api function
 # 2025.02.11 - added readCache and writeCache functions
@@ -1261,5 +1248,18 @@ if os.path.isdir(CONFIGDIR) is False:
 # 2023.03.30 - added try/except for log file
 # 2023.04.30 - disabled email MFA and added timeout parameter
 # 2023-09-06 - version bump
+# 2023.09.24 - web session authentication, added support for password reset. email MFA
+# 2023.10.03 - fixed 'forcePasswordChange' error on AD authentication
+# 2023.10.09 - set last error on cluster not connected to helios
+# 2023.10.13 - fixed password prompt for AD user
+# 2023.11.07 - updated password storage after validation
+# 2023.11.27 - fix useApiKey for helios/mcm
+# 2023.12.29 - added testProp function
+# 2024.01.14 - reenabled legacy access modes
+# 2024.02.28 - added support for helios.gov
+# 2024.03.15 - unhid value error
+# 2024.03.31 - fixed empty return
+# 2024.06.07 - added support for Entra ID (Open ID) authentication
+# 2024.08.10 - added text output mode
 #
 ##########################################################################################
