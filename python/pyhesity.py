@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Cohesity Python REST API Wrapper Module - 2026.04.03"""
+"""Cohesity Python REST API Wrapper Module - 2026.05.05"""
 
 ##########################################################################################
 # Change Log
@@ -31,6 +31,7 @@
 # 2026.02.03 - added pauseCohesityAPIDebugger and resumeCohesityAPIDebugger functions
 # 2026.03.20 - updated helios auth exception handling
 # 2026.04.03 - added environment variable secret check
+# 2026.05.05 - bug hunt
 #
 ##########################################################################################
 # Install Notes
@@ -96,7 +97,7 @@ __all__ = ['api_version',
            'pauseCohesityAPIDebugger',
            'resumeCohesityAPIDebugger']
 
-api_version = '2026.04.03'
+api_version = '2026.05.05'
 
 COHESITY_API = {
     'APIROOT': '',
@@ -122,21 +123,30 @@ HELIOSENDPOINTS = ['helios.cohesity.com', 'helios.gov-cohesity.com']
 ### debugger
 def enableCohesityAPIDebugger():
     COHESITY_API['DEBUG'] = True
-    d = open('cohesity-har-file.txt', 'w')
-    d.write("Debbuger enabled: %s" % usecsToDate(dateToUsecs()))
-    d.close()
+    try:
+        d = open('cohesity-har-file.txt', 'w')
+        d.write("Debugger enabled: %s" % usecsToDate(dateToUsecs()))
+        d.close()
+    except Exception:
+        pass
 
 def pauseCohesityAPIDebugger():
     COHESITY_API['DEBUG'] = False
-    d = open('cohesity-har-file.txt', 'a')
-    d.write("Debbuger paused: %s" % usecsToDate(dateToUsecs()))
-    d.close()
+    try:
+        d = open('cohesity-har-file.txt', 'a')
+        d.write("Debugger paused: %s" % usecsToDate(dateToUsecs()))
+        d.close()
+    except Exception:
+        pass
 
 def resumeCohesityAPIDebugger():
     COHESITY_API['DEBUG'] = True
-    d = open('cohesity-har-file.txt', 'a')
-    d.write("Debbuger resumed: %s" % usecsToDate(dateToUsecs()))
-    d.close()
+    try:
+        d = open('cohesity-har-file.txt', 'a')
+        d.write("Debugger resumed: %s" % usecsToDate(dateToUsecs()))
+        d.close()
+    except Exception:
+        pass
 
 ### get last error
 def LAST_API_ERROR():
@@ -312,12 +322,12 @@ def apiauth(vip='helios.cohesity.com', username='helios', domain='local', passwo
                         # check force password change
                         try:
                             changePassword = False
-                            user = response.json()
                             if response.reason == 'Too Many Requests':
                                 print('*** Too Many Requests ***')
                                 print('Sleeping for 20 seconds...')
                                 time.sleep(20)
                                 continue
+                            user = response.json()
                             if 'user' in user and user['user'] is not None and 'forcePasswordChange' in user['user'] and user['user']['forcePasswordChange'] is True:
                                 if newPassword is not None:
                                     confirmPassword = newPassword
@@ -651,13 +661,13 @@ def api(method, uri, data=None, quiet=None, mcm=None, mcmv2=None, v=1, reporting
         while True:
             try:
                 if method == 'get':
-                    response = COHESITY_API['SESSION'].get(url, headers=THISCONTEXT['HEADER'], verify=False, timeout=timeout)
+                    response = THISCONTEXT['SESSION'].get(url, headers=THISCONTEXT['HEADER'], verify=False, timeout=timeout)
                 if method == 'post':
-                    response = COHESITY_API['SESSION'].post(url, headers=THISCONTEXT['HEADER'], json=data, verify=False, timeout=timeout)
+                    response = THISCONTEXT['SESSION'].post(url, headers=THISCONTEXT['HEADER'], json=data, verify=False, timeout=timeout)
                 if method == 'put':
-                    response = COHESITY_API['SESSION'].put(url, headers=THISCONTEXT['HEADER'], json=data, verify=False, timeout=timeout)
+                    response = THISCONTEXT['SESSION'].put(url, headers=THISCONTEXT['HEADER'], json=data, verify=False, timeout=timeout)
                 if method == 'delete':
-                    response = COHESITY_API['SESSION'].delete(url, headers=THISCONTEXT['HEADER'], json=data, verify=False, timeout=timeout)
+                    response = THISCONTEXT['SESSION'].delete(url, headers=THISCONTEXT['HEADER'], json=data, verify=False, timeout=timeout)
                 COHESITY_API['LAST_ERROR'] = 'OK'
                 if COHESITY_API['DEBUG'] is True:
                     d = open('cohesity-har-file.txt', 'a')
@@ -781,7 +791,7 @@ def getRuns(jobId, startTimeUsecs=None, endTimeUsecs=None, numRuns=1000, include
             thisTail = tail + '&endTimeUsecs=%s' % endTimeUsecs
         while 1:
             runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&includeTenants=true%s' % (jobId, numRuns, thisTail), v=2)
-            if len(runs['runs']) == 0 or runs['runs'][-1]['id'] == lastRunId:
+            if runs is None or 'runs' not in runs or runs['runs'] is None or len(runs['runs']) == 0 or runs['runs'][-1]['id'] == lastRunId:
                 break
             allruns = allruns + [r for r in runs['runs'] if r['id'] != lastRunId]
             lastRunId = runs['runs'][-1]['id']
@@ -831,8 +841,10 @@ def usecsToDateTime(uedate):
 
 
 ### convert date to usecs
-def dateToUsecs(dt=datetime.now()):
+def dateToUsecs(dt=None):
     """Convert Date String to Unix Epoc Microseconds"""
+    if dt is None:
+        dt = datetime.now()
     if isinstance(dt, str):
         dt = datetime.strptime(dt, "%Y-%m-%d %H:%M:%S")
     return int(time.mktime(dt.timetuple())) * 1000000
@@ -890,9 +902,9 @@ def writeCache(content, cachefile):
             'content': content,
             'timestamp': nowUsecs
         }
-        cachefile = codecs.open(cachefile, 'w')
-        json.dump(cache, cachefile)
-        cachefile.close()
+        thiscachefile = codecs.open(cachefile, 'w')
+        json.dump(cache, thiscachefile)
+        thiscachefile.close()
     except Exception:
         pass
     return None
@@ -927,7 +939,7 @@ def __getpassword(vip, username, password, domain, useApiKey=False, helios=False
         f.close()
         for pwditem in pwdlist:
             try:
-                v, d, u, k, opwd = pwditem.split(":", 5)
+                v, d, u, k, opwd = pwditem.split(":", 4)
                 if v.lower() == vip.lower() and d.lower() == domain.lower() and u.lower() == username.lower() and k == str(useApiKey):
                     if password is not None:
                         setpwd(v=vip, u=username, d=domain, helios=helios, useApiKey=useApiKey, password=password)
@@ -1022,7 +1034,7 @@ def setpwd(v='helios.cohesity.com', u='helios', d='local', useApiKey=False, heli
     foundPwd = False
     for pwditem in pwdlist:
         try:
-            vip, domain, username, k, cpwd = pwditem.split(":", 5)
+            vip, domain, username, k, cpwd = pwditem.split(":", 4)
             if v.lower() == vip.lower() and d.lower() == domain.lower() and u.lower() == username.lower() and k == str(useApiKey):
                 f.write('%s:%s:%s:%s:%s\n' % (v, d, u, useApiKey, opwd))
                 foundPwd = True
