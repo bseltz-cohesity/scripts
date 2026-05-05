@@ -1,17 +1,8 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2026.05.04 - Brian Seltzer
+#  Version 2026.05.05 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
-# 2024-02-18 - fix - toJson function - handle null input
-# 2024-02-28 - added support for helios.gov
-# 2024-02-29 - added dateToString function
-# 2024-05-02 - added quiet switch to fileDownload function
-# 2024-05-17 - added support for EntraID (Open ID) authentication
-# 2024-06-24 - fixed authentication error for SaaS connectors
-# 2024-09-20 - allow posts to read-only helios cluster (for advanced queries)
-# 2024-10-14 - fixed date formatting
-# 2024-12-31 - added 'heliosCluster -' to remove access cluster ID
 # 2025-01-10 - added Get-Runs function
 # 2025-01-30 - added apiauth skipForcePasswordChange option
 # 2025-01-31 - fixed legacy session-id auth
@@ -34,10 +25,11 @@
 # 2026-02-03 - added pauseCohesityAPIDebugger and resumeCohesityAPIDebugger functions
 # 2026-03-25 - fixed support for orgs in Helios
 # 2026-05-04 - bug hunt - various minor fixes
+# 2026-05-05 - updated api error logging
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2026.05.04'
+$versionCohesityAPI = '2026.05.05'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -98,11 +90,18 @@ public class SSLHandler
 
 function __writeLog($logmessage){
     # get call stack
-    $caller = ''
+    $stackString = ''
     try{
         $callStack = Get-PSCallStack
-        $caller = $callStack.Command -join ', '
-        $lineNumber = $callStack.ScriptLineNumber -join ', '
+        $caller = @($callStack.Command | Select-Object -Skip 1 | Select-Object -SkipLast 1) # -join ', '
+        $lineNumber = @($callStack.ScriptLineNumber | Select-Object -Skip 1 | Select-Object -SkipLast 1) # -join ', '
+        $stack = @()
+        $x = 0
+        foreach($c in $caller){
+            $stack = @($stack + "$c($($lineNumber[$x]))")
+            $x += 1
+        }
+        $stackString = $stack -join ', '
     }catch{
         # nothing
     }
@@ -120,16 +119,17 @@ function __writeLog($logmessage){
         # nothing
     }
 
+    $message = "[cohesity-api($versionCohesityAPI):$($stackString)] $logmessage"
     # avoid race condition
     $apiErrorDate = Get-Date
-    if($Global:lastAPIerror -eq "($caller) line: $lineNumber $logmessage" -and $apiErrorDate -lt $Global:lastAPIerrorDate.AddSeconds(5)){
-        Start-Sleep 5
+    if($Global:lastAPIerror -eq $message -and $apiErrorDate -lt $Global:lastAPIerrorDate.AddSeconds(60)){
+        return $null
     }
-    $Global:lastAPIerror = "($caller) line: $lineNumber $logmessage"
+    $Global:lastAPIerror = $message
     $Global:lastAPIerrorDate = $apiErrorDate
 
     # output message
-    "$($apiErrorDate): ($caller) line: $lineNumber $logmessage" | Out-File -FilePath "$apilogfile" -Append -Encoding ascii
+    "$($apiErrorDate): $message" | Out-File -FilePath "$apilogfile" -Append -Encoding ascii
 }
 
 function reportError($errorObject, [switch]$quiet){
@@ -1788,8 +1788,8 @@ function getViews([switch]$includeInactive){
     return $myViews
 }
 
-reportError "Using cohesity-api version $versionCohesityAPI" -quiet
-reportError "OK" -quiet
+# reportError "Using cohesity-api version $versionCohesityAPI" -quiet
+# reportError "OK" -quiet
 
 # . . . . . . . . . . . . . . . . . . .
 #  Previous Updates
@@ -1860,5 +1860,14 @@ reportError "OK" -quiet
 # 2024.01.14 - reenabled legacy access modes
 # 2024.01.25 - added support for unicode characters for REST payloads in Windows PowerShell 5.1
 # 2024.01.30 - fix - clear header before auth
+# 2024-02-18 - fix - toJson function - handle null input
+# 2024-02-28 - added support for helios.gov
+# 2024-02-29 - added dateToString function
+# 2024-05-02 - added quiet switch to fileDownload function
+# 2024-05-17 - added support for EntraID (Open ID) authentication
+# 2024-06-24 - fixed authentication error for SaaS connectors
+# 2024-09-20 - allow posts to read-only helios cluster (for advanced queries)
+# 2024-10-14 - fixed date formatting
+# 2024-12-31 - added 'heliosCluster -' to remove access cluster ID
 #
 # . . . . . . . . . . . . . . . . . . .
