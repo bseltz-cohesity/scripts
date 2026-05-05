@@ -1,4 +1,4 @@
-# version: 2026-01-15
+# version: 2026-05-05
 
 # process commandline arguments
 [CmdletBinding()]
@@ -25,7 +25,7 @@ param (
     [Parameter()][array]$environments = $null
 )
 
-$scriptversion = '2026-01-15 (PowerShell)'
+$scriptversion = '2026-05-05 (PowerShell)'
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -172,7 +172,7 @@ function reportStorage(){
         }
         if($job.environment -notin @('kView')){
             output "  $($job.name)"
-            $tenant = $job.permissions.name
+            $jobTenant = $job.permissions.name
             # get resiliency factor
             $resiliencyFactor = 1
             $sdName = ''
@@ -378,7 +378,7 @@ function reportStorage(){
                                 }
                             }
                             if($snap -and $objId -in $objects.Keys -and $snap.snapshotInfo.stats.PSObject.Properties['logicalSizeBytes'] -and $snap.snapshotInfo.stats.logicalSizeBytes -gt $objects[$objId]['logical']){
-                                if($objects[$objId]['logical'] -eq 0 -or ($job.environment -notin @('kVMware', 'kAD', 'kHyperV') -and ($job.environment -ne 'kPhysical' -and $job.physicalParams.protectionType -ne 'kVolume'))){
+                                if($objects[$objId]['logical'] -eq 0 -or ($job.environment -notin @('kVMware', 'kAD', 'kHyperV') -and ($job.environment -ne 'kPhysical' -or $job.physicalParams.protectionType -ne 'kVolume'))){
                                     $objects[$objId]['logical'] = $snap.snapshotInfo.stats.logicalSizeBytes
                                 }
                             }
@@ -532,6 +532,7 @@ function reportStorage(){
                 if($thisObject['archiveLogical'] -gt 0){
                     $objFESize = toUnits $thisObject['archiveLogical']
                 }
+                $objGrowth = 0
                 if($jobReduction -gt 0){
                     $objGrowth = toUnits ($thisObject['growth'] / $jobReduction)
                 }
@@ -613,7 +614,7 @@ function reportStorage(){
                     $alloc = $objFESize
                 }
                 if(!$environments -or $job.environment -in $environments){
-                    """$($cluster.name)"",""$origin"",""$statsAge"",""$($job.name)"",""$tenant"",""$($job.storageDomainId)"",""$sdName"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$alloc"",""$objFESize"",""$(toUnits $objDataIn)"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$($thisObject['numSnaps'])"",""$($thisObject['numLogs'])"",""$(usecsToDate $thisObject['oldestBackup'])"",""$(usecsToDate $thisObject['newestBackup'])"",""$($thisObject['lastDataLock'])"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)"",""$($thisObject['vmTags'])"",""$($cluster.id):$($cluster.incarnationId):$($objId)"",""$($thisObject['awsTags'])""" | Out-File -FilePath $outfileName -Append
+                    """$($cluster.name)"",""$origin"",""$statsAge"",""$($job.name)"",""$jobTenant"",""$($job.storageDomainId)"",""$sdName"",""$($job.environment)"",""$sourceName"",""$($thisObject['name'])"",""$alloc"",""$objFESize"",""$(toUnits $objDataIn)"",""$(toUnits $objWritten)"",""$(toUnits $objWrittenWithResiliency)"",""$jobReduction"",""$objGrowth"",""$($thisObject['numSnaps'])"",""$($thisObject['numLogs'])"",""$(usecsToDate $thisObject['oldestBackup'])"",""$(usecsToDate $thisObject['newestBackup'])"",""$($thisObject['lastDataLock'])"",""$archiveCount"",""$oldestArchive"",""$(toUnits $totalArchived)"",""$vaultStats"",""$($job.description)"",""$($thisObject['vmTags'])"",""$($cluster.id):$($cluster.incarnationId):$($objId)"",""$($thisObject['awsTags'])""" | Out-File -FilePath $outfileName -Append
                     if($secondFormat){
                         """$($cluster.name)"",""$monthString"",""$fqObjectName"",""$($job.description)"",""$(toUnits $objWrittenWithResiliency)""" | Out-File -FilePath $outfile2 -Append
                     }
@@ -690,9 +691,9 @@ function reportStorage(){
                                         $viewHistory[$object.object.name]['oldestArchive'] = '-'
                                         $viewHistory[$object.object.name]['lastDataLock'] = $null
                                     }
+                                    $viewHistory[$object.object.name]['archiveCount'] += 1
+                                    $viewHistory[$object.object.name]['oldestArchive'] = usecsToDate (($run.id -split ':')[-1])
                                 }
-                                $viewHistory[$object.object.name]['archiveCount'] += 1
-                                $viewHistory[$object.object.name]['oldestArchive'] = usecsToDate (($run.id -split ':')[-1])
                             }
                         }
                     }
@@ -859,7 +860,10 @@ function reportStorage(){
         $garbagePercent = [math]::Round(100 * ($garbageBytes / $clusterUsedBytes), 1)
         $otherUnaccountedPercent = $unaccountedPercent - $garbagePercent
     }
-    $storageVarianceFactor = [math]::Round($clusterUsedBytes / $sumObjectsWrittenWithResiliency, 4)
+    $storageVarianceFactor = 0
+    if($sumObjectsWrittenWithResiliency -gt 0){
+        $storageVarianceFactor = [math]::Round($clusterUsedBytes / $sumObjectsWrittenWithResiliency, 4)
+    }
     """$($cluster.name)"",""$clusterUsed"",""$(toUnits $bookKeeperBytes)"",""$(toUnits $unaccounted)"",""$unaccountedPercent"",""$(toUnits $garbageBytes)"",""$garbagePercent"",""$(toUnits $otherUnaccountedBytes)"",""$otherUnaccountedPercent"",""$clusterReduction"",""$(toUnits $sumObjectsUsed)"",""$(toUnits $sumObjectsWritten)"",""$(toUnits $sumObjectsWrittenWithResiliency)"",""$storageVarianceFactor"",""$scriptVersion"",""$($cluster.clusterSoftwareVersion)""" | Out-File -FilePath $clusterStatsFileName -Append
 }
 
@@ -870,9 +874,9 @@ if(! $vip){
 
 foreach($v in $vip){
     # authenticate
-    apiauth -vip $v -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt -quiet
+    apiauth -vip $v -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -heliosAuthentication $mcm -tenant $tenant -noPromptForPassword $noPrompt -quiet
     if(!$cohesity_api.authorized){
-        output "`n$($v): authentication failed" -ForegroundColor Yellow
+        output "`n$($v): authentication failed" -warn
         continue
     }
     if($USING_HELIOS){
