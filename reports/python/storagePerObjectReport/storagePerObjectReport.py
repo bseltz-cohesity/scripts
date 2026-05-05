@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Storage Per Object Report version 2026.01.15 for Python"""
+"""Storage Per Object Report version 2026.05.05 for Python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -44,7 +44,7 @@ skipdeleted = args.skipdeleted
 debug = args.debug
 includearchives = args.includearchives
 
-scriptVersion = '2026-01-15 (Python)'
+scriptVersion = '2026-05-05 (Python)'
 
 if vips is None or len(vips) == 0:
     vips = ['helios.cohesity.com']
@@ -127,9 +127,9 @@ def reportStorage():
     storageDomains = api('get', 'viewBoxes')
 
     sourceNames = {}
-    localStats = getConsumerStats('kProtectionRuns', growthdays)
-    replicaStats = getConsumerStats('kReplicationRuns', growthdays)
-    viewRunStats = getConsumerStats('kViewProtectionRuns', growthdays)
+    localStats = getConsumerStats('kProtectionRuns', msecsBeforeCurrentTimeToCompare)
+    replicaStats = getConsumerStats('kReplicationRuns', msecsBeforeCurrentTimeToCompare)
+    viewRunStats = getConsumerStats('kViewProtectionRuns', msecsBeforeCurrentTimeToCompare)
 
     viewJobAltStats = {}
 
@@ -149,6 +149,7 @@ def reportStorage():
             # get resiliency factor
             resiliencyFactor = 1
             sdname = 'DirectArchive'
+            sdid = None
             if 'storageDomainId' in job:
                 sdid = job['storageDomainId']
                 sd = [v for v in storageDomains if v['id'] == job['storageDomainId']]
@@ -183,8 +184,10 @@ def reportStorage():
                 dataIn = thisStat[0]['stats'].get('dataInBytes', 0)
                 dataInAfterDedup = thisStat[0]['stats'].get('dataInBytesAfterDedup', 0)
                 jobWritten = thisStat[0]['stats'].get('dataWrittenBytes', 0)
+                # display(thisStat[0]['stats'])
                 storageConsumedBytes = thisStat[0]['stats'].get('storageConsumedBytes', 0)
                 storageConsumedBytesPrev = thisStat[0]['stats'].get('storageConsumedBytesPrev', 0)
+                # print("sc: %s sp: %s" % (storageConsumedBytes, storageConsumedBytesPrev))
                 if storageConsumedBytes > 0 and storageConsumedBytesPrev > 0 and resiliencyFactor > 0:
                     jobGrowth = (storageConsumedBytes - storageConsumedBytesPrev) / resiliencyFactor
                 if dataInAfterDedup > 0 and jobWritten > 0:
@@ -199,7 +202,7 @@ def reportStorage():
                 jobReduction = clusterReduction
             if jobReduction == 0:
                 jobReduction = 1
-
+            vmsearch = None
             if job['environment'] in ['kVMware', 'kAD', 'kHyperV', 'kAWS'] or (job['environment'] == 'kPhysical' and job['physicalParams']['protectionType'] == 'kVolume'):
                 if job['environment'] == 'kAD':
                     entityType = 'kPhysical'
@@ -314,7 +317,7 @@ def reportStorage():
                                                     objects[objId]['logical'] = vmbytes
                                                     objects[objId]['fetb'] = vmbytes
                                         if snap is not None and 'logicalSizeBytes' in snap['snapshotInfo']['stats'] and snap['snapshotInfo']['stats']['logicalSizeBytes'] > objects[objId]['logical']:
-                                            if objects[objId]['logical'] == 0 or (job['environment'] not in ['kVMware', 'kAD', 'kHyperV'] and job['environment'] != 'kPhysical' and job['physicalParams']['protectionType'] != 'kVolume'):
+                                            if objects[objId]['logical'] == 0 or (job['environment'] not in ['kVMware', 'kAD', 'kHyperV'] and job['environment'] != 'kPhysical' or ('physicalParams' in job and  job['physicalParams']['protectionType'] != 'kVolume')):
                                                 objects[objId]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
                                         if snap is not None and job['environment'] == 'kVMware' and snap['snapshotInfo']['stats']['logicalSizeBytes'] < objects[objId]['logical'] and snap['snapshotInfo']['stats']['logicalSizeBytes'] > 0:
                                             objects[objId]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
@@ -332,8 +335,7 @@ def reportStorage():
                                             objects[objId]['oldestBackup'] = snap['snapshotInfo']['startTimeUsecs']
                                         if archivalInfo is not None:
                                             objects[objId]['oldestBackup'] = archivalInfo['startTimeUsecs']
-                                            objects[objId]['archiveBytesRead'] += archivalInfo['stats']['bytesRead']
-                                
+                                            objects[objId]['archiveBytesRead'] += archivalInfo['stats']['bytesRead']                                
                                 except Exception as e:
                                     pass
                                 
@@ -355,6 +357,7 @@ def reportStorage():
                         endUsecs = runs['runs'][-1]['archivalInfo']['archivalTargetResults'][0]['endTimeUsecs']
             # process output
             jobFESize = 0
+            isCad = False
             for object in sorted(objects.keys()):
                 thisObject = objects[object]
                 if 'logical' in thisObject:
@@ -476,7 +479,7 @@ def reportStorage():
                                 if 'localSnapshotInfo' in object:
                                     snap = object['localSnapshotInfo']
                                     runInfo = run['localBackupInfo']
-                                elif 'orignialSnapshotInfo' in object:
+                                elif 'originalSnapshotInfo' in object:
                                     snap = object['originalBackupInfo']
                                     runInfo = run['originalBackupInfo']
                                 else:
@@ -634,7 +637,7 @@ def reportStorage():
             if statsTimeUsecs > 0:
                 statsAge = round((nowUsecs - statsTimeUsecs) / 86400000000, 0)
             else:
-                statsTime = '-'
+                statsAge = '-'
             sumObjectsWritten += round(jobWritten / multiplier, 1)
             sumObjectsWrittenWithResiliency += round(consumption / multiplier, 1)
 
