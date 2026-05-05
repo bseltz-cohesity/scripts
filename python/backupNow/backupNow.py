@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2025.12.29
+# version 2026.05.05
 
 # version history
 # ===============
@@ -35,8 +35,9 @@
 # 2025.02.16 - improved VM API query
 # 2025.02.18 - fixed CAD errors, magneto error handling in 'wait for new run to appear' loop
 # 2025.05.20 - catch new existing run error "there is an outstanding run-now request"
-# 2025-12-18 - added support for 7.3 SQL AAG
+# 2025.12.18 - added support for 7.3 SQL AAG
 # 2025.12.29 - replaced protectionSources API with v2 data-protect objects API
+# 2026.05.05 - bug fixes
 #
 # extended error codes
 # ====================
@@ -372,11 +373,13 @@ if objectnames is not None:
                     db = None
             serverObjectId = None
             if server.lower() not in serverSearchCache:
-                search = api('get', 'data-protect/search/protected-objects?searchString=%s&enviroments=%s' % (server, environment), v=2)
+                search = api('get', 'data-protect/search/protected-objects?searchString=%s&environments=%s' % (server, environment), v=2)
                 serverSearchCache[server.lower()] = search
             else:
                 search = serverSearchCache[server.lower()]
-            serverObject = [s for s in search['objects'] if s['name'].lower() == server.lower()]
+            serverObject = None
+            if search is not None and 'objects' in search and search['objects'] is not None:
+                serverObject = [s for s in search['objects'] if s['name'].lower() == server.lower()]
             if serverObject is not None and len(serverObject) > 0:
                 serverObjectId = serverObject[0]['id']
             else:
@@ -409,40 +412,40 @@ if objectnames is not None:
                                 searchCache[str(serverObjectId)] = search
                             else:
                                 search = searchCache[str(serverObjectId)]
-                        if environment == 'kSQL':
-                            # SQL
-                            if db is None:
+                            if environment == 'kSQL':
+                                # SQL
+                                if db is None:
+                                    dbSource = [o for o in search['objects'] if o['name'].lower() == instance.lower()]
+                                else:
+                                    dbSource = [o for o in search['objects'] if o['name'].lower() == '%s/%s' % (instance.lower(), db.lower())]
+                                if dbSource is not None and len(dbSource) > 0:
+                                    dbSource = [o for o in dbSource if o['protectionGroupConfigurations'][0]['protectionGroupId'] == v2JobId]
+                                else:
+                                    out('%s not protected by %s' % (objectname, jobName))
+                                    if extendederrorcodes is True:
+                                        bail(3)
+                                    else:
+                                        bail(1)
+                                if dbSource is not None and len(dbSource) > 0:
+                                    runNowParameter['databaseIds'].append(dbSource[0]['id'])
+                                else:
+                                    out('%s not protected by %s' % (objectname, jobName))
+                                    if extendederrorcodes is True:
+                                        bail(3)
+                                    else:
+                                        bail(1)
+                            else:
+                                # Oracle
                                 dbSource = [o for o in search['objects'] if o['name'].lower() == instance.lower()]
-                            else:
-                                dbSource = [o for o in search['objects'] if o['name'].lower() == '%s/%s' % (instance.lower(), db.lower())]
-                            if dbSource is not None and len(dbSource) > 0:
-                                dbSource = [o for o in dbSource if o['protectionGroupConfigurations'][0]['protectionGroupId'] == v2JobId]
-                            else:
-                                out('%s not protected by %s' % (objectname, jobName))
-                                if extendederrorcodes is True:
-                                    bail(3)
+                                if dbSource is not None and len(dbSource) > 0:
+                                    dbSource = [o for o in dbSource if o['protectionGroupConfigurations'][0]['protectionGroupId'] == v2JobId]
                                 else:
-                                    bail(1)
-                            if dbSource is not None and len(dbSource) > 0:
+                                    out('%s not protected by %s' % (instance, jobName))
+                                    if extendederrorcodes is True:
+                                        bail(3)
+                                    else:
+                                        bail(1)
                                 runNowParameter['databaseIds'].append(dbSource[0]['id'])
-                            else:
-                                out('%s not protected by %s' % (objectname, jobName))
-                                if extendederrorcodes is True:
-                                    bail(3)
-                                else:
-                                    bail(1)
-                        else:
-                            # Oracle
-                            dbSource = [o for o in search['objects'] if o['name'].lower() == instance.lower()]
-                            if dbSource is not None and len(dbSource) > 0:
-                                dbSource = [o for o in dbSource if o['protectionGroupConfigurations'][0]['protectionGroupId'] == v2JobId]
-                            else:
-                                out('%s not protected by %s' % (instance, jobName))
-                                if extendederrorcodes is True:
-                                    bail(3)
-                                else:
-                                    bail(1)
-                            runNowParameter['databaseIds'].append(dbSource[0]['id'])
                     else:
                         out("Job is Volume based. Can not selectively backup instances/databases")
                         if extendederrorcodes is True:
@@ -638,6 +641,7 @@ if purgeoraclelogs and environment == 'kOracle' and backupType == 'kLog':
         for dbparam in obj['dbParams']:
             if objectnames is not None:
                 for objectname in objectnames:
+                    parts = objectname.split('/')
                     if len(parts) == 2:
                         (server, instance) = parts
                     else:
@@ -709,6 +713,7 @@ while runNow != "" and runNow is not None:
 out("Running %s..." % jobName)
 
 # wait for new job run to appear
+v2RunId = 0
 if wait is True:
     timeOutUsecs = dateToUsecs(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     while newRunId <= lastRunId:
@@ -800,15 +805,16 @@ if wait is True:
                                 if foundkeystring is True:
                                     x += 1
                                 else:
-                                    preprocessFinished = False
+                                    pass
+                                    # preprocessFinished = False
                     except Exception:
                         pass
                     if x >= len(run['objects']):
                         print('*** SUCCESSFUL STRING MATCH')
-                        exit(0)
+                        bail(0)
                 if x < len(run['objects']):
                     print('*** TIMED OUT WAITING FOR STRING MATCH')
-                    exit(1)
+                    bail(1)
             if status in finishedStates:
                 break
             if progress:
