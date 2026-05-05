@@ -1,4 +1,4 @@
-# version 2025.12.29
+# version 2026.05.05
 
 # version history
 # ===============
@@ -31,6 +31,8 @@
 # 2025.05.20 - catch new existing run error "there is an outstanding run-now request"
 # 2025.12.18 - added support for 7.3 SQL AAG
 # 2025.12.29 - replaced protectionSources API with v2 data-protect objects API
+# 2026.02.01 - added enableCohesityAPIDebugger (requires cohesity-api.ps1 version 2026.01.01 or later)
+# 2026.05.05 - minor bug fixes
 #
 # extended error codes
 # ====================
@@ -118,6 +120,10 @@ $finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning', '3', '4', '
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
+if($dbg -and $cohesity_api.api_version -ge '2026.02.01'){
+    enableCohesityAPIDebugger
+}
+
 # enforce sleep times
 if($sleepTimeSecs -lt 30){
     $sleepTimeSecs = 30
@@ -173,7 +179,7 @@ if($cohesity_api.api_version -lt '2022.08.02'){
     }
 }
 
-apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -entraIdAuthentication $EntraId -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -entraIdAuthentication $EntraId -tenant $tenant -noPromptForPassword $noPrompt
 
 ### select helios/mcm managed cluster
 if($USING_HELIOS){
@@ -295,6 +301,7 @@ $pgCache = @{}
 if($objects){
     $runNowParameters = @()
     foreach($object in $objects){
+        $serverObjectId = $null
         if($environment -eq 'kSQL' -or $environment -eq 'kOracle'){
             if($environment -eq 'kSQL'){
                 $server, $instance, $db = $object.split('/')
@@ -302,7 +309,7 @@ if($objects){
                 $server, $db = $object.split('/')
             }
             if("$server" -notin $serverSearchCache.Keys){
-                $search = api get -v2 "data-protect/search/protected-objects?searchString=$server&enviroments=$environment"
+                $search = api get -v2 "data-protect/search/protected-objects?searchString=$server&environments=$environment"
                 $serverSearchCache["$server"] = $search
             }else{
                 $search = $serverSearchCache["$server"]
@@ -613,7 +620,7 @@ if($null -ne $runs -and $runs.PSObject.Properties['runs']){
 $lastRunId = 1
 $newRunId = 1
 $lastRunUsecs = 1662164882000000
-if($null -ne $runs -and $runs.Count -ne "0"){
+if($null -ne $runs -and $runs.Count -ne 0){
     $newRunId = $lastRunId = $runs[0].protectionGroupInstanceId
     if($runs[0].PSObject.Properties['localBackupInfo']){
         $lastRunUsecs = $runs[0].localBackupInfo.startTimeUsecs
@@ -623,10 +630,6 @@ if($null -ne $runs -and $runs.Count -ne "0"){
 }
 
 # run job
-if($dbg){
-    $jobdata | ConvertTo-Json -Depth 99 | Out-File -FilePath 'payload.json'
-}
-
 if($backupType -ne 'kRegular'){
     $jobdata['usePolicyDefaults'] = $false
 }
@@ -711,7 +714,7 @@ if($wait -or $progress){
             $runs = @($runs.runs)
         }
         $runs = $runs | Where-Object protectionGroupInstanceId -gt $lastRunId
-        if($null -ne $runs -and $runs.Count -ne "0" -and $useMetadataFile -eq $True){
+        if($null -ne $runs -and $runs.Count -ne 0 -and $useMetadataFile -eq $True){
             foreach($run in $runs){
                 $runDetail = api get "/backupjobruns?exactMatchStartTimeUsecs=$($run.localBackupInfo.startTimeUsecs)&id=$($v1JobId)&useCachedData=$cacheSetting" -timeout $timeoutSec
                 $metadataFilePath = $runDetail[0].backupJobRuns.protectionRuns[0].backupRun.additionalParamVec[0].physicalParams.metadataFilePath
@@ -721,7 +724,7 @@ if($wait -or $progress){
                     break
                 }
             }
-        }elseif($null -ne $runs -and $runs.Count -ne "0"){
+        }elseif($null -ne $runs -and $runs.Count -ne 0){
             $newRunId = $runs[0].protectionGroupInstanceId
             $v2RunId = $runs[0].id
         }
@@ -739,7 +742,7 @@ if($wait -or $progress){
     $lastProgress = -1
     $lastStatus = 'unknown'
     while ($lastStatus -notin $finishedStates){
-        Start-Sleep $sleepTimeSecs
+        $run = api get -v2 "data-protect/protection-groups/$v2JobId/runs/$($v2RunId)?includeObjectDetails=false&useCachedData=$cacheSetting" -timeout $timeoutSec
         $bumpStatusCount = $false
         try {
             if($run){
@@ -761,6 +764,8 @@ if($wait -or $progress){
                 }
                 if($lastStatus -in $finishedStates){
                     break
+                }else{
+                    Start-Sleep $sleepTimeSecs
                 }
                 # display progress
                 if($progress){
@@ -784,6 +789,7 @@ if($wait -or $progress){
             }
         }catch{
             $bumpStatusCount = $True
+            Start-Sleep $sleepTimeSecs
         }
         if($bumpStatusCount -eq $True){
             $statusRetryCount += 1
@@ -796,7 +802,6 @@ if($wait -or $progress){
                 exit 1
             }
         }
-        $run = api get -v2 "data-protect/protection-groups/$v2JobId/runs/$($v2RunId)?includeObjectDetails=false&useCachedData=$cacheSetting" -timeout $timeoutSec
     }
 }
 
