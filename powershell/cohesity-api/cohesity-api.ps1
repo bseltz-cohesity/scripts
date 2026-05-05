@@ -1025,7 +1025,7 @@ function Get-Runs($jobId, $endTimeUsecs=$null, $startTimeUsecs=$null, [switch]$i
             if(!$runs.runs -or $runs.runs.Count -eq 0 -or $runs.runs[-1].id -eq $lastRunId){
                 break
             }
-            $runs.runs = $runs.runs | Where-Object {$_.id -ne $lastRunId}
+            $runs.runs | Where-Object {$_.id -ne $lastRunId}
             $lastRunId = $runs.runs[-1].id
             if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
                 $endTimeUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs
