@@ -94,14 +94,14 @@ To connect through Helios:
 | T | **Oldest Backup** | The timestamp of the oldest retained local backup snapshot for this object. A dash (`-`) indicates no backups were found.
 | U | **Newest Backup** | The timestamp of the most recent retained local backup snapshot for this object. A dash (`-`) indicates no backups were found.
 | V | **Newest DataLock Expiry** | The expiry timestamp of the most recent WORM/DataLock constraint applied to a backup run for this object. A dash (`-`) means no active DataLock exists.
-| W | **Archive Count** | The total number of successful archive (cloud/tape vault) runs for this object's protection group.
-| X | **Oldest Archive** | The timestamp of the oldest successful archive run for this object's protection group. A dash (`-`) indicates no archives exist.
+| W | **Archive Count** | The total number of successful archive (cloud/tape vault) runs in retention for this object's protection group.
+| X | **Oldest Archive** | The timestamp of the oldest successful archive run in retention for this object's protection group. A dash (`-`) indicates no archives exist.
 | Y | **`<units>` Archived** | The total cloud/vault storage consumed by this object across all archive targets, in the selected units. Only populated when `--includearchives` is passed.
 | Z | **`<units>` per Archive Target** | A bracketed breakdown of archived storage per named vault target (e.g., `[MyS3Vault]12.3`), showing each archive target's individual consumption in the selected units. Only populated when `--includearchives` is passed.
 | AA | **Description** | The free-text description field of the protection group or view, as configured in Cohesity. Empty if no description is set.
-| AB | **VM Tags** | Semicolon-separated list of VMware tags assigned to the VM object (e.g., `Environment: Prod; Owner: TeamA`). Only populated for VMware workloads.
+| AB | **VM Tags** | Semicolon-separated list of VMware tags assigned to the VM object. Only populated for VMware workloads.
 | AC | **Object ID** | A composite identifier for the object in the format `clusterID:incarnationID:objectID`, uniquely identifying the object within the Cohesity cluster context.
-| AD | **AWS Tags** | Semicolon-separated list of AWS resource tags assigned to the object (e.g., `Name: my-instance; Env: prod`). Only populated for AWS workloads.
+| AD | **AWS Tags** | Semicolon-separated list of AWS resource tags assigned to the object. Only populated for AWS workloads.
 
 ---
 
