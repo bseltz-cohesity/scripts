@@ -1,5 +1,5 @@
 # process commandline arguments
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding=$false)]
 param (
     [Parameter()][string]$vip = 'helios.cohesity.com',
     [Parameter()][string]$username = 'helios',
@@ -59,12 +59,14 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         "{0}" -f $job.name
         while($True){
-            $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=false"
+            $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=false&excludeNonRestorableRuns=true"
             foreach($run in $runs.runs){
                 if($run.PSObject.Properties['localBackupInfo']){
                     $runStartTimeUsecs = $run.localBackupInfo.startTimeUsecs
-                }else{
+                }elseif($run.PSObject.Properties['originalBackupInfo']){
                     $runStartTimeUsecs = $run.originalBackupInfo.startTimeUsecs
+                }else{
+                    $runStartTimeUsecs = $run.archivalInfo.archivalTargetResults[0].startTimeUsecs
                 }
                 if($runStartTimeUsecs -gt 0){
                     $runStartTime = usecsToDate $runStartTimeUsecs
@@ -84,8 +86,10 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
             if($runs.runs.Count -eq $numRuns){
                 if($run.PSObject.Properties['localBackupInfo']){
                     $endUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs - 1
-                }else{
+                }elseif($run.PSObject.Properties['originalBackupInfo']){
                     $endUsecs = $runs.runs[-1].originalBackupInfo.endTimeUsecs - 1
+                }else{
+                    $endUsecs = $runs.runs[-1].archivalInfo.archivalTargetResults[0].endTimeUsecs - 1
                 }
             }else{
                 break
