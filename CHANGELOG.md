@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-05-06`] [archiveInventory.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/archiveInventory) [`Update`] added support for CAD
+* [`2026-05-05`] [policyTool.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/policyTool) [`Update`] bug fixes
 * [`2026-05-05`] [backupNow.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backupNow) [`Update`] bug fixes
 * [`2026-05-05`] [backupNow.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/backupNow) [`Update`] bug fixes
 * [`2026-05-05`] [storagePerObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerObjectReport) [`Update`] bug fixes
