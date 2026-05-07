@@ -1,16 +1,17 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-05-07`] [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] minor bug fixes
 * [`2026-05-07`] [restoreCcsM365Mailbox.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365Mailbox) [`Update`] added -region parameter
 * [`2026-05-07`] [storagePerObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerObjectReport) [`Update`] fixed CAD weight calculation
 * [`2026-05-07`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] fixed CAD weight calculation
 * [`2026-05-06`] [archiveInventory.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/archiveInventory) [`Update`] added support for CAD
-* [`2026-05-05`] [policyTool.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/policyTool) [`Update`] bug fixes
-* [`2026-05-05`] [backupNow.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backupNow) [`Update`] bug fixes
-* [`2026-05-05`] [backupNow.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/backupNow) [`Update`] bug fixes
-* [`2026-05-05`] [storagePerObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerObjectReport) [`Update`] bug fixes
-* [`2026-05-05`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] bug fixes
-* [`2026-05-05`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] bug fixes
-* [`2026-05-05`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] bug fixes
+* [`2026-05-05`] [policyTool.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/policyTool) [`Update`] minor bug fixes
+* [`2026-05-05`] [backupNow.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backupNow) [`Update`] minor bug fixes
+* [`2026-05-05`] [backupNow.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/backupNow) [`Update`] minor bug fixes
+* [`2026-05-05`] [storagePerObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerObjectReport) [`Update`] minor bug fixes
+* [`2026-05-05`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] minor bug fixes
+* [`2026-05-05`] [pyhesity.py](https://github.com/cohesity/community-automation-samples/tree/main/python/pyhesity) [`Update`] minor bug fixes
+* [`2026-05-05`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] minor bug fixes
 * [`2026-05-01`] [heliosReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/python/heliosReport) [`Update`] added parallel proceessing
 * [`2026-04-29`] [activeSnapshots.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/activeSnapshots) [`Update`] added support for TLS encryption for SMTP
 * [`2026-04-29`] [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`Update`] added support for .tgz
