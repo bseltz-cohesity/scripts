@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Storage Per Object Report version 2026.05.05 for Python"""
+"""Storage Per Object Report version 2026.05.07 for Python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -44,7 +44,7 @@ skipdeleted = args.skipdeleted
 debug = args.debug
 includearchives = args.includearchives
 
-scriptVersion = '2026-05-05 (Python)'
+scriptVersion = '2026-05-07 (Python)'
 
 if vips is None or len(vips) == 0:
     vips = ['helios.cohesity.com']
@@ -364,9 +364,9 @@ def reportStorage():
                     jobFESize += thisObject['logical']
                 if 'bytesRead' in thisObject:
                     jobFESize += thisObject['bytesRead']
-                if 'archiveLogical' in thisObject and thisObject['archiveLogical'] > 0:
+                if 'archiveLogical' in thisObject and thisObject['archiveLogical'] > 0 and jobFESize == 0:
                     jobFESize += thisObject['archiveLogical']
-                if 'archiveBytesRead' in thisObject:
+                if 'archiveBytesRead' in thisObject and jobFESize == 0:
                     jobFESize += thisObject['archiveBytesRead']
                     isCad = True
             for object in sorted(objects.keys()):

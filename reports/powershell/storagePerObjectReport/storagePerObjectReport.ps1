@@ -1,4 +1,4 @@
-# version: 2026-05-05
+# version: 2026-05-07
 
 # process commandline arguments
 [CmdletBinding()]
@@ -25,7 +25,7 @@ param (
     [Parameter()][array]$environments = $null
 )
 
-$scriptversion = '2026-05-05 (PowerShell)'
+$scriptversion = '2026-05-07 (PowerShell)'
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -516,7 +516,7 @@ function reportStorage(){
                 }
                 $jobFESize += $thisObject['logical']
                 $jobFESize += $thisObject['bytesRead']
-                if($thisObject['archiveLogical'] -gt 0){
+                if($thisObject['archiveLogical'] -gt 0 -and $jobFESize -eq 0){
                     $jobFESize += $thisObject['archiveLogical']
                     $jobFESize += $thisObject['archiveBytesRead']
                     $isCad = $True
@@ -591,6 +591,7 @@ function reportStorage(){
                                 if($cloudJob.storageConsumed -gt 0){
                                     $totalArchived += ($objWeight * $cloudJob.storageConsumed)
                                     $vaultStats += "[$($vaultSummary.vaultName)]$(toUnits ($objWeight * $cloudJob.storageConsumed)) "
+                                    # Write-Host "$($thisObject['name'])  $objWeight  $(toUnits $cloudJob.storageConsumed)"
                                     if($isCad -eq $True){
                                         $jobReduction = [math]::Round($jobFESize / $cloudJob.storageConsumed, 1)
                                     }
