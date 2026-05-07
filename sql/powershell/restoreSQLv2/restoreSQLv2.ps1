@@ -1,4 +1,4 @@
-# version 2025-12-15
+# version 2026-05-07
 # process commandline arguments
 [CmdletBinding()]
 param (
@@ -59,12 +59,12 @@ if(! $commit -and ! $exportPaths -and ! $showPaths){
 
 $conflictingSelections = $False
 if($allDBs){
-    if($sourceDBList -ne '' -or $sourceDB.Count -gt 0){
+    if($sourceDBList -or @($sourceDB).Count -gt 0){
         $conflictingSelections = $True
     }
 }
-if($sourceDBList -ne ''){
-    if($sourceDB.Count -gt 0){
+if($sourceDBList){
+    if(@($sourceDB).Count -gt 0){
         $conflictingSelections = $True
     }
 }
@@ -84,12 +84,12 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
             Get-Content $FilePath | ForEach-Object {$items += [string]$_}
         }else{
             Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
-            exit
+            exit 1
         }
     }
     if($Required -eq $True -and $items.Count -eq 0){
         Write-Host "No $Name specified" -ForegroundColor Yellow
-        exit
+        exit 1
     }
     return ($items | Sort-Object -Unique)
 }
@@ -173,7 +173,7 @@ if($allDBs -or $exportPaths){
 
     if(! $dbresults.vms){
         Write-Host "no DBs found for $sourceServer" -ForegroundColor Yellow
-        exit
+        exit 1
     }
 
     # exportFileInfo
@@ -199,7 +199,7 @@ if($allDBs -or $exportPaths){
         $dbresults.vms = $dbresults.vms | Where-Object {($_.vmDocument.objectName -split '/')[0] -eq $sourceInstance}
         if(! $dbresults.vms){
             Write-Host "no DBs found for $sourceServer/$sourceInstance" -ForegroundColor Yellow
-            exit
+            exit 1
         }
     }
 
@@ -210,7 +210,7 @@ if($allDBs -or $exportPaths){
         }
         if(! $dbresults.vms){
             Write-Host "no DBs found for source nodes $($sourceNodes -join ', ')" -ForegroundColor Yellow
-            exit
+            exit 1
         }
     }
 
@@ -219,7 +219,7 @@ if($allDBs -or $exportPaths){
         $dbresults.vms = $dbresults.vms | Where-Object {$_.vmDocument.versions[0].instanceId.jobStartTimeUsecs -ge $newerThanUsecs}
         if(! $dbresults.vms){
             Write-Host "no DBs found newer than $newerThan days" -ForegroundColor Yellow
-            exit
+            exit 1
         }
     }
 
@@ -232,12 +232,12 @@ if($allDBs -or $exportPaths){
 
 if($sourceDbNames.Count -eq 0){
     Write-Host "No DBs specified for restore" -ForegroundColor Yellow
-    exit
+    exit 1
 }
 
 if($sourceDbNames.Count -gt 1 -and $targetDB){
     Write-Host "Can't specify -targetDB when more than one database is speficified. Please use -prefix or -suffix for renaming" -ForegroundColor Yellow
-    exit
+    exit 1
 }
 
 # find target server
@@ -412,7 +412,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
     }
 
 
-    if(! $nologs){
+    if(! $noLogs){
         if($range.pit -ne $range.snapshot.runStartTimeUsecs){
             $thisParam['pointInTimeUsecs'] = $range.pit
             $thisParam.sqlTargetParams.originalSourceConfig['restoreTimeUsecs'] = $range.pit
@@ -487,7 +487,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
     # file destinations
     if(!$flatFilePath -and ($alternateInstance -eq $True -or $renameDB -eq $True -or $showPaths)){
         # use source paths
-        $secondaryFileLocation = $null
+        $secondaryFileLocation = @()
         if(! $mdfFolder){
             $useSourcePaths = $True
         }
@@ -517,7 +517,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
             }
             $mdfFolderFound = $False
             $ldfFolderFound = $False
-            $secondaryFileLocation = @()
+            # $secondaryFileLocation = @()
             foreach($datafile in $dbFileInfoVec){
                 $path = $datafile.fullPath.subString(0, $datafile.fullPath.LastIndexOf('\'))
                 if($datafile.type -eq 0){
@@ -545,7 +545,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         }
         $targetConfig['dataFileDirectoryLocation'] = $mdfFolder
         $targetConfig['logFileDirectoryLocation'] = $ldfFolder
-        if($secondaryFileLocation){
+        if(@($secondaryFileLocation).Count -gt 0){
             $targetConfig['secondaryDataFilesDirList'] = $secondaryFileLocation
         }elseif($ndfFolders){
             $ndfParams = @()
