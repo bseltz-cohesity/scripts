@@ -53,10 +53,22 @@ Place the files in a folder together and run the script like so:
 * -sendFrom: (optional) email address to show in the from field
 * -includeArchives: (optional) include storage consumption in archive targets
 
-## Column Descriptions
+## Column Descriptions for the Output File (`storageReport_<clusterName>_<datetime>.csv`)
 
-* Logical: the sum of the front-end sizes of the source objects in the job, multiplied by the number of backups in retention
-* Ingested: the amount of data read from the source objects, before dedup and compression, that is in retention
-* Written: the amount of data written to disk, after dedup and compression, that is in retention, not including resiliency overhead (this is analogous to the sizing term "dedup storage required")
-* Consumed: the amount of data written plus resiliency overhead (actual raw usage)
-* Unique: the amount of data (written plus resiliency) that is unique to this job (not shared with other jobs)
+| # | Column Header | Description |
+| --- | --- | --- |
+| A | **Job/View Name** | Name of the protection job or Cohesity View being reported |
+| B | **Tenant** | Tenant/organization name associated with the job or view |
+| C | **Environment** | Workload type with the leading `k` stripped (e.g. `VMware`, `SQL`, `Oracle`, `Physical`, `View`) |
+| D | **Origination** | Whether the data is `Local` (backed up on this cluster), `Replicated` (received from another cluster), or an archive vault name when `-includeArchives` is used |
+| E | **Storage Target** | `Local` for on-cluster storage, or the name of the archival vault target when `-includeArchives` is used |
+| F | **\<unit\> Logical** | Logical (pre-dedup/compression) size of the protected data in the chosen unit |
+| G | **\<unit\> Ingested** | Amount of data ingested (read from the source) in the chosen unit |
+| H | **\<unit\> Consumed** | Actual storage consumed on the cluster (physical footprint) in the chosen unit |
+| I | **\<unit\> Written** | Amount of data written to disk after dedup and compression, in the chosen unit |
+| J | **\<unit\> Unique** | Unique physical data bytes stored (after global dedup), in the chosen unit |
+| K | **Dedup Ratio** | Deduplication ratio — Ingested ÷ Data-after-dedup (higher is better) |
+| L | **Compression** | Compression ratio — Data-after-dedup ÷ Data-written (higher is better) |
+| M | **Reduction** | Overall data reduction ratio — Ingested ÷ Written (dedup × compression combined) |
+| N | **Storage Domain** | Name of the Cohesity Storage Domain (View Box) where the data resides |
+| O | **Resiliency Setting** | Resilience/redundancy configuration of the Storage Domain: `RF 1`, `RF 2`, or an erasure coding descriptor such as `EC 4:2` |
