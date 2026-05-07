@@ -127,7 +127,7 @@ function reportStorage(){
     }
     if($includeArchives){
         $cloudStats = getCloudStats
-        $cloudStats | toJson | Out-File cloudstats-$($cluster.name).json
+        # $cloudStats | toJson | Out-File cloudstats-$($cluster.name).json
     }
     
     if($skipDeleted){
