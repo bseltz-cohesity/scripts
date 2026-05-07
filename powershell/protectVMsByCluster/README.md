@@ -72,3 +72,28 @@ To create a new protection job:
 * -disableIndexing: (optional) disable indexing (indexing is enabled by default)
 * -appConsistent: (optional) quiesce VMs during backup
 * -noStorageeDomain: (optional) do not specify storage domain (for CAD and NGCE deployments)
+
+## Column Definitions for Output File (`protectionRunsReport-<date>.csv`)
+
+| # | Column Header | Description |
+| --- | --- | --- |
+| A | **Start Time** | The start time of the object's backup snapshot (`yyyy-MM-dd HH:mm:ss`) |
+| B | **End Time** | The end time of the object's backup snapshot (`yyyy-MM-dd HH:mm:ss`) |
+| C | **Duration** | Total duration of the backup in seconds |
+| D | **status** | Snapshot status of the object (e.g. `kSuccess`, `kFailed`) |
+| E | **slaStatus** | Whether the SLA was `Met` or `Missed` for this run |
+| F | **snapshotStatus** | Snapshot availability status — always `Active` for non-deleted snapshots |
+| G | **objectName** | Name of the protected object (VM, database, host, etc.) |
+| H | **sourceName** | Name of the registered protection source the object belongs to |
+| I | **groupName** | Name of the protection group (backup job) |
+| J | **policyName** | Name of the protection policy applied to the group |
+| K | **Object Type** | Environment/workload type (e.g. `kVMware`, `kSQL`, `kOracle`, `kPhysical`) |
+| L | **backupType** | Type of backup run (e.g. `kFull`, `kIncremental`, `kLog`) |
+| M | **System Name** | Name of the Cohesity cluster that performed the backup |
+| N | **Logical Size \<unit\>** | Logical size of the backed-up object in the chosen unit (default: GiB) |
+| O | **Data Read \<unit\>** | Amount of data read from the source during backup, in the chosen unit |
+| P | **Data Written \<unit\>** | Amount of data written to the Cohesity cluster during backup, in the chosen unit |
+| Q | **Organization Name** | Tenant/organization name associated with the protection group |
+| R | **DataLock Expiry** | Expiry date/time of a DataLock (Compliance mode WORM lock), if applicable |
+| S | **Legal Hold** | Whether the snapshot is under legal hold (`True` / `False`) |
+| T | **Snapshot Expiry** | The date/time when the snapshot is scheduled to expire |
