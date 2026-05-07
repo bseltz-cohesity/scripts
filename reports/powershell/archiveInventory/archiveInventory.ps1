@@ -12,7 +12,7 @@ param (
     [Parameter()][string]$mfaCode = $null,
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName = $null,
-    [Parameter()][int]$numRuns = 1000,
+    [Parameter()][int]$numRuns = 100000,
     [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'MiB'
 )
 
