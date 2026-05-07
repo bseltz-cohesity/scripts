@@ -10,9 +10,9 @@ param (
     [Parameter()][string]$targetMailbox,
     [Parameter()][string]$folderPrefix = 'restore',
     [Parameter()][int]$pageSize = 1000,
-    [Parameter()][switch]$useMBS
+    [Parameter()][switch]$useMBS,
+    [Parameter(Mandatory=$True)][string]$region
 )
-
 
 # gather list from command line params and file
 function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
@@ -35,7 +35,6 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
     return ($items | Sort-Object -Unique)
 }
 
-
 $objectNames = @(gatherList -Param $mailboxName -FilePath $mailboxList -Name 'mailboxes' -Required $True)
 
 # source the cohesity-api helper code
@@ -49,19 +48,13 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
-$sessionUser = api get sessionUser
-$tenantId = $sessionUser.profiles[0].tenantId
-$regions = api get -mcmv2 dms/tenants/regions?tenantId=$tenantId
-$regionList = $regions.tenantRegionInfoList.regionId -join ','
-$selectedRegion = $null
-$selectedRegionObject = $null
 $targetMailboxName = $null
 $targetMailboxId = $null
 $targetParentId = $null
 
 foreach($objName in $objectNames){
-    $search = api get -v2 "data-protect/search/objects?searchString=$objName&regionIds=$regionList&o365ObjectTypes=kO365Exchange,kUser&isProtected=true&environments=kO365&includeTenants=true&count=$pageSize"
-    $exactMatch = $search.objects | Where-Object name -eq $objName
+    $search = api get -v2 "data-protect/search/objects?searchString=$objName&regionIds=$region&o365ObjectTypes=kO365Exchange,kUser&isProtected=true&environments=kO365&includeTenants=true&count=$pageSize"
+    $exactMatch = $search.objects | Where-Object {$_.name -eq $objName -or $_.o365Params.primarySMTPAddress -eq $objName}
     if($source){
         $exactMatch = $exactMatch | Where-Object {$_.sourceInfo.name -eq $source}
     }
@@ -72,12 +65,9 @@ foreach($objName in $objectNames){
         foreach($result in $exactMatch | Where-Object {$_.name -eq $objName}){
             $x += 1
             foreach($objectProtectionInfo in $result.objectProtectionInfos){
-                
                 $objectId = $objectProtectionInfo.objectId
                 $objectRegionId = $objectProtectionInfo.regionId
-                if($selectedRegion -eq $null){
-                    $selectedRegion = $objectRegionId
-                    $selectedRegionObject = $objName
+                if($objectRegionId -eq $region){
                     if($targetSource -and !$targetMailboxId){
                         if(!$targetMailbox){
                             Write-Host "-targetMailbox is required" -ForegroundColor Yellow
@@ -111,73 +101,69 @@ foreach($objName in $objectNames){
                             exit
                         }
                     }
-                }else{
-                    if($objectRegionId -ne $selectedRegion){
-                        Write-Host "$objName is in a different region than $selectedRegionObject and must be restored separately" -ForegroundColor Yellow
-                        continue
+
+                    if($useMBS){
+                        $snapshots = api get -v2 "data-protect/objects/$objectId/snapshots?snapshotActions=RecoverMailboxCSM&objectActionKeys=kO365ExchangeCSM&regionId=$objectRegionId"
+                    }else{
+                        $snapshots = api get -v2 "data-protect/objects/$objectId/snapshots?objectActionKeys=kO365Exchange&regionId=$objectRegionId"
                     }
-                }
-                if($useMBS){
-                    $snapshots = api get -v2 "data-protect/objects/$objectId/snapshots?snapshotActions=RecoverMailboxCSM&objectActionKeys=kO365ExchangeCSM&regionId=$objectRegionId"
-                }else{
-                    $snapshots = api get -v2 "data-protect/objects/$objectId/snapshots?objectActionKeys=kO365Exchange&regionId=$objectRegionId"
-                }
-                
-                $snapshots = $snapshots.snapshots | Sort-Object -Property runStartTimeUsecs -Descending
-                if($snapshots -and $snapshots.Count -gt 0){
-                    if($recoverDate){
-                        $recoverDateUsecs = dateToUsecs ($recoverDate.AddMinutes(1))
                     
-                        $snapshots = $snapshots | Where-Object runStartTimeUsecs -lt $recoverDateUsecs
-                        if($snapshots -and $snapshots.Count -gt 0){
+                    $snapshots = $snapshots.snapshots | Sort-Object -Property runStartTimeUsecs -Descending
+                    if($snapshots -and $snapshots.Count -gt 0){
+                        if($recoverDate){
+                            $recoverDateUsecs = dateToUsecs ($recoverDate.AddMinutes(1))
+                        
+                            $snapshots = $snapshots | Where-Object runStartTimeUsecs -lt $recoverDateUsecs
+                            if($snapshots -and $snapshots.Count -gt 0){
+                                $snapshot = $snapshots[0]
+                                $snapshotId = $snapshot.id
+                            }else{
+                                Write-Host "No snapshots available for $objName"
+                            }
+                        }else{
                             $snapshot = $snapshots[0]
                             $snapshotId = $snapshot.id
-                        }else{
-                            Write-Host "No snapshots available for $objName"
                         }
-                    }else{
-                        $snapshot = $snapshots[0]
-                        $snapshotId = $snapshot.id
-                    }
-                    $dateString = Get-Date -UFormat '%b_%d_%Y_%H-%M%p'
-                    $restoreParams = @{
-                        "name" = "Recover_Mailboxes_$dateString";
-                        "snapshotEnvironment" = "kO365";
-                        "office365Params" = @{
-                            "recoveryAction" = "RecoverMailbox";
-                            "recoverMailboxParams" = @{
-                                "continueOnError" = $true;
-                                "objects" = @(
-                                    @{
-                                        "mailboxParams" = @{
-                                            "recoverFolders" = $null;
-                                            "recoverEntireMailbox" = $true
-                                        };
-                                        "ownerInfo" = @{
-                                            "snapshotId" = $snapshotId
+                        $dateString = Get-Date -UFormat '%b_%d_%Y_%H-%M%p'
+                        $restoreParams = @{
+                            "name" = "Recover_Mailboxes_$dateString";
+                            "snapshotEnvironment" = "kO365";
+                            "office365Params" = @{
+                                "recoveryAction" = "RecoverMailbox";
+                                "recoverMailboxParams" = @{
+                                    "continueOnError" = $true;
+                                    "objects" = @(
+                                        @{
+                                            "mailboxParams" = @{
+                                                "recoverFolders" = $null;
+                                                "recoverEntireMailbox" = $true
+                                            };
+                                            "ownerInfo" = @{
+                                                "snapshotId" = $snapshotId
+                                            }
                                         }
-                                    }
-                                )
+                                    )
+                                }
                             }
                         }
-                    }
-                    if($useMBS){
-                        $restoreParams.office365Params.recoveryAction = "RecoverMailboxCSM"
-                    }
-                    if($targetSource){
-                        Write-Host "Restoring $objName to $targetMailboxName ($($folderPrefix)-$($objName))"
-                        $restoreParams.office365Params.recoverMailboxParams['targetMailbox'] = @{
-                            "targetFolderPath" = "$($folderPrefix)-$($objName)";
-                            "id" = [int64]$targetMailboxId;
-                            "name" = "$targetMailboxName";
-                            "parentSourceId" = [int64]$targetParentId
+                        if($useMBS){
+                            $restoreParams.office365Params.recoveryAction = "RecoverMailboxCSM"
                         }
+                        if($targetSource){
+                            Write-Host "Restoring $objName to $targetMailboxName ($($folderPrefix)-$($objName))"
+                            $restoreParams.office365Params.recoverMailboxParams['targetMailbox'] = @{
+                                "targetFolderPath" = "$($folderPrefix)-$($objName)";
+                                "id" = [int64]$targetMailboxId;
+                                "name" = "$targetMailboxName";
+                                "parentSourceId" = [int64]$targetParentId
+                            }
+                        }else{
+                            Write-Host "Restoring $objName"
+                        }
+                        $null = api post -v2 "data-protect/recoveries?regionId=$objectRegionId" $restoreParams
                     }else{
-                        Write-Host "Restoring $objName"
+                        Write-Host "No snapshots available for $objName"
                     }
-                    $null = api post -v2 "data-protect/recoveries?regionId=$objectRegionId" $restoreParams
-                }else{
-                    Write-Host "No snapshots available for $objName"
                 }
             }
         }
