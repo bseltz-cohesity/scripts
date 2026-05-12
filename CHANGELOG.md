@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-05-12`] [policyTool.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/policyTool) [`Update`] fixed deletereplica, and fixed weekly/monthly addreplica/addarchive
 * [`2026-05-08`] [restoreCcsM365Mailbox.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365Mailbox) [`Update`] refactored for performance
 * [`2026-05-07`] [archiveInventory.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/archiveInventory) [`Update`] added support for CAD
 * [`2026-05-07`] [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] minor bug fixes
