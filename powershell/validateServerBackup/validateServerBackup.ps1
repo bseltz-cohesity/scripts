@@ -193,6 +193,7 @@ $script:html += '</span>
 <tr>
     <th>ObjectName</th>
     <th>JobName</th>
+    <th>OrgName</th>
     <th>Last Run Date</th>
     <th>Status</th>
     <th>Validated</th>
@@ -208,6 +209,13 @@ if($includeVMs){
 
 function validateServer($object, $vm){
     $doc = $vm.vmDocument
+    $usingOrg = $False
+    $orgname = '-'
+    if($doc.PSObject.Properties['tenantId'] -and $doc.tenantId -ne $null){
+        $orgname = $doc.tenantId -replace ".$"
+        impersonate $orgname
+        $usingOrg = $True
+    }
     $version = $doc.versions[0]
     $jobId = $doc.objectId.jobId
     $jobStartedTimeUsecs = $version.instanceId.jobStartTimeUsecs
@@ -256,7 +264,8 @@ function validateServer($object, $vm){
     <td>{2}</td>
     <td>{3}</td>
     <td>{4}</td>
-    </tr>" -f $object, $jobName, (usecsToDate $lastRunUsecs), $lastStatus.subString(1), $lastBackupReadable)
+    <td>{5}</td>
+    </tr>" -f $object, $jobName, $orgname, (usecsToDate $lastRunUsecs), $lastStatus.subString(1), $lastBackupReadable)
 
     Write-Host ("{0}  {1}  {2}  {3}  {4}" -f `
                 $object,
@@ -264,11 +273,14 @@ function validateServer($object, $vm){
                 (usecsToDate $lastRunUsecs),
                 $lastStatus.subString(1),
                 $lastBackupReadable)
+    if($usingOrg -eq $True){
+        switchback
+    }
 }
 
 if($objects.Count -eq 0){
     $from = 0
-    $search = api get "/searchvms?$entityTypes&size=$pageSize&from=$from&vmName=*"
+    $search = api get "/searchvms?$entityTypes&size=$pageSize&from=$from&allUnderHierarchy=true&vmName=*"
     if($search.count -gt 0){
         while($True){
             $search.vms | Sort-Object -Property {$_.vmDocument.jobName}, {$_.vmDocument.objectName } | ForEach-Object {
@@ -278,7 +290,7 @@ if($objects.Count -eq 0){
             }
             if($search.count -gt ($pageSize + $from)){
                 $from += $pageSize
-                $search = api get "/searchvms?$entityTypes&size=$pageSize&from=$from&vmName=*"
+                $search = api get "/searchvms?$entityTypes&size=$pageSize&from=$from&allUnderHierarchy=true&vmName=*"
             }else{
                 break
             }
@@ -287,7 +299,7 @@ if($objects.Count -eq 0){
 }else{
     foreach($object in $objects){
         $object = [string]$object
-        $search = api get "/searchvms?$entityTypes&vmName=$object"
+        $search = api get "/searchvms?$entityTypes&vmName=$object&allUnderHierarchy=true"
         if(! $search.vms){
             Write-Host "$object not found" -ForegroundColor Yellow
         }else{
