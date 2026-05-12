@@ -1,4 +1,4 @@
-# version: 2026-05-07
+# version: 2026-05-12
 
 # process commandline arguments
 [CmdletBinding()]
@@ -16,7 +16,7 @@ param (
     [Parameter()][int]$numRuns = 1000,
     [Parameter()][int]$growthDays = 7,
     [Parameter()][switch]$skipDeleted,
-    [Parameter()][ValidateSet('MiB','GiB','TiB','MB','GB','TB')][string]$unit = 'GiB',
+    [Parameter()][ValidateSet('KiB','MiB','GiB','TiB','KB','MB','GB','TB')][string]$unit = 'GiB',
     [Parameter()][switch]$secondFormat,
     [Parameter()][switch]$consolidateDBs,
     [Parameter()][switch]$dbg,
@@ -25,7 +25,7 @@ param (
     [Parameter()][array]$environments = $null
 )
 
-$scriptversion = '2026-05-07 (PowerShell)'
+$scriptversion = '2026-05-12 (PowerShell)'
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -135,6 +135,8 @@ function reportStorage(){
     }else{
         $jobs = api get -v2 "data-protect/protection-groups?includeTenants=true&useCachedData=true"
     }
+
+    $altjobs = api get /backupjobs
     
     $storageDomains = api get "viewBoxes?allUnderHierarchy=true"
     
@@ -156,7 +158,11 @@ function reportStorage(){
     $viewJobAltStats = @{}
 
     foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
+
         $v1JobId = ($job.id -split ':')[2]
+        $altjob = $altjobs.backupJob | Where-Object {$_.jobId -eq $v1JobId}
+        $primaryJobId = $altJob.primaryJobUid.objectId
+
         $statsAge = '-'
         $origin = 'local'
         if($job.isActive -ne $True){
@@ -210,7 +216,7 @@ function reportStorage(){
                 $stats = $viewRunStats
             }
             if($stats){
-                $thisStat = $stats.statsList | Where-Object {$_.id -eq $v1JobId -or $_.name -eq $job.name}
+                $thisStat = $stats.statsList | Where-Object {$_.id -eq $primaryJobId -or $_.name -eq $job.name}
             }
             if($stats -and $thisStat){
                 try{
@@ -248,7 +254,6 @@ function reportStorage(){
                 $jobWritten = 0
                 $jobReduction = $clusterReduction
             }
-    
             # runs
             $archiveCount = 0
             $oldestArchive = '-'
@@ -623,8 +628,9 @@ function reportStorage(){
             }
         }elseif($job.environment -in @('kView')){
             $stats = $viewRunStats
-            if($stats){    
-                $thisStat = $stats.statsList | Where-Object {$_.id -eq $v1JobId}
+            # $stats | toJson
+            if($stats){
+                $thisStat = $stats.statsList | Where-Object {$_.id -eq $primaryJobId}
             }
             $endUsecs = $nowUsecs
             $lastDataLock = '-'
@@ -754,7 +760,7 @@ function reportStorage(){
             if($jobName -notin $viewJobStats.Keys){
                 $viewJobStats[$jobName] = $viewHistory[$view.name]['stats']
             }
-
+            # Write-Host ($viewHistory[$view.name] | toJson)
         }catch{
             $jobName = '-'
         }
@@ -792,8 +798,10 @@ function reportStorage(){
         $objFESize = toUnits $viewStats.totalLogicalUsageBytes
         $objGrowth = 0
         if($jobName -ne '-' -and $jobName -in $viewJobStats.Keys -and $jobName -in $viewJobAltStats.Keys -and $viewJobAltStats[$jobName]["totalConsumed"] -gt 0){
+            
             $objWeight = $viewStats.storageConsumedBytes / $viewJobAltStats[$jobName]["totalConsumed"]
             $dataIn = $viewJobStats[$jobName].stats.dataInBytes * $objWeight
+            
             $dataInAfterDedup = $viewJobStats[$jobName].stats.dataInBytesAfterDedup * $objWeight
             $jobWritten = $viewJobStats[$jobName].stats.dataWrittenBytes * $objWeight
             $consumption =  $viewJobStats[$jobName].stats.localTotalPhysicalUsageBytes * $objWeight
