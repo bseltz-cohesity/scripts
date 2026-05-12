@@ -585,6 +585,23 @@ if($action -eq 'addreplica'){
             }
         }
         if($frequencyUnit -ne 'runs'){
+            if($frequencyUnit -eq 'weeks'){
+                $newReplica.schedule = @{
+                    "unit" = $textInfo.ToTitleCase($frequencyUnit.ToLower());
+                    "weekSchedule" = @{
+                        "dayOfWeek" = @($dayOfWeek)
+                    }
+                }
+            }
+            if($frequencyUnit -eq 'months'){
+                $newReplica.schedule = @{
+                    "unit" = $textInfo.ToTitleCase($frequencyUnit.ToLower());
+                    "monthSchedule" = @{
+                        "dayOfWeek" = @($dayOfWeek[0]);
+                        "weekOfMonth" = $weekOfMonth
+                    }
+                }
+            }
             $newReplica.schedule['frequency'] = $frequency
         }
         if($lockDuration){
@@ -623,6 +640,7 @@ if($action -eq 'addreplica'){
             }
         }
     }
+    $policy | toJson
     $updatedPolicy = api put -v2 data-protect/policies/$($policy.id) $policy
     $policies = @($updatedPolicy)
 }
@@ -649,11 +667,11 @@ if($action -eq 'deletereplica'){
                     $includeThisReplica = $false
                 }
             }
-            if($includeThisReplica -eq $True){
-                $newReplicationTargets = @($newReplicationTargets + $replicationTarget)
-            }else{
-                $changedReplicationTargets = $True
-            }
+        }
+        if($includeThisReplica -eq $True){
+            $newReplicationTargets = @($newReplicationTargets + $replicationTarget)
+        }else{
+            $changedReplicationTargets = $True
         }
     }
     if($changedReplicationTargets -eq $True){
@@ -722,6 +740,24 @@ if($action -eq 'addarchive'){
             }
         }
         if($frequencyUnit -ne 'runs'){
+            $newTarget.schedule.frequency = $frequency
+            if($frequencyUnit -eq 'weeks'){
+                $newTarget.schedule = @{
+                    "unit" = $textInfo.ToTitleCase($frequencyUnit.ToLower());
+                    "weekSchedule" = @{
+                        "dayOfWeek" = @($dayOfWeek)
+                    }
+                }
+            }
+            if($frequencyUnit -eq 'months'){
+                $newTarget.schedule = @{
+                    "unit" = $textInfo.ToTitleCase($frequencyUnit.ToLower());
+                    "monthSchedule" = @{
+                        "dayOfWeek" = @($dayOfWeek[0]);
+                        "weekOfMonth" = $weekOfMonth
+                    }
+                }
+            }
             $newTarget.schedule.frequency = $frequency
         }
         $policy.remoteTargetPolicy.archivalTargets = @($policy.remoteTargetPolicy.archivalTargets + $newTarget)
