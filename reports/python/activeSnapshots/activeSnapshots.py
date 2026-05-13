@@ -183,8 +183,8 @@ if mailserver is not None and sendto is not None and sendfrom is not None:
     msg.attach(part)
     try:
         if tls is True:
-            if mailport == 25:
-                mailport = 465
+            # if mailport == 25:
+            #     mailport = 465
             context = ssl.create_default_context()
             smtp = smtplib.SMTP_SSL(mailserver, mailport, context=context)
             if mailuser is None:
