@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2026.05.05 - Brian Seltzer
+#  Version 2026.05.13 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2025-01-10 - added Get-Runs function
@@ -26,10 +26,11 @@
 # 2026-03-25 - fixed support for orgs in Helios
 # 2026-05-04 - bug hunt - various minor fixes
 # 2026-05-05 - updated api error logging
+# 2026-05-13 - reordered auth attempts
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2026.05.05'
+$versionCohesityAPI = '2026.05.13'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -522,7 +523,25 @@ function apiauth([string] $vip='helios.cohesity.com',
         }catch{
             $thisError = $_
             if($skipForcePasswordChange -or $thisError -match 'User does not have the privilege to access UI' -or $thisError -match "KInvalidError"){
-                $url = $cohesity_api.apiRoot + '/public/accessTokens'
+                # $url = $cohesity_api.apiRoot + '/public/accessTokens'
+                $url = $cohesity_api.apiRootv2 + 'users/sessions'
+                $origbody = $body
+                $body = ConvertTo-Json @{
+                    'domain' = $domain;
+                    'username' = $username;
+                    'password' = $passwd;
+                    'otpType' = $mfaType.ToLower();
+                    'otpCode' = $mfaCode
+                }
+                if($skipForcePasswordChange){
+                    $body = ConvertTo-Json @{
+                        'domain' = $domain;
+                        'username' = $username;
+                        'password' = $passwd;
+                        'otpType' = $mfaType.ToLower();
+                        'otpCode' = $mfaCode;
+                    }
+                }
                 $retryCounter = 0
                 while($retryCounter -le 10){
                     $retryCounter += 1
@@ -534,7 +553,8 @@ function apiauth([string] $vip='helios.cohesity.com',
                         }
                         # authenticate
                         $auth = __auth -method Post -url $url -body $body -timeout $timeout
-                        $cohesity_api.header['authorization'] = $auth.tokenType + ' ' + $auth.accessToken
+                        $cohesity_api.header['session-id'] = $auth.sessionId
+                        # $cohesity_api.header['authorization'] = $auth.tokenType + ' ' + $auth.accessToken
                         __connected -quiet:$quiet
                         $retryCounter = 11
                         if($tenant){
@@ -563,26 +583,29 @@ function apiauth([string] $vip='helios.cohesity.com',
                             $cohesity_api.last_api_error = $message
                             if($message -eq 'Access denied'){
                                 try{
-                                    $url = $cohesity_api.apiRootv2 + 'users/sessions'
-                                    $body = ConvertTo-Json @{
-                                        'domain' = $domain;
-                                        'username' = $username;
-                                        'password' = $passwd;
-                                        'otpType' = $mfaType.ToLower();
-                                        'otpCode' = $mfaCode
-                                    }
-                                    if($skipForcePasswordChange){
-                                        $body = ConvertTo-Json @{
-                                            'domain' = $domain;
-                                            'username' = $username;
-                                            'password' = $passwd;
-                                            'otpType' = $mfaType.ToLower();
-                                            'otpCode' = $mfaCode;
-                                        }
-                                    }
+                                    # $url = $cohesity_api.apiRootv2 + 'users/sessions'
+                                    $url = $cohesity_api.apiRoot + '/public/accessTokens'
+                                    $body = $origbody
+                                    # $body = ConvertTo-Json @{
+                                    #     'domain' = $domain;
+                                    #     'username' = $username;
+                                    #     'password' = $passwd;
+                                    #     'otpType' = $mfaType.ToLower();
+                                    #     'otpCode' = $mfaCode
+                                    # }
+                                    # if($skipForcePasswordChange){
+                                    #     $body = ConvertTo-Json @{
+                                    #         'domain' = $domain;
+                                    #         'username' = $username;
+                                    #         'password' = $passwd;
+                                    #         'otpType' = $mfaType.ToLower();
+                                    #         'otpCode' = $mfaCode;
+                                    #     }
+                                    # }
                                     # authenticate
                                     $auth = __auth -method Post -url $url -body $body -timeout $timeout
-                                    $cohesity_api.header['session-id'] = $auth.sessionId
+                                    # $cohesity_api.header['session-id'] = $auth.sessionId
+                                    $cohesity_api.header['authorization'] = $auth.tokenType + ' ' + $auth.accessToken
                                     __connected -quiet:$quiet
                                     $retryCounter = 11
                                     if($tenant){
