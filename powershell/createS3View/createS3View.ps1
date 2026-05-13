@@ -260,6 +260,12 @@ if($showKeys){
     }else{
         $user = api get users | Where-Object {$_.username -eq $username -and $_.domain -eq $domain}
     }
-    "s3AccessKeyId: {0}" -f $user.s3AccessKeyId
-    "  s3SecretKey: {0}" -f $user.s3SecretKey
+    if($USING_HELIOS){
+        "s3AccessKeyId: {0}" -f $thisOwner.s3AccountParams.s3AccessKeyId
+        "  s3SecretKey: {0}" -f $thisOwner.s3AccountParams.s3SecretKey
+    }else{
+        "s3AccessKeyId: {0}" -f $user.s3AccessKeyId
+        "  s3SecretKey: {0}" -f $user.s3SecretKey
+    }
+
 }
