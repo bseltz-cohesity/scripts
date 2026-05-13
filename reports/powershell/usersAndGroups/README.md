@@ -30,7 +30,7 @@ Place both files in a folder together and run the main script like so:
 # end example
 ```
 
-## Parameters
+## Authentication Parameters
 
 * -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
 * -username: (optional) name of user to connect to Cohesity (defaults to helios)
@@ -40,3 +40,7 @@ Place both files in a folder together and run the main script like so:
 * -noPrompt: (optional) do not prompt for password
 * -mfaCode: (optional) TOTP MFA code
 * -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
+* -adminsOnly: (optional) list only users/groups that have the Admin role

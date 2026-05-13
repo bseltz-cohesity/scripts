@@ -10,7 +10,8 @@ param (
     [Parameter()][switch]$noPrompt,
     [Parameter()][switch]$mcm,
     [Parameter()][string]$mfaCode = $null,
-    [Parameter()][string]$clusterName = $null
+    [Parameter()][string]$clusterName = $null,
+    [Parameter()][switch]$adminsOnly
 )
 
 # source the cohesity-api helper code
@@ -46,23 +47,35 @@ $users = api get users?_includeTenantInfo=true
 $groups = api get groups?_includeTenantInfo=true
 
 foreach($user in $users | Sort-Object -Property domain, username){
-    Write-Host "User: $($user.domain)\$($user.username)"
+    $isAdmin = $False
     $roleNames = @()
     foreach($role in $user.roles){
         $roleName = ($roles | Where-Object name -eq $role).label
         $roleNames = @($roleNames + $roleName)
+        if($roleName -eq 'Admin'){
+            $isAdmin = $True
+        }
     }
-    """User"",""$($user.username)"",""$($user.domain)"",""$($roleNames -join '; ')""" | Out-File -FilePath $outfileName -Append
+    if(!$adminsOnly -or $isAdmin -eq $True){
+        Write-Host "User: $($user.domain)\$($user.username)"
+        """User"",""$($user.username)"",""$($user.domain)"",""$($roleNames -join '; ')""" | Out-File -FilePath $outfileName -Append
+    }
 }
 
 foreach($group in $groups | Sort-Object -Property domain, name){
-    Write-Host "Group: $($group.domain)\$($group.name)"
+    $isAdmin = $False
     $roleNames = @()
     foreach($role in $group.roles){
         $roleName = ($roles | Where-Object name -eq $role).label
         $roleNames = @($roleNames + $roleName)
+        if($roleName -eq 'Admin'){
+            $isAdmin = $True
+        }
     }
-    """Group"",""$($group.name)"",""$($group.domain)"",""$($roleNames -join '; ')""" | Out-File -FilePath $outfileName -Append
+    if(!$adminsOnly -or $isAdmin -eq $True){
+        Write-Host "Group: $($group.domain)\$($group.name)"
+        """Group"",""$($group.name)"",""$($group.domain)"",""$($roleNames -join '; ')""" | Out-File -FilePath $outfileName -Append
+    }
 }
 
 "`nOutput saved to $outfilename`n"
