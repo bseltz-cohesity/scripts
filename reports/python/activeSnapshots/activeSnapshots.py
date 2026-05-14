@@ -35,6 +35,7 @@ parser.add_argument('-mp', '--mailport', type=int, default=25)
 parser.add_argument('-to', '--sendto', action='append', type=str)
 parser.add_argument('-fr', '--sendfrom', type=str)
 parser.add_argument('-tls', '--tls', action='store_true')
+parser.add_argument('-stls', '--starttls', action='store_true')
 parser.add_argument('-muser', '--mailuser', type=str)
 parser.add_argument('-mpwd', '--mailpassword', type=str)
 
@@ -60,6 +61,7 @@ mailport = args.mailport
 sendto = args.sendto
 sendfrom = args.sendfrom
 tls = args.tls
+starttls = args.starttls
 mailuser = args.mailuser
 mailpassword = args.mailpassword
 
@@ -183,10 +185,15 @@ if mailserver is not None and sendto is not None and sendfrom is not None:
     msg.attach(part)
     try:
         if tls is True:
-            # if mailport == 25:
-            #     mailport = 465
             context = ssl.create_default_context()
             smtp = smtplib.SMTP_SSL(mailserver, mailport, context=context)
+            if mailuser is None:
+                mailuser = sendfrom
+            smtp.login(mailuser, pw(vip=mailserver, username=mailuser, password=mailpassword))
+        elif starttls is True:
+            context = ssl.create_default_context()
+            smtp = smtplib.SMTP(mailserver, mailport)
+            smtp.starttls(context=context)
             if mailuser is None:
                 mailuser = sendfrom
             smtp.login(mailuser, pw(vip=mailserver, username=mailuser, password=mailpassword))
