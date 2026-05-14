@@ -195,6 +195,6 @@ if mailserver is not None and sendto is not None and sendfrom is not None:
         smtp.sendmail(sendfrom, sendto, msg.as_string())
         print('\nSending email report to %s\n' % ', '.join(sendto))
     except Exception as e:
-        print(f"Error: {e}")
+        print(repr(e))
     finally:
         smtp.quit()
