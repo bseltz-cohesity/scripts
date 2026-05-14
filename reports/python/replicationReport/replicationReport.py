@@ -64,7 +64,7 @@ of = codecs.open(objectFileName, 'w')
 of.write('"Cluster Name","Job Name","Job Type","Run Start Time","Source Name","Replication Delay Sec","Replication Duration Sec","Logical Replicated %s","Physical Replicated %s","Status","Target Cluster","Percent Completed"\n' % (units, units))
 runFileName = os.path.join(outpath, 'replicationReport-perRun-%s.csv' % dateString)
 rf = codecs.open(runFileName, 'w')
-rf.write('"Cluster Name","Job Name","Job Type","Run Start Time","Replication Start Time","Replication End Time","Replication Duration (Sec)","Entries Changed","Logical Replicated %s","Physical Replicated %s","Status","Target Cluster"\n' % (units, units))
+rf.write('"Cluster Name","Job Name","Job Type","Run Start Time","Replication Start Time","Replication End Time","Replication Duration (Sec)","Entries Changed","Logical Replicated %s","Physical Replicated %s","Status","Target Cluster","V2 Run ID","V1 Run ID","Error Message"\n' % (units, units))
 dayFileName = os.path.join(outpath, 'replicationReport-perDay-%s.csv' % dateString)
 df = codecs.open(dayFileName, 'w')
 df.write('"Cluster Name","Job Name","Job Type","Day","Replication Duration (Sec)","Logical Replicated %s","Physical Replicated %s","Target Cluster"\n' % (units, units))
@@ -152,7 +152,10 @@ def getCluster():
                                 'entriesChanged': repl['entriesChanged'],
                                 'logicalReplicated': 0,
                                 'physicalReplicated': 0,
-                                'status': repl['status']
+                                'status': repl['status'],
+                                'runId': run['id'],
+                                'v1runId': run['protectionGroupInstanceId'],
+                                'message': repl.get('message', '')
                             }
                         # per object stats
                         for server in run['objects']:
@@ -190,7 +193,7 @@ def getCluster():
                         for remoteCluster in repls.keys():
                             if repls[remoteCluster]['status'] == 'Succeeded' and repls[remoteCluster]['startTimeUsecs'] is not None:
                                 replicaDuration = round((repls[remoteCluster]['endTimeUsecs'] - repls[remoteCluster]['startTimeUsecs']) / 1000000, 0)
-                                rf.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, jobName, jobType, usecsToDate(runStartTimeUsecs), usecsToDate(repls[remoteCluster]['startTimeUsecs']), usecsToDate(repls[remoteCluster]['endTimeUsecs']), replicaDuration, repls[remoteCluster]['entriesChanged'], repls[remoteCluster]['logicalReplicated'], repls[remoteCluster]['physicalReplicated'], repls[remoteCluster]['status'], remoteCluster))
+                                rf.write('"%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' % (clusterName, jobName, jobType, usecsToDate(runStartTimeUsecs), usecsToDate(repls[remoteCluster]['startTimeUsecs']), usecsToDate(repls[remoteCluster]['endTimeUsecs']), replicaDuration, repls[remoteCluster]['entriesChanged'], repls[remoteCluster]['logicalReplicated'], repls[remoteCluster]['physicalReplicated'], repls[remoteCluster]['status'], remoteCluster, repls[remoteCluster]['runId'], repls[remoteCluster]['v1runId'], repls[remoteCluster]['message']))
                                 # per day stats
                                 replDay = usecsToDate(uedate=repls[remoteCluster]['startTimeUsecs'], fmt='%Y-%m-%d')
                                 if remoteCluster not in perDayRepls:
