@@ -186,14 +186,14 @@ if mailserver is not None and sendto is not None and sendfrom is not None:
     try:
         if tls is True:
             context = ssl.create_default_context()
-            smtp = smtplib.SMTP_SSL(mailserver, mailport, context=context)
+            smtp = smtplib.SMTP_SSL(mailserver, mailport) # , context=context)
             if mailuser is None:
                 mailuser = sendfrom
             smtp.login(mailuser, pw(vip=mailserver, username=mailuser, password=mailpassword))
         elif starttls is True:
             context = ssl.create_default_context()
             smtp = smtplib.SMTP(mailserver, mailport)
-            smtp.starttls(context=context)
+            smtp.starttls() # context=context)
             if mailuser is None:
                 mailuser = sendfrom
             smtp.login(mailuser, pw(vip=mailserver, username=mailuser, password=mailpassword))
