@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-05-14`] [replicationReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/replicationReport) [`Update`] added run ID and error message columns
+* [`2026-05-14`] [activeSnapshots.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/activeSnapshots) [`Update`] added STARTTLS support
+* [`2026-05-13`] [createS3View.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/createS3View) [`Update`] fixed issue with showing S3 keys when connected through Helios
 * [`2026-05-13`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] reordered auth attempts (now sessions are tried before accessTokens)
 * [`2026-05-13`] [usersAndGroups.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/usersAndGroups) [`Update`] added -adminsOnly option
 * [`2026-05-12`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] fixed replicated view stats bug in Cohesity 7.4
