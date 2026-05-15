@@ -207,13 +207,18 @@ if($includeVMs){
     $entityTypes="entityTypes=kFlashBlade&entityTypes=kGenericNas&entityTypes=kIsilon&entityTypes=kNetapp&entityTypes=kPhysical"
 }
 
+$script:tenants = $null
+
 function validateServer($object, $vm){
     $doc = $vm.vmDocument
     $usingOrg = $False
     $orgname = '-'
     if($doc.PSObject.Properties['tenantId'] -and $doc.tenantId -ne $null){
-        $orgname = $doc.tenantId -replace ".$"
-        impersonate $orgname
+        if($script:tenants -eq $null){
+            $script:tenants = api get tenants
+        }
+        $tenant = $script:tenants | Where-Object tenantId -eq $doc.tenantId
+        impersonate $tenant.name
         $usingOrg = $True
     }
     $version = $doc.versions[0]
