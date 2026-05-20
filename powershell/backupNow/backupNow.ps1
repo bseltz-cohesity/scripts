@@ -214,37 +214,6 @@ if(!$cohesity_api.authorized){
     }
 }
 
-$sources = @{}
-
-function getObjectId($objectName){
-    $global:_object_id = $null
-
-    function get_nodes($obj){
-        if($obj.protectionSource.name -eq $objectName){
-            $global:_object_id = $obj.protectionSource.id
-            break
-        }
-        if($obj.name -eq $objectName){
-            $global:_object_id = $obj.id
-            break
-        }
-        if($obj.PSObject.Properties['nodes']){
-            foreach($node in $obj.nodes){
-                if($null -eq $global:_object_id){
-                    get_nodes $node
-                }
-            }
-        }
-    }
-    
-    foreach($source in $sources){
-        if($null -eq $global:_object_id){
-            get_nodes $source
-        }
-    }
-    return $global:_object_id
-}
-
 function cancelRunningJob($v1JobId, $durationMinutes){
     if($durationMinutes -gt 0){
         $durationUsecs = $durationMinutes * 60000000
