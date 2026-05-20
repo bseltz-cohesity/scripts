@@ -395,31 +395,6 @@ if($objects){
                     exit 1
                 }
             }
-        }elseif($environment -eq 'kVMware'){
-            $search = api get -v2 "data-protect/search/objects?environments=kVMware&searchString=$object" # &protectionGroupIds=$v2JobId
-            $thisObject = $search.objects | Where-Object name -eq $object
-            if($thisObject){
-                $protectionInfo = $thisObject.objectProtectionInfos | Where-Object {$jobName -in $_.protectionGroups.name}
-                if($protectionInfo){
-                    $objectId = $protectionInfo.objectId
-                    $sourceIds += $objectId
-                    $selectedSources = @($selectedSources + $objectId)
-                }else{
-                    output "Object $object not found" -warn
-                    if($extendedErrorCodes){
-                        exit 3
-                    }else{
-                        exit 1
-                    }
-                }
-            }else{
-                output "Object $object not found" -warn
-                if($extendedErrorCodes){
-                    exit 3
-                }else{
-                    exit 1
-                }
-            }
         }else{
             $search = api get -v2 "data-protect/search/objects?environments=$environment&searchString=$object" # &protectionGroupIds=$v2JobId
             $thisObject = $search.objects | Where-Object name -eq $object
