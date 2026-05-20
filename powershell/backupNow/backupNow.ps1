@@ -33,6 +33,7 @@
 # 2025.12.29 - replaced protectionSources API with v2 data-protect objects API
 # 2026.02.01 - added enableCohesityAPIDebugger (requires cohesity-api.ps1 version 2026.01.01 or later)
 # 2026.05.05 - minor bug fixes
+# 2026.05.20 - fixed new object search
 #
 # extended error codes
 # ====================
@@ -213,6 +214,37 @@ if(!$cohesity_api.authorized){
     }
 }
 
+$sources = @{}
+
+function getObjectId($objectName){
+    $global:_object_id = $null
+
+    function get_nodes($obj){
+        if($obj.protectionSource.name -eq $objectName){
+            $global:_object_id = $obj.protectionSource.id
+            break
+        }
+        if($obj.name -eq $objectName){
+            $global:_object_id = $obj.id
+            break
+        }
+        if($obj.PSObject.Properties['nodes']){
+            foreach($node in $obj.nodes){
+                if($null -eq $global:_object_id){
+                    get_nodes $node
+                }
+            }
+        }
+    }
+    
+    foreach($source in $sources){
+        if($null -eq $global:_object_id){
+            get_nodes $source
+        }
+    }
+    return $global:_object_id
+}
+
 function cancelRunningJob($v1JobId, $durationMinutes){
     if($durationMinutes -gt 0){
         $durationUsecs = $durationMinutes * 60000000
@@ -279,9 +311,12 @@ if($job){
             exit 1
         }
     }
-    # if($objects -and ($environment -eq 'kSQL' -or $environment -eq 'kOracle')){
-    #     $v1Job = api get "protectionJobs/$($v1JobId)?onlyReturnBasicSummary=true&useCachedData=$cacheSetting" -timeout $timeoutSec
-    # }
+    
+    if($objects -and ($environment -eq 'kSQL' -or $environment -eq 'kOracle')){
+        $backupJob = api get "/backupjobs/$($v1JobId)?useCachedData=$cacheSetting" -timeout $timeoutSec
+        $backupSources = api get "/backupsources?allUnderHierarchy=false&entityId=$($backupJob.backupJob.parentSource.id)&excludeTypes=5&useCachedData=$cacheSetting&pruneNonCriticalInfo=true" -timeout $timeoutSec
+        $v1Job = api get "protectionJobs/$($v1JobId)?onlyReturnBasicSummary=true&useCachedData=$cacheSetting" -timeout $timeoutSec
+    }
 }else{
     output "Job $jobName not found!" -warn
     if($extendedErrorCodes){
@@ -308,62 +343,42 @@ if($objects){
             }else{
                 $server, $db = $object.split('/')
             }
-            if("$server" -notin $serverSearchCache.Keys){
-                $search = api get -v2 "data-protect/search/protected-objects?searchString=$server&environments=$environment"
-                $serverSearchCache["$server"] = $search
-            }else{
-                $search = $serverSearchCache["$server"]
-            }
-            $serverObject = $search.objects | Where-Object name -eq $server
+            $serverObject = $backupSources.entityHierarchy.children | Where-Object {$_.entity.displayName -eq $server}
             if($serverObject){
-                $serverObjectId = $search.objects[0].id
-                # $serverObjectId = $search.objects[0].objectProtectionInfos[0].objectId
-            }else{
-                if($environment -eq 'kSQL'){
-                    $search.objects = $search.objects | Where-Object {$_.mssqlParams.hostInfo.name -eq $server}
-                }else{
-                    $search.objects = $search.objects | Where-Object {$_.oracleParams.hostInfo.name -eq $server}
-                }
-                if(@($search.objects).Count -gt 0){
-                    if($environment -eq 'kSQL'){
-                        $serverObjectId = [int64]($search.objects[0].mssqlParams.hostInfo.id)
-                    }else{
-                        $serverObjectId = [int64]($search.objects[0].oracleParams.hostInfo.id)
-                    }
-                }
+                $serverObjectId = $serverObject.entity.id
             }
             if($serverObjectId){
-                # if($serverObjectId -in $v1Job.sourceIds){
+                if($serverObjectId -in $v1Job.sourceIds){
                     if(! ($runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId})){
                         $runNowParameters += @{
                             "sourceId" = $serverObjectId;
                         }
                         $selectedSources = @($selectedSources + $serverObjectId)
                     }
-                    if($instance -or $db){  
+                    if($instance -or $db){                  
                         if($environment -eq 'kOracle' -or $environment -eq 'kSQL'){
                             $runNowParameter = $runNowParameters | Where-Object {$_.sourceId -eq $serverObjectId}
                             if(! $runNowParameter.databaseIds){
                                 $runNowParameter.databaseIds = @()
                             }
-                            if("$serverObjectId" -notin $searchCache.Keys){
-                                $search = api get -v2 "data-protect/objects?parentId=$serverObjectId&environments=$environment&onlyProtectedObjects=true"
-                                $searchCache["$serverObjectId"] = $search
+                            if($backupJob.backupJob.PSObject.Properties['backupSourceParams']){
+                                $backupJobSourceParams = $backupJob.backupJob.backupSourceParams | Where-Object sourceId -eq $serverObjectId
                             }else{
-                                $search = $searchCache["$serverObjectId"]
+                                $backupJobSourceParams = $null
                             }
-                            
+                            $serverSource = $backupSources.entityHierarchy.children | Where-Object {$_.entity.id -eq $serverObjectId}
                             if($environment -eq 'kSQL'){
                                 # SQL
-                                if(!$db){
-                                    $dbSource = $search.objects | Where-Object name -eq $instance
+                                if($serverSource.PSObject.Properties['children']){
+                                    # 7.3 AAG
+                                    $dbSource = $serverSource.children | Where-Object {$_.entity.displayName -eq "$instance"}
                                 }else{
-                                    $dbSource = $search.objects | Where-Object name -eq "$instance/$db"
+                                    $instanceSource = $serverSource.auxChildren | Where-Object {$_.entity.displayName -eq $instance}
+                                    $dbSource = $instanceSource.children | Where-Object {$_.entity.displayName -eq "$instance/$db"}
                                 }
-                                $dbSource = $dbSource | Where-Object {$_.protectionGroupConfigurations[0].protectionGroupId -eq $v2JobId}
                                 
-                                if($dbSource){
-                                    $runNowParameter.databaseIds = @($runNowParameter.databaseIds + $dbSource.id)
+                                if($dbSource -and ( $null -eq $backupJobSourceParams -or $dbSource.entity.id -in $backupJobSourceParams.appEntityIdVec -or $instanceSource.entity.id -in $backupJobSourceParams.appEntityIdVec)){
+                                    $runNowParameter.databaseIds = @($runNowParameter.databaseIds + $dbSource.entity.id)
                                 }else{
                                     output "$object not protected by job $jobName" -warn
                                     if($extendedErrorCodes){
@@ -374,11 +389,9 @@ if($objects){
                                 }
                             }else{
                                 # Oracle
-                                $dbSource = $search.objects | Where-Object name -eq "$db"
-                                $dbSource = $dbSource | Where-Object {$_.protectionGroupConfigurations[0].protectionGroupId -eq $v2JobId}
-                                
-                                if($dbSource){
-                                    $runNowParameter.databaseIds = @($runNowParameter.databaseIds + $dbSource.id)
+                                $dbSource = $serverSource.auxChildren | Where-Object {$_.entity.displayName -eq "$db"}
+                                if($dbSource -and ( $null -eq $backupJobSourceParams -or $dbSource.entity.id -in $backupJobSourceParams.appEntityIdVec)){
+                                    $runNowParameter.databaseIds = @($runNowParameter.databaseIds + $dbSource.entity.id)
                                 }else{
                                     output "$object not protected by job $jobName" -warn
                                     if($extendedErrorCodes){
@@ -397,14 +410,14 @@ if($objects){
                             }
                         }
                     }
-                # }else{
-                #     output "Server $server not protected by job $jobName" -warn
-                #     if($extendedErrorCodes){
-                #         exit 3
-                #     }else{
-                #         exit 1
-                #     }
-                # }
+                }else{
+                    output "Server $server not protected by job $jobName" -warn
+                    if($extendedErrorCodes){
+                        exit 3
+                    }else{
+                        exit 1
+                    }
+                }
             }else{
                 output "Server $server not found" -warn
                 if($extendedErrorCodes){
@@ -414,12 +427,22 @@ if($objects){
                 }
             }
         }elseif($environment -eq 'kVMware'){
-            $search = api get -v2 "data-protect/search/protected-objects?environments=kVMware&protectionGroupIds=$v2JobId&searchString=$object"
+            $search = api get -v2 "data-protect/search/objects?environments=kVMware&searchString=$object" # &protectionGroupIds=$v2JobId
             $thisObject = $search.objects | Where-Object name -eq $object
             if($thisObject){
-                $objectId = $thisObject.id
-                $sourceIds += $objectId
-                $selectedSources = @($selectedSources + $objectId)
+                $protectionInfo = $thisObject.objectProtectionInfos | Where-Object {$jobName -in $_.protectionGroups.name}
+                if($protectionInfo){
+                    $objectId = $protectionInfo.objectId
+                    $sourceIds += $objectId
+                    $selectedSources = @($selectedSources + $objectId)
+                }else{
+                    output "Object $object not found" -warn
+                    if($extendedErrorCodes){
+                        exit 3
+                    }else{
+                        exit 1
+                    }
+                }
             }else{
                 output "Object $object not found" -warn
                 if($extendedErrorCodes){
@@ -429,7 +452,6 @@ if($objects){
                 }
             }
         }else{
-            # $search = api get -v2 "data-protect/search/protected-objects?environments=$environment&protectionGroupIds=$v2JobId&searchString=$object"
             $search = api get -v2 "data-protect/search/objects?environments=$environment&searchString=$object" # &protectionGroupIds=$v2JobId
             $thisObject = $search.objects | Where-Object name -eq $object
             if($thisObject){
