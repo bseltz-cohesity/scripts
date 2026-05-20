@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-05-20`] [backupNow.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/backupNow) [`Update`] fixed new object search
+* [`2026-05-20`] [backupNow.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backupNow) [`Update`] fixed new object search
 * [`2026-05-14`] [replicationReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/replicationReport) [`Update`] added run ID and error message columns
 * [`2026-05-14`] [activeSnapshots.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/activeSnapshots) [`Update`] added STARTTLS support
 * [`2026-05-13`] [createS3View.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/createS3View) [`Update`] fixed issue with showing S3 keys when connected through Helios
