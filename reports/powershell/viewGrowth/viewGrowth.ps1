@@ -3,19 +3,51 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip,
-    [Parameter(Mandatory = $True)][string]$username,
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
     [Parameter()][string]$domain = 'local',
-    [Parameter()][int]$days = 31
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$helios,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
+    [Parameter()][int]$days = 31,
+    [Parameter()][switch]$skipEmpty
 )
 
-### source the cohesity-api helper code
-. ./cohesity-api
+# source the cohesity-api helper code
+. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-### authenticate
-apiauth -vip $vip -username $username -domain $domain
+# authentication =============================================
+# demand clusterName for Helios
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios" -ForegroundColor Yellow
+    exit 1
+}
+
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $helios -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
+
+# select helios managed cluster
+if($USING_HELIOS){
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
+        exit 1
+    }
+}
+# end authentication =========================================
 
 $views = (api get views).views | Sort-Object -Property name
+$consumers = api get stats/consumers?consumerType=kViews
 
 $endDate = get-date
 $startDate = $endDate.AddDays(-$days)
@@ -44,10 +76,14 @@ function formatSize($size){
 "View Name,Start Size,Start (Formatted),End Size,End (Formatted),Growth,Growth (Formatted)," | Out-File  $outfile
 
 foreach($view in $views | Sort-Object -Property name){
-    $stats = api get "statistics/timeSeriesStats?endTimeMsecs=$endDateMsecs&entityId=$($view.viewId)&metricName=kSystemUsageBytes&metricUnitType=0&range=week&rollupFunction=latest&rollupIntervalSecs=14400&schemaName=kBridgeViewLogicalStats&startTimeMsecs=$startDateMsecs"
-    if($stats.dataPointVec.count -gt 0){
-        $startSize = $stats.dataPointVec[0].data.int64Value
-        $endSize = $stats.dataPointVec[-1].data.int64Value
+    $consumer = $consumers.statsList | Where-Object {$_.id -eq $view.viewId}
+    $consumerId = $consumer.groupList[0].id
+    $viewStats = api get -v2 "stats/time-series-stats?startTimeMsecs=$startDateMsecs&schemaName=BookKeeperStats&metricNames=LogicalUsage&rollupIntervalSecs=86400&rollupFunction=kLatest&entityIdList=$consumerId&endTimeMsecs=$endDateMsecs"
+    $stats = $viewStats.timeSeriesStats[0]
+    if($stats.dataPoints.count -gt 0){
+        $stats.dataPoints = $stats.dataPoints | Sort-Object -Property timestampMsecs
+        $startSize = $stats.dataPoints[0].int64Value
+        $endSize = $stats.dataPoints[-1].int64Value
         "
  View Name: {0}
 Start Size: {1} ({2})
