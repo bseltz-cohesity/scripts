@@ -1,4 +1,4 @@
-# version: 2026-05-12
+# version: 2026-05-22
 
 # process commandline arguments
 [CmdletBinding()]
@@ -25,7 +25,7 @@ param (
     [Parameter()][array]$environments = $null
 )
 
-$scriptversion = '2026-05-12 (PowerShell)'
+$scriptversion = '2026-05-22 (PowerShell)'
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -417,8 +417,10 @@ function reportStorage(){
                     if($run.PSObject.Properties['archivalInfo'] -and $run.archivalInfo.PSObject.Properties['archivalTargetResults']){
                         foreach($archiveResult in $run.archivalInfo.archivalTargetResults){
                             if($archiveResult.status -eq 'Succeeded'){
-                                $archiveCount += 1
-                                $oldestArchive = usecsToDate (($run.id -split ':')[-1])
+                                if($archiveResult.PSObject.Properties['expiryTimeUsecs'] -and $archiveResult.expiryTimeUsecs -gt $nowUsecs){
+                                    $archiveCount += 1
+                                    $oldestArchive = usecsToDate (($run.id -split ':')[-1])
+                                }
                             }
                         }
                     }
@@ -698,8 +700,10 @@ function reportStorage(){
                                         $viewHistory[$object.object.name]['oldestArchive'] = '-'
                                         $viewHistory[$object.object.name]['lastDataLock'] = $null
                                     }
-                                    $viewHistory[$object.object.name]['archiveCount'] += 1
-                                    $viewHistory[$object.object.name]['oldestArchive'] = usecsToDate (($run.id -split ':')[-1])
+                                    if($archiveResult.PSObject.Properties['expiryTimeUsecs'] -and $archiveResult.expiryTimeUsecs -gt $nowUsecs){
+                                        $viewHistory[$object.object.name]['archiveCount'] += 1
+                                        $viewHistory[$object.object.name]['oldestArchive'] = usecsToDate (($run.id -split ':')[-1])
+                                    }
                                 }
                             }
                         }
