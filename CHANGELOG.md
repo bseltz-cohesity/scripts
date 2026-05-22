@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-05-22`] [viewGrowth.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/viewGrowth) [`Update`] updated for 7.3.x
 * [`2026-05-22`] [storagePerObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerObjectReport) [`Update`] fixed archive count, oldest archive date
 * [`2026-05-22`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] fixed archive count, oldest archive date
 * [`2026-05-20`] [backupNow.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/backupNow) [`Update`] fixed new object search
