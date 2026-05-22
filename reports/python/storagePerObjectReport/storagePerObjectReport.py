@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Storage Per Object Report version 2026.05.07 for Python"""
+"""Storage Per Object Report version 2026.05.22 for Python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -44,7 +44,7 @@ skipdeleted = args.skipdeleted
 debug = args.debug
 includearchives = args.includearchives
 
-scriptVersion = '2026-05-07 (Python)'
+scriptVersion = '2026-05-22 (Python)'
 
 if vips is None or len(vips) == 0:
     vips = ['helios.cohesity.com']
@@ -341,7 +341,7 @@ def reportStorage():
                                 
                     if 'archivalInfo' in run and run['archivalInfo'] is not None and 'archivalTargetResults' in run['archivalInfo'] and run['archivalInfo']['archivalTargetResults'] is not None and len(run['archivalInfo']['archivalTargetResults']) > 0:
                         for archiveResult in run['archivalInfo']['archivalTargetResults']:
-                            if 'status' in archiveResult and archiveResult['status'] == 'Succeeded':
+                            if 'status' in archiveResult and archiveResult['status'] == 'Succeeded' and 'expiryTimeUsecs' in archiveResult and archiveResult['expiryTimeUsecs'] > nowUsecs:
                                 archiveCount += 1
                                 oldestArchive = usecsToDate(run['id'].split(':')[-1])
                 
@@ -523,8 +523,9 @@ def reportStorage():
                                         viewHistory[object['object']['name']]['numLogs'] = 0
                                         viewHistory[object['object']['name']]['newestBackup'] = None
                                         viewHistory[object['object']['name']]['oldestBackup'] = None
-                                    viewHistory[object['object']['name']]['archiveCount'] += 1
-                                    viewHistory[object['object']['name']]['oldestArchive'] = usecsToDate(run['id'].split(':')[-1])
+                                    if 'expiryTimeUsecs' in archiveResult and archiveResult['expiryTimeUsecs'] > nowUsecs:
+                                        viewHistory[object['object']['name']]['archiveCount'] += 1
+                                        viewHistory[object['object']['name']]['oldestArchive'] = usecsToDate(run['id'].split(':')[-1])
                 if len(runs['runs']) == 0 or runs['runs'][-1]['id'] == lastRunId:
                     break
                 else:
