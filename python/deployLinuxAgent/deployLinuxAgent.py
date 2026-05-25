@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """deploy linux agent"""
 
+import warnings
+warnings.filterwarnings("ignore", module="paramiko")
 import paramiko
 import getpass
 import os
