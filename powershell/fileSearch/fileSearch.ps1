@@ -48,6 +48,19 @@ if($USING_HELIOS){
 }
 # end authentication =========================================
 
+function getSize($sizeBytes){
+    $unit = 'B'
+    if($sizeBytes -gt 1024){
+        $sizeBytes = $sizeBytes / 1024
+        $unit = 'KB'
+    }
+    if($sizeBytes -gt 1024){
+        $sizeBytes = $sizeBytes / 1024
+        $unit = 'MB'
+    }
+    return "$sizeBytes $unit"
+}
+
 $jobs = api get protectionJobs
 
 $encodedFile = [System.Web.HttpUtility]::UrlEncode($filePath).Replace('%2F%2F','%2F').replace('%2f','%2F')
@@ -87,7 +100,7 @@ foreach($file in $search.files){
             $x += 1
             if($showVersions -eq $x -and !$runId){
                 $versions = api get "/file/versions?clusterId=$clusterId&clusterIncarnationId=$clusterIncarnationId&entityId=$entityId&filename=$encodedFile&fromObjectSnapshotsOnly=false&jobId=$jobId"
-                $versions.versions | Format-Table -Property @{label="runId"; expression={$_.instanceId.jobInstanceId}}, @{label="startDate"; expression={usecsToDate $_.instanceId.jobStartTimeUsecs}}
+                $versions.versions | Format-Table -Property @{label="runId"; expression={$_.instanceId.jobInstanceId}}, @{label="startDate"; expression={usecsToDate $_.instanceId.jobStartTimeUsecs}}, @{label="size"; expression={getSize $_.sizeBytes}}
                 exit
             }else{
                 Write-Host "$($x): $($job[0].name) / $($file.fileDocument.objectId.entity.displayName) -> $($file.fileDocument.fileName)"
