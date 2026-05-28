@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-05-28`] [heliosCSVReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/powershell/heliosCSVReport) [`Update`] added parallel processing
 * [`2026-05-26`] [fileSearch.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/fileSearch) [`Update`] added file size when using -showversions option
 * [`2026-05-25`] [deployLinuxAgent.py](https://github.com/cohesity/community-automation-samples/tree/main/python/deployLinuxAgent) [`Update`] quiet cryptography warning
 * [`2026-05-22`] [viewGrowth.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/viewGrowth) [`Update`] updated for 7.3.x
