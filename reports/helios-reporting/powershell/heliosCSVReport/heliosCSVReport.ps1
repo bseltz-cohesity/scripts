@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param (
-    [Parameter()][string]$vip='helios.cohesity.com',
-    [Parameter()][string]$username='helios',
+    [Parameter()][string]$vip = 'helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
     [Parameter()][switch]$EntraId,
     [Parameter()][string]$startDate = '',
     [Parameter()][string]$endDate = '',
@@ -10,7 +10,7 @@ param (
     [Parameter()][int]$days = 7,
     [Parameter()][int]$dayRange = 180,
     [Parameter()][array]$clusterNames,
-    [Parameter(Mandatory = $True)][string]$reportName = 'Protection Runs',
+    [Parameter()][string]$reportName = 'Protection Runs',
     [Parameter()][string]$timeZone = 'America/New_York',
     [Parameter()][string]$outputPath = '.',
     [Parameter()][switch]$includeCCS,
@@ -21,443 +21,457 @@ param (
     [Parameter()][int]$timeoutSeconds = 600,
     [Parameter()][array]$objectUuid,
     [Parameter()][array]$objectName,
-    [Parameter()][switch]$dbg,
     [Parameter()][array]$filters,
     [Parameter()][string]$filterList,
     [Parameter()][string]$filterProperty,
     [Parameter()][switch]$showRecord,
-    [Parameter()][switch]$ccsOnly
+    [Parameter()][switch]$ccsOnly,
+    [Parameter()][int]$MaxRunspaces = 20
 )
 
-# gather list from command line params and file
-function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
+function gatherList {
+    param($Param = $null, $FilePath = $null, $Required = $true, $Name = 'items')
     $items = @()
-    if($Param){
-        $Param | ForEach-Object {$items += $_}
-    }
+    if($Param){ $Param | ForEach-Object { $items += $_ } }
     if($FilePath){
         if(Test-Path -Path $FilePath -PathType Leaf){
-            Get-Content $FilePath | ForEach-Object {$items += [string]$_}
-        }else{
-            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow
-            exit
+            Get-Content $FilePath | ForEach-Object { $items += [string]$_ }
+        } else {
+            Write-Host "Text file $FilePath not found!" -ForegroundColor Yellow; exit
         }
     }
-    if($Required -eq $True -and $items.Count -eq 0){
-        Write-Host "No $Name specified" -ForegroundColor Yellow
-        exit
+    if($Required -and $items.Count -eq 0){
+        Write-Host "No $Name specified" -ForegroundColor Yellow; exit
     }
     return ($items | Sort-Object -Unique)
 }
 
 $filterTextList = @(gatherList -FilePath $filterList -Name 'filter text list' -Required $false)
 
-# source the cohesity-api helper code
-. $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
-
 # authenticate
+. (Join-Path $PSScriptRoot 'cohesity-api.ps1')
 apiauth -vip $vip -username $username -domain 'local' -helios -entraIdAuthentication $EntraId
+$context = getContext
 
-# $allClusters = heliosClusters
-if(! $ccsOnly){
-    $allClusters = (api get -mcmv2 cluster-mgmt/info).cohesityClusters
+$allClusters = @()
+if(!$ccsOnly){
+    $allClusters = (api get -mcmv2 'cluster-mgmt/info').cohesityClusters
 }
-$regions = api get -mcmv2 dms/regions
+$regions = api get -mcmv2 'dms/regions'
 if($includeCCS -or $ccsOnly){
-    foreach($region in $regions.regions){
+    foreach ($region in $regions.regions){
         setApiProperty -object $region -name 'clusterName' -Value $region.name
         $allClusters = @($allClusters + $region)
     }
 }
 
-# select clusters to include
 $selectedClusters = $allClusters
-if($clusterNames.length -gt 0){
-    $selectedClusters = $allClusters | Where-Object {$_.clusterName -in $clusterNames -or $_.clusterId -in $clusterNames}
-    $unknownClusters = $clusterNames | Where-Object {$_ -notin @($allClusters.clusterName) -and $_ -notin @($allClusters.clusterId)}
+if($clusterNames.Length -gt 0){
+    $selectedClusters = $allClusters | Where-Object {
+        $_.clusterName -in $clusterNames -or $_.clusterId -in $clusterNames
+    }
+    $unknownClusters = $clusterNames | Where-Object {
+        $_ -notin @($allClusters.clusterName)-and $_ -notin @($allClusters.clusterId)
+    }
     if($unknownClusters){
-        Write-Host "Clusters not found:`n $($unknownClusters -join ', ')" -ForegroundColor Yellow
-        exit
+        Write-Host "Clusters not found:`n $($unknownClusters -join ', ')" -ForegroundColor Yellow; exit
     }
 }
 
-# date range
+# Date ranges
 $today = Get-Date
-
-if($startDate -ne '' -and $endDate -ne ''){
-    $uStart = dateToUsecs $startDate
-    $uEnd = dateToUsecs $endDate
-}elseif ($thisCalendarMonth) {
-    $uStart = dateToUsecs ($today.Date.AddDays(-($today.day-1)))
-    $uEnd = dateToUsecs ($today)
-}elseif ($lastCalendarMonth) {
-    $uStart = dateToUsecs ($today.Date.AddDays(-($today.day-1)).AddMonths(-1))
-    $uEnd = dateToUsecs ($today.Date.AddDays(-($today.day-1)).AddSeconds(-1))
-}else{
-    $uStart = timeAgo $days 'days'
-    $uEnd = dateToUsecs ($today)
+if($startDate -ne '' -and $endDate -ne ''){ $uStart = dateToUsecs $startDate; $uEnd = dateToUsecs $endDate }
+elseif($thisCalendarMonth){ $uStart = dateToUsecs ($today.Date.AddDays(-($today.Day - 1))); $uEnd = dateToUsecs $today }
+elseif($lastCalendarMonth){
+    $uStart = dateToUsecs ($today.Date.AddDays(-($today.Day - 1)).AddMonths(-1))
+    $uEnd = dateToUsecs ($today.Date.AddDays(-($today.Day - 1)).AddSeconds(-1))
+} else {
+    $uStart = timeAgo $days 'days'; $uEnd = dateToUsecs $today
 }
 
 $start = (usecsToDate $uStart).ToString('yyyy-MM-dd')
-$end = (usecsToDate $uEnd).ToString('yyyy-MM-dd')
-
+$end = (usecsToDate $uEnd  ).ToString('yyyy-MM-dd')
 $dayRangeUsecs = $dayRange * 86400000000
 
-# build time ranges
 $ranges = @()
-$gotAllRanges = $False
 $thisUend = $uEnd
 $thisUstart = $uStart
-while($gotAllRanges -eq $False){
-    if(($thisUend - $uStart) -gt $dayRangeUsecs){
+while ($true){
+    if(($thisUend - $uStart)-gt $dayRangeUsecs){
         $thisUstart = $thisUend - $dayRangeUsecs
-        $ranges = @($ranges + @{'start' = $thisUstart; 'end' = $thisUend})
+        $ranges    += @{ start = $thisUstart; end = $thisUend }
         $thisUend = $thisUstart - 1
-    }else{
-        $ranges = @($ranges + @{'start' = $uStart; 'end' = $thisUend})
-        $gotAllRanges = $True
+    } else {
+        $ranges += @{ start = $uStart; end = $thisUend }
+        break
     }
 }
 
+# pre-filters
 $excludeLogsFilter = @{
-    "attribute" = "backupType";
-    "filterType" = "In";
-    "inFilterParams" = @{
-        "attributeDataType" = "String";
-        "stringFilterValues" = @(
-            "kRegular",
-            "kFull",
-            "kSystem"
-        );
-        "attributeLabels" = @(
-            "Incremental",
-            "Full",
-            "System"
-        )
+    attribute = 'backupType'; filterType = 'In'
+    inFilterParams = @{
+        attributeDataType = 'String'
+        stringFilterValues = @('kRegular','kFull','kSystem')
+        attributeLabels = @('Incremental','Full','System')
     }
 }
 
 $environmentFilter = @{
-    "attribute" = "environment";
-    "filterType" = "In";
-    "inFilterParams" = @{
-        "attributeDataType" = "String";
-        "stringFilterValues" = @(
-            $environment
-        );
-        "attributeLabels" = @(
-            $environment
-        )
+    attribute = 'environment'; filterType = 'In'
+    inFilterParams = @{
+        attributeDataType = 'String'
+        stringFilterValues = @($environment)
+        attributeLabels = @($environment)
     }
 }
 
 $replicationFilter = @{
-    "attribute" = "activityType";
-    "filterType" = "In";
-    "inFilterParams" = @{
-        "attributeDataType" = "String";
-        "stringFilterValues" = @(
-            "Replication"
-        );
-        "attributeLabels" = @(
-            "Replication"
-        )
+    attribute = 'activityType'; filterType = 'In'
+    inFilterParams = @{
+        attributeDataType = 'String'
+        stringFilterValues = @('Replication')
+        attributeLabels = @('Replication')
     }
 }
 
+# Object UUID
 if($objectName){
-    $foundObjects = 0
-    foreach($oName in $objectName){
+    foreach ($oName in $objectName){
         $deletedSearch = api get -v2 "data-protect/search/objects?searchString=$oName&isDeleted=true"
         $search = api get -v2 "data-protect/search/objects?searchString=$oName"
-        $allObjects = @(($search.objects + $deletedSearch.objects) | Where-Object {$_.name -eq $oName})
-        if(@($allObjects).Count -eq 0){
-            Write-Host "Object $oName not found" -ForegroundColor Yellow
-            exit 1
-        }
+        $allObjects = @(($search.objects + $deletedSearch.objects)| Where-Object { $_.name -eq $oName })
+        if($allObjects.Count -eq 0){ Write-Host "Object $oName not found" -ForegroundColor Yellow; exit 1 }
         $objectUuid = @($objectUuid + $allObjects.globalId | Sort-Object -Unique)
     }
 }
 
 $objectUuidFilter = @{
-    "attribute" = "objectUuid";
-    "filterType" = "In";
-    "inFilterParams" = @{
-        "attributeDataType" = "String";
-        "stringFilterValues" = @(
-            $objectUuid
-        )
+    attribute = 'objectUuid'; filterType = 'In'
+    inFilterParams = @{
+        attributeDataType = 'String'
+        stringFilterValues = @($objectUuid)
     }
 }
 
-# get list of available reports
-$reports = api get -reportingV2 reports
-$report = $reports.reports | Where-Object {$_.title -eq $reportName}
-if(! $report){
+# Report selection
+
+$reports = api get -reportingV2 'reports'
+$report = $reports.reports | Where-Object { $_.title -eq $reportName }
+if(!$report){
     Write-Host "Invalid report name: $reportName" -ForegroundColor Yellow
     Write-Host "`nAvailable report names are:`n"
-    Write-Host (($reports.reports.title | Sort-Object) -join "`n")
+    Write-Host (($reports.reports.title | Sort-Object)-join "`n")
     exit
 }
 $reportNumber = $report.componentIds[0]
 $title = $report.title
 
-# output files
-$csvFileName = $(Join-Path -Path $outputPath -ChildPath "$($title.replace('/','-').replace('\','-'))_$($start)_$($end).csv")
-$tmpCsv =  $(Join-Path -Path $outputPath -ChildPath "tmpCsv")
-
-$gotHeadings = $False
-$headings = @()
+# output path
+$csvFileName = Join-Path $outputPath "$($title.Replace('/','-').Replace('\','-'))_$($start)_$($end).csv"
+if(!(Test-Path $outputPath)){ New-Item -ItemType Directory -Path $outputPath | Out-Null }
+$fullOutputPath = (Resolve-Path $outputPath).Path
+$tmpDir = Join-Path $fullOutputPath 'tmpRunspaceCSV'
+if(!(Test-Path $tmpDir)){ New-Item -ItemType Directory -Path $tmpDir | Out-Null }
 
 Write-Host "`nRetrieving report data...`n"
 
-$usecColumns = @()
-$epochColums = @()
-$sortColumn = ''
-$sortDecending = $False
+# Build work items  (one per cluster × range combination)
+$workItems = [System.Collections.Generic.List[hashtable]]::new()
+foreach ($cluster in ($selectedClusters | Sort-Object -Property clusterName)){
+    $systemId = if($cluster.clusterName -in @($regions.regions.name)){
+        $cluster.id
+    } else {
+        "$($cluster.clusterId):$($cluster.clusterIncarnationId)"
+    }
+    foreach ($range in $ranges){
+        $workItems.Add(@{
+            ClusterName = $cluster.clusterName
+            SystemId = $systemId
+            Range = $range
+            ReportNumber = $reportNumber
+            TimeZone = $timeZone
+            TimeoutSec = $timeoutSeconds
+            ExcludeLogs = $excludeLogs.IsPresent
+            HasEnvironment = ($null -ne $environment -and $environment.Count -gt 0)
+            Environment = $environmentFilter
+            ReplicationOnly = $replicationOnly.IsPresent
+            Replication = $replicationFilter
+            HasObjectUuid = ($null -ne $objectUuid -and $objectUuid.Count -gt 0)
+            ObjectUuid = $objectUuidFilter
+            OutputDir = $tmpDir
+            Vip = $vip
+            ApiContext = $context
+            PsScriptRoot2 = $PSScriptRoot
+        })
+    }
+}
 
+# Runspace script
+$runspaceScript = {
+    param([hashtable]$Item)
+    Write-Host "running"
+    . (Join-Path $Item.PsScriptRoot2 'cohesity-api.ps1')
+    setContext $Item.ApiContext
+    # Build report params
+    $reportParams = @{
+        filters = @(
+            @{
+                attribute = 'date'
+                filterType = 'TimeRange'
+                timeRangeFilterParams = @{
+                    lowerBound = [int64]$Item.Range.start
+                    upperBound = [int64]$Item.Range.end
+                }
+            },
+            @{
+                attribute = 'systemId'
+                filterType = 'Systems'
+                systemsFilterParams = @{
+                    systemIds = @("$($Item.SystemId)")
+                    systemNames = @("$($Item.ClusterName)")
+                }
+            }
+        )
+        sort = $null
+        timezone = $Item.TimeZone
+        limit = @{ size = 100000 }
+    }
+
+    if($Item.ExcludeLogs){ $reportParams.filters += $Item.Environment }
+    if($Item.ExcludeLogs){ $reportParams.filters = @($reportParams.filters | Where-Object { $_ -ne $Item.Environment }); $reportParams.filters += @{ attribute='backupType';filterType='In';inFilterParams=@{attributeDataType='String';stringFilterValues=@('kRegular','kFull','kSystem');attributeLabels=@('Incremental','Full','System')}} }
+    if($Item.HasEnvironment){ $reportParams.filters += $Item.Environment }
+    if($Item.ReplicationOnly){ $reportParams.filters += $Item.Replication }
+    if($Item.HasObjectUuid){ $reportParams.filters += $Item.ObjectUuid }
+
+    $dt1 = Get-Date
+    try {
+        $preview = api post -reportingV2 "components/$($Item.ReportNumber)/preview" $reportParams -TimeoutSec $Item.TimeoutSec
+        $safeCluster = $Item.ClusterName -replace '[\\/:*?"<>|]', '_'
+        $tmpFile = Join-Path $Item.OutputDir "$safeCluster`_$($Item.Range.start).csv"
+        $preview.component.data | Export-Csv -Path $tmpFile -NoTypeInformation
+    } catch {
+        Write-Host "Error"
+        return @{
+            ClusterName = $Item.ClusterName
+            RangeStart = $Item.Range.start
+            Error = $_.Exception.Message
+            Rows = 0
+            Seconds = 0
+            Preview = $null
+        }
+    }
+    $seconds = [math]::Round(((Get-Date)- $dt1).TotalSeconds)
+
+    return @{
+        ClusterName = $Item.ClusterName
+        RangeStart = $Item.Range.start
+        Error = $null
+        Rows = @($preview.component.data).Count
+        Seconds = $seconds
+        TmpFile = $tmpFile
+        Attributes = $preview.component.config.xlsxParams.attributeConfig
+        Preview = $null
+    }
+}
+
+# Runspace pool
+$pool = [System.Management.Automation.Runspaces.RunspaceFactory]::CreateRunspacePool(1, $MaxRunspaces)
+$pool.Open()
+$jobs = [System.Collections.Generic.List[hashtable]]::new()
 $date1 = Get-Date
-$x = 0
-foreach($cluster in $selectedClusters | Sort-Object -Property clusterName){
-    $y = 0
-    if($cluster.clusterName -in @($regions.regions.name)){
-        $systemId = $cluster.id
-    }else{
-        $systemId = "$($cluster.clusterId):$($cluster.clusterIncarnationId)"
+
+foreach ($item in $workItems){
+    $ps = [PowerShell]::Create().AddScript($runspaceScript).AddParameter('Item', $item)
+    $ps.RunspacePool = $pool
+    $jobs.Add(@{ PS = $ps; Handle = $ps.BeginInvoke()})
+}
+
+# Collect results as they complete
+$results = [System.Collections.Generic.List[hashtable]]::new()
+foreach ($job in $jobs){
+    $result = $job.PS.EndInvoke($job.Handle)
+    $job.PS.Dispose()
+    if($result){
+        $r = $result[0]
+        if($r.Error){
+            Write-Host "$($r.ClusterName): ERROR - $($r.Error)" -ForegroundColor Red
+        } else {
+            Write-Host "$($r.ClusterName)  ($($r.Rows) rows - $($r.Seconds) secs)"
+        }
+        $results.Add($r)
     }
-    Write-Host "$($cluster.clusterName) " -NoNewline
-  
-    foreach($range in $ranges){
-        $reportParams = @{
-            "filters"  = @(
-                @{
-                    "attribute"             = "date";
-                    "filterType"            = "TimeRange";
-                    "timeRangeFilterParams" = @{
-                        "lowerBound" = [int64]$range.start;
-                        "upperBound" = [int64]$range.end
-                    }
-                }
-                @{
-                    "attribute" = "systemId";
-                    "filterType" = "Systems";
-                    "systemsFilterParams" = @{
-                        "systemIds" = @("$systemId");
-                        "systemNames" = @("$($cluster.clusterName)")
-                    }
-                }
-            );
-            "sort"     = $null;
-            "timezone" = $timeZone;
-            "limit"    = @{
-                "size" = 100000;
-            }
-        }
-        if($excludeLogs){
-            $reportParams.filters = @($reportParams.filters + $excludeLogsFilter)
-        }
-        if($environment){
-            $reportParams.filters = @($reportParams.filters + $environmentFilter)
-        }
-        if($replicationOnly){
-            $reportParams.filters = @($reportParams.filters + $replicationFilter)
-        }
-        if($objectUuid){
-            $reportParams.filters = @($reportParams.filters + $objectUuidFilter)
-        }
-        if($dbg){
-            $reportParams | toJson
-        }
-        $dt1 = Get-Date
-        $preview = api post -reportingV2 "components/$reportNumber/preview" $reportParams -TimeoutSec $timeoutSeconds
-        $dt2 = Get-Date
-        $seconds = [math]::Round(($dt2 - $dt1).totalSeconds)
-        Write-Host " ($($preview.component.data.Count) rows - $seconds secs)" 
-        if($preview.component.data.Count -eq 100000){
-            Write-Host "Hit limit of records. Try reducing -dayRange (e.g. -dayRange 1)" -ForegroundColor Yellow
-            exit
-        }
-        $attributes = $preview.component.config.xlsxParams.attributeConfig
-        # sort data on first colums
-        $sortColumn = $attributes[0].attributeName
-        if($attributes[0].PSObject.Properties['format'] -and $attributes[0].format -eq 'timestamp'){
-            $sortDecending = $True
-        }
+}
 
-        foreach($attribute in $attributes){
-            if($attribute.PSObject.Properties['format'] -and $attribute.format -eq 'timestamp'){
-                $epochColums = @($epochColums + $attribute.attributeName)
-            }elseif($attribute.attributeName -match 'usecs'){
-                $usecColumns = @($usecColumns + $attribute.attributeName)
-            }
-        }
-        # headings
-        if(!$gotHeadings -and $x -eq 0){
-            $attributes.attributeName -join ',' | Out-File -FilePath $csvFileName
-        }
+$pool.Close()
+$pool.Dispose()
 
-        if($y -eq 0){
-            $preview.component.data | Export-CSV -Path $tmpCsv
-            $y = 1
-        }else{
-            $preview.component.data | Export-CSV -Path $tmpCsv -Append
+# Collect column metadata from any successful result
+$attributes = ($results | Where-Object { $_.Attributes } | Select-Object -First 1).Attributes
+$sortColumn = ''
+$sortDesc = $false
+$epochCols = @()
+$usecCols = @()
+
+if($attributes){
+    $sortColumn = $attributes[0].attributeName
+    if($attributes[0].PSObject.Properties['format'] -and $attributes[0].format -eq 'timestamp'){
+        $sortDesc = $true
+    }
+    foreach ($attr in $attributes){
+        if($attr.PSObject.Properties['format'] -and $attr.format -eq 'timestamp'){
+            $epochCols += $attr.attributeName
+        } elseif($attr.attributeName -match 'usecs'){
+            $usecCols  += $attr.attributeName
         }
     }
-    $csv = Import-CSV -Path $tmpCsv
-    Remove-Item -Path $tmpCsv -force
-    if($csv.Count -eq 0){
-        continue
-    }
+}
 
-    foreach($column in $attributes.attributeName){
-        $csv | ForEach-Object{
-            if($_.$column -is [System.Array]){
-                $_.$column = [string](@($_.$column | Sort-Object -Unique) -join '; ')
+# Write CSV header
+if($attributes){
+    $attributes.attributeName -join ',' | Out-File -FilePath $csvFileName
+}
+
+# Group results by cluster so we can merge ranges per cluster (original logic)
+$byCluster = $results | Where-Object { !$_.Error -and $_.Rows -gt 0 } | Group-Object -Property ClusterName
+
+$firstCluster = $true
+foreach ($clusterGroup in $byCluster){
+    # Merge all range temp files for this cluster
+    $allRows = [System.Collections.Generic.List[object]]::new()
+    foreach ($r in $clusterGroup.Group){
+        if($r.TmpFile -and (Test-Path $r.TmpFile)){
+            Import-Csv -Path $r.TmpFile | ForEach-Object { $allRows.Add($_)}
+            Remove-Item -Path $r.TmpFile -Force
+        }
+    }
+    if($allRows.Count -eq 0){ continue }
+
+    $csv = $allRows.ToArray()
+
+    # Flatten array-valued columns
+    foreach ($col in $attributes.attributeName){
+        $csv | ForEach-Object {
+            if($_.$col -is [System.Array]){
+                $_.$col = [string](@($_.$col | Sort-Object -Unique)-join '; ')
             }
         }
     }
 
-    if($showRecord){
-        $csv[0] | ConvertTo-Json -Depth 99
-        exit
-    }
-    # apply filters
+    if($showRecord){ $csv[0] | ConvertTo-Json -Depth 99; exit }
+
+    # post-filters
     if($filters){
-        foreach($filter in $filters){
-            if($filter -match '<='){
-                $fattrib, $fvalue = $filter -split "<="
-            }elseif($filter -match '>='){
-                $fattrib, $fvalue = $filter -split ">="
-            }elseif($filter -match '!='){
-                $fattrib, $fvalue = $filter -split "!="
-            }elseif($filter -match '=='){
-                $fattrib, $fvalue = $filter -split "=="
-            }elseif($filter -match '>'){
-                $fattrib, $fvalue = $filter -split ">"
-            }elseif($filter -match '<'){
-                $fattrib, $fvalue = $filter -split "<"
-            }else{
-                Write-Host "`nInvalid filter format, should be one of ==, !=, <=, >=, <, >`n" -ForegroundColor Yellow
-                exit
+        foreach ($filter in $filters){
+            if($filter -match '<='){ $op = '<='; $fattrib,$fvalue = $filter -split '<=' }
+            elseif($filter -match '>='){ $op = '>='; $fattrib,$fvalue = $filter -split '>=' }
+            elseif($filter -match '!='){ $op = '!='; $fattrib,$fvalue = $filter -split '!=' }
+            elseif($filter -match '=='){ $op = '=='; $fattrib,$fvalue = $filter -split '==' }
+            elseif($filter -match '>'){ $op = '>';  $fattrib,$fvalue = $filter -split '>'  }
+            elseif($filter -match '<'){ $op = '<';  $fattrib,$fvalue = $filter -split '<'  }
+            else    { Write-Host "`nInvalid filter format: $filter`n" -ForegroundColor Yellow; exit }
+
+            $fattrib = $fattrib.Trim(); $fvalue = $fvalue.Trim()
+            if($csv -and !$csv[0].PSObject.Properties[$fattrib]){
+                Write-Host "`nInvalid filter attribute: $fattrib`n" -ForegroundColor Yellow; exit
             }
-            $fattrib = $fattrib.Trim()
-            $fvalue = $fvalue.Trim()
-            if($csv -and ! $csv[0].PSObject.Properties[$fattrib]){
-                Write-Host "`nInvalid filter attribute: $fattrib`nUse -showRecord to see attribute names`n" -ForegroundColor Yellow
-                exit
-            }else{
-                if($filter -match '<='){
-                    $csv = $csv | Where-Object {[double]$_.$fattrib -le [double]$fvalue}
-                }elseif($filter -match '>='){
-                    $csv = $csv | Where-Object {[double]$_.$fattrib -ge [double]$fvalue}
-                }elseif($filter -match '!='){
-                    $csv = $csv | Where-Object {$_.$fattrib -ne $fvalue}
-                }elseif($filter -match '=='){
-                    $csv = $csv | Where-Object {$_.$fattrib -eq $fvalue}
-                }elseif($filter -match '>'){
-                    $csv = $csv | Where-Object {[double]$_.$fattrib -gt [double]$fvalue}
-                }elseif($filter -match '<'){
-                    $csv = $csv | Where-Object {[double]$_.$fattrib -lt [double]$fvalue}
-                }
+            $csv = switch ($op){
+                '<='  { $csv | Where-Object { [double]$_.$fattrib -le [double]$fvalue } }
+                '>='  { $csv | Where-Object { [double]$_.$fattrib -ge [double]$fvalue } }
+                '!='  { $csv | Where-Object { $_.$fattrib -ne $fvalue } }
+                '=='  { $csv | Where-Object { $_.$fattrib -eq $fvalue } }
+                '>'   { $csv | Where-Object { [double]$_.$fattrib -gt [double]$fvalue } }
+                '<'   { $csv | Where-Object { [double]$_.$fattrib -lt [double]$fvalue } }
             }
         }
     }
+
     if($filterList -and $filterProperty){
-        if($csv -and ! $csv[0].PSObject.Properties[$filterProperty]){
-            Write-Host "`nInvalid filter attribute: $filterProperty`nUse -showRecord to see attribute names`n" -ForegroundColor Yellow
-            exit
-        }else{
-            $csv = $csv | Where-Object {$_.$filterProperty -in $filterTextList}
+        if($csv -and !$csv[0].PSObject.Properties[$filterProperty]){
+            Write-Host "`nInvalid filter attribute: $filterProperty`n" -ForegroundColor Yellow; exit
         }
+        $csv = $csv | Where-Object { $_.$filterProperty -in $filterTextList }
     }
-    
-    # exclude environments
+
     if($excludeEnvironment){
         $csv = $csv | Where-Object environment -notin $excludeEnvironment
     }
-    
-    # convert timestamps to dates
-    foreach($epochColum in ($epochColums | Sort-Object -Unique)){
-        $csv | Where-Object{ $_.$epochColum -ne $null -and $_.$epochColum -ne 0} | ForEach-Object{
-            $_.$epochColum = usecsToDate $_.$epochColum
+
+    # Convert epoch timestamps
+    foreach ($col in ($epochCols | Sort-Object -Unique)){
+        $csv | Where-Object { $_.$col -ne $null -and $_.$col -ne 0 } | ForEach-Object {
+            $_.$col = usecsToDate $_.$col
         }
     }
-    
-    # convert usecs to seconds
-    foreach($usecColumn in ($usecColumns | Sort-Object -Unique)){
-        $csv | ForEach-Object{
-            $_.$usecColumn = [int]($_.$usecColumn / 1000000)
-        }
+
+    # Convert usecs to seconds
+    foreach ($col in ($usecCols | Sort-Object -Unique)){
+        $csv | ForEach-Object { $_.$col = [int]($_.$col / 1000000)}
     }
-    
-    # merge ranges
+
+    # Merge date ranges for aggregate reports (logic identical to original)
     if($ranges.Count -gt 1){
-        # merge protected objects
         if($reportName -eq 'protected objects'){
             $newCSV = @()
-            $groups = $csv | Group-Object -Property {$_.system}, {$_.sourceName}, {$_.objectType}, {$_.objectName}, {$_.groupName}
-            foreach($group in $groups){
-                $records = $group.group | Sort-Object -Property lastRunTime
-                $primaryRecord = $records[-1]
-                $primaryRecord.numSuccessfulBackups = ($records.numSuccessfulBackups | Measure-Object -sum).sum
-                $primaryRecord.numUnsuccessfulBackups = ($records.numUnsuccessfulBackups | Measure-Object -sum).sum
-                $newCSV = @($newCSV + $primaryRecord)
+            $csv | Group-Object { $_.system },{ $_.sourceName },{ $_.objectType },{ $_.objectName },{ $_.groupName } | ForEach-Object {
+                $recs = $_.Group | Sort-Object lastRunTime
+                $prim = $recs[-1]
+                $prim.numSuccessfulBackups = ($recs.numSuccessfulBackups | Measure-Object -Sum).Sum
+                $prim.numUnsuccessfulBackups = ($recs.numUnsuccessfulBackups | Measure-Object -Sum).Sum
+                $newCSV += $prim
             }
             $csv = $newCSV
         }
-        # merge failures
         if($reportName -eq 'failures'){
             $newCSV = @()
-            $groups = $csv | Group-Object -Property {$_.system}, {$_.sourceName}, {$_.objectType}, {$_.objectName}, {$_.groupName}
-            foreach($group in $groups){
-                $records = $group.group | Sort-Object -Property lastFailedRunUsecs
-                $primaryRecord = $records[-1]
-                $primaryRecord.failedBackups = ($records.failedBackups | Measure-Object -sum).sum
-                $newCSV = @($newCSV + $primaryRecord)
+            $csv | Group-Object { $_.system },{ $_.sourceName },{ $_.objectType },{ $_.objectName },{ $_.groupName } | ForEach-Object {
+                $recs = $_.Group | Sort-Object lastFailedRunUsecs
+                $prim = $recs[-1]
+                $prim.failedBackups = ($recs.failedBackups | Measure-Object -Sum).Sum
+                $newCSV += $prim
             }
             $csv = $newCSV
         }
-        # merge protected / unprotected objects
         if($reportName -eq 'protected / unprotected objects'){
             $newCSV = @()
-            $groups = $csv | Group-Object -Property {$_.systems}, {$_.sourceName}, {$_.objectType}, {$_.environment}, {$_.objectName}
-            foreach($group in $groups){
-                $records = $group.group
-                $primaryRecord = $records[0]
-                $newCSV = @($newCSV + $primaryRecord)
+            $csv | Group-Object { $_.systems },{ $_.sourceName },{ $_.objectType },{ $_.environment },{ $_.objectName } | ForEach-Object {
+                $newCSV += $_.Group[0]
             }
             $csv = $newCSV
         }
-        # merge protection group summary
         if($reportName -eq 'protection group summary'){
             $newCSV = @()
-            $groups = $csv | Group-Object -Property {$_.system}, {$_.sourceEnvironment}, {$_.groupName}
-            foreach($group in $groups){
-                $records = $group.group | Sort-Object -Property lastRunTimeUsecs
-                $primaryRecord = $records[-1]
-                $primaryRecord.successfulBackups = ($records.successfulBackups | Measure-Object -sum).sum
-                $primaryRecord.failedBackups = ($records.failedBackups | Measure-Object -sum).sum
-                $primaryRecord.dataIngestBytes = ($records.dataIngestBytes | Measure-Object -sum).sum
-                $newCSV = @($newCSV + $primaryRecord)
+            $csv | Group-Object { $_.system },{ $_.sourceEnvironment },{ $_.groupName } | ForEach-Object {
+                $recs = $_.Group | Sort-Object lastRunTimeUsecs
+                $prim = $recs[-1]
+                $prim.successfulBackups = ($recs.successfulBackups | Measure-Object -Sum).Sum
+                $prim.failedBackups = ($recs.failedBackups | Measure-Object -Sum).Sum
+                $prim.dataIngestBytes = ($recs.dataIngestBytes | Measure-Object -Sum).Sum
+                $newCSV += $prim
             }
             $csv = $newCSV
         }
     }
-    
-    if($sortDecending){
-        $csv = $csv | Sort-Object -Property $sortColumn -Descending
-    }else{
-        $csv = $csv | Sort-Object -Property $sortColumn
+
+    # Sort
+    $csv = if($sortDesc){ 
+        $csv | Sort-Object -Property $sortColumn -Descending
+    }else{ 
+        $csv | Sort-Object -Property $sortColumn
     }
-    if($x -eq 0){
-        $csv | Export-CSV -Path $csvFileName
-        $x = 1
-    }else{
-        $csv | Export-CSV -Path $csvFileName -Append
+
+    # Append to master CSV
+    if($firstCluster){
+        $csv | Export-Csv -Path $csvFileName -NoTypeInformation
+        $firstCluster = $false
+    } else {
+        $csv | Export-Csv -Path $csvFileName -Append -NoTypeInformation
     }
 }
-$date2 = Get-Date
-$reportSeconds = ($date2 - $date1).totalSeconds
-Write-Host "`nTotal time: $([math]::Round($reportSeconds)) seconds"
 
+# Cleanup temp dir
+if(Test-Path $tmpDir){ Remove-Item -Path $tmpDir -Recurse -Force -ErrorAction SilentlyContinue }
+
+$reportSeconds = ((Get-Date)- $date1).TotalSeconds
+Write-Host "`nTotal time: $([math]::Round($reportSeconds)) seconds"
 Write-Host "`nCSV output saved to $csvFileName`n"
