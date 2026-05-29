@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-05-29`] [deleteSQLBackups.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/deleteSQLBackups) [`New`] delete SQL server backups
 * [`2026-05-29`] [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] improved target server API query
 * [`2026-05-28`] [heliosCSVReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/powershell/heliosCSVReport) [`Update`] added parallel processing
 * [`2026-05-26`] [fileSearch.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/fileSearch) [`Update`] added file size when using -showversions option
