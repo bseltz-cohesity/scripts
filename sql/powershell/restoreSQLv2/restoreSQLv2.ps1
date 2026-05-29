@@ -241,7 +241,7 @@ if($sourceDbNames.Count -gt 1 -and $targetDB){
 }
 
 # find target server
-$targetEntity = (api get protectionSources/registrationInfo?environments=kSQL).rootNodes | Where-Object { $_.rootNode.name -eq $targetServer }
+$targetEntity = (api get "protectionSources/registrationInfo?environments=kSQL&includeEntityPermissionInfo=false&includeApplicationsTreeInfo=false&pruneNonCriticalInfo=true").rootNodes | Where-Object { $_.rootNode.name -eq $targetServer }
 if($null -eq $targetEntity -and ! $showPaths){
     Write-Host "Target Server $targetServer Not Found" -ForegroundColor Yellow
     exit 1
