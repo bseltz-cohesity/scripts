@@ -246,6 +246,7 @@ if($null -eq $targetEntity -and ! $showPaths){
     Write-Host "Target Server $targetServer Not Found" -ForegroundColor Yellow
     exit 1
 }
+$targetSource = api get "protectionSources?numLevels=1&id=$($targetEntity.rootNode.id)"
 
 $restoreDate = Get-Date -UFormat '%Y-%m-%d_%H:%M:%S'
 
@@ -448,7 +449,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
         if(! $targetInstance){
             $targetInstance = 'MSSQLSERVER'
         }
-        $targetInstanceObj = ($targetEntity.applications | Where-Object environment -eq kSQL).applicationTreeInfo | Where-Object {$_.protectionSource.name -eq $targetInstance}
+        $targetInstanceObj = $targetSource.applicationNodes | Where-Object {$_.protectionSource.name -eq $targetInstance}
         if(! $targetInstanceObj){
             Write-Host "    Target instance $($targetEntity.rootNode.name)/$($targetInstance) not found" -ForegroundColor Yellow
             exit 1
