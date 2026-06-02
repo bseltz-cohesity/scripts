@@ -91,10 +91,12 @@ if search is not None and 'files' in search and len(search['files']) > 0:
                 if showversions is None:
                     print('%s: %s / %s -> %s' % (x, job[0]['name'], file['fileDocument']['objectId']['entity']['displayName'], file['fileDocument']['filename']))
                 if showversions == x:
+                    encodedFile = quote_plus(file['fileDocument']['filename'])
                     clusterId = file['fileDocument']['objectId']['jobUid']['clusterId']
                     clusterIncarnationId = file['fileDocument']['objectId']['jobUid']['clusterIncarnationId']
                     entityId = file['fileDocument']['objectId']['entity']['id']
                     jobId = file['fileDocument']['objectId']['jobId']
+                    # print('/file/versions?clusterId=%s&clusterIncarnationId=%s&entityId=%s&filename=%s&fromObjectSnapshotsOnly=false&jobId=%s' % (clusterId, clusterIncarnationId, entityId, encodedFile, jobId))
                     versions = api('get', '/file/versions?clusterId=%s&clusterIncarnationId=%s&entityId=%s&filename=%s&fromObjectSnapshotsOnly=false&jobId=%s' % (clusterId, clusterIncarnationId, entityId, encodedFile, jobId))
                     if versions is not None and 'versions' in versions and len(versions['versions']) > 0:
                         print('\n%10s  %s' % ('runId', 'runDate'))
