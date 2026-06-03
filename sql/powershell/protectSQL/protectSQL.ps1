@@ -36,6 +36,10 @@ param (
     [Parameter()][switch]$sourceSideDeduplication,
     [Parameter()][switch]$allDBs,
     [Parameter()][switch]$replace,
+    [Parameter()][switch]$incrForLogBreak,
+    [Parameter()][switch]$incrForNewDB,
+    [Parameter()][switch]$noIncrForLogBreak,
+    [Parameter()][switch]$noIncrForNewDB,
     [Parameter()][ValidateSet('kPrimaryReplicaOnly', 'kSecondaryReplicaOnly', 'kPreferSecondaryReplica', 'kAnyReplica', 'kUseServerPreference')][string]$aagBackupPreference = 'kUseServerPreference'
 )
 
@@ -193,9 +197,19 @@ if(! $job){
             "excludeFilters" = $null;
             "logBackupNumStreams" = $logNumStreams;
             "logBackupWithClause" = $logWithClause;
+            "advancedSettings" = @{
+                "logChainBreakAutoTriggerOobIncrBackup" = $false;
+                "newDatabaseAutoTriggerOobIncrBackup" = $false
+            }
         }
         if($sourceSideDeduplication){
             $job.mssqlParams['fileProtectionTypeParams']['performSourceSideDeduplication'] = $True
+        }
+        if($incrForLogBreak){
+            $job.mssqlParams['fileProtectionTypeParams']['advancedSettings']['logChainBreakAutoTriggerOobIncrBackup'] = $True
+        }
+        if($incrForNewDB){
+            $job.mssqlParams['fileProtectionTypeParams']['advancedSettings']['newDatabaseAutoTriggerOobIncrBackup'] = $True
         }
         $params = $job.mssqlParams.fileProtectionTypeParams
     }
@@ -211,7 +225,17 @@ if(! $job){
             "backupSystemDbs" = $true;
             "useAagPreferencesFromServer" = $true;
             "fullBackupsCopyOnly" = $false;
-            "excludeFilters" = $null
+            "excludeFilters" = $null;
+            "advancedSettings" = @{
+                "logChainBreakAutoTriggerOobIncrBackup" = $false;
+                "newDatabaseAutoTriggerOobIncrBackup" = $false
+            }
+        }
+        if($incrForLogBreak){
+            $job.mssqlParams['nativeProtectionTypeParams']['advancedSettings']['logChainBreakAutoTriggerOobIncrBackup'] = $True
+        }
+        if($incrForNewDB){
+            $job.mssqlParams['nativeProtectionTypeParams']['advancedSettings']['newDatabaseAutoTriggerOobIncrBackup'] = $True
         }
         $params = $job.mssqlParams.nativeProtectionTypeParams
     }
@@ -288,6 +312,27 @@ if(! $job){
         if($logWithClause -ne ''){
             setApiProperty -object $params -name 'logBackupWithClause' -value $logWithClause
         }
+    }
+
+    if($job.mssqlParams.protectionType -in @('kNative', 'kFile')){
+        if(! $params.PSObject.Properties['advancedSettings']){
+            setApiProperty -object $params -name 'advancedSettings' -value @{
+                "logChainBreakAutoTriggerOobIncrBackup" = $false;
+                "newDatabaseAutoTriggerOobIncrBackup" = $false
+            }
+        }
+        if($incrForLogBreak){
+            $params.advancedSettings.logChainBreakAutoTriggerOobIncrBackup = $True
+        }
+        if($incrForNewDB){
+            $params.advancedSettings.newDatabaseAutoTriggerOobIncrBackup = $True
+        }
+        if($noIncrForLogBreak){
+            $params.advancedSettings.logChainBreakAutoTriggerOobIncrBackup = $False
+        }
+        if($noIncrForNewDB){
+            $params.advancedSettings.newDatabaseAutoTriggerOobIncrBackup = $False
+        }        
     }
 }
 

@@ -99,3 +99,7 @@ Or to update an existing job:
 * -logWithClause: (optional) e.g. 'WITH MAXTRANSFERSIZE = 4194304, BUFFERCOUNT = 64, COMPRESSION' (requires Cohesity 6.8.1 or later)
 * -sourceSideDeduplication: (optional) use source side deduplication
 * -aagBackupPreference: (optional) 'kPrimaryReplicaOnly', 'kSecondaryReplicaOnly', 'kPreferSecondaryReplica', 'kAnyReplica', or 'kUseServerPreference' (default is 'kUseServerPreference')
+* -incrForLogBreak: (optional) run incremental on log chain break (default is false)
+* -incrForNewDB: (optional) run incremental for new databases (default is false)
+* -noIncrForLogBreak: (optional) disable incremental on log chain break
+* -noIncrForNewDB: (optional) disable incremental for new databases
