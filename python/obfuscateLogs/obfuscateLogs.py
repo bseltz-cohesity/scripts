@@ -102,11 +102,44 @@ RE_LINUX_PATH = re.compile(r'(\/.+[\w:.|\\-]+)')
 
 crlist = None
 
+
+class RedactionRegistry:
+    """Maps each unique original string to a stable, unique redaction token.
+
+    Token format: <prefix>_<zero-padded counter>
+    Example: redacted_path_001, redacted_path_002, ...
+
+    The same original value always gets the same token within a registry
+    instance (i.e. within a single file's processing run).
+    """
+
+    def __init__(self):
+        # { prefix -> { original_value -> token } }
+        self._maps = {}
+        # { prefix -> current counter }
+        self._counters = {}
+
+    def redact(self, original: str, prefix: str) -> str:
+        """Return the stable redaction token for *original* under *prefix*."""
+        if prefix not in self._maps:
+            self._maps[prefix] = {}
+            self._counters[prefix] = 0
+        mapping = self._maps[prefix]
+        if original not in mapping:
+            self._counters[prefix] += 1
+            mapping[original] = f'{prefix}_{self._counters[prefix]:03d}'
+        return mapping[original]
+
+
 def obfuscatefile(root, filepath, crlist):
     filename = os.path.basename(filepath)
     print(filepath, flush=True)
     if filename.startswith('redacted_'):
         return
+
+    # One registry per file so tokens are consistent within a file
+    registry = RedactionRegistry()
+
     outfile = os.path.join(root, 'redacted_%s' % filename)
     with codecs.open(filepath, 'r', 'latin-1') as f_in:
         with codecs.open(outfile, 'w', 'latin-1') as f_out:
@@ -115,21 +148,17 @@ def obfuscatefile(root, filepath, crlist):
                 if crlist is not None:
                     for rule in crlist:
                         matches = re.findall(rule['regex'], line)
+                        prefix = rule.get('type', 'redacted_rule')
                         for match in matches:
                             if isinstance(match, tuple):
                                 for submatch in match:
                                     if submatch != '' and submatch is not None:
-                                        if 'type' in rule:
-                                            redact = '%s_xxx' % rule['type']
-                                            line = line.replace(submatch, redact)
-                                        else:
-                                            line = line.replace(submatch, 'redacted_rule_xxx')
+                                        token = registry.redact(submatch, prefix)
+                                        line = line.replace(submatch, token)
                             else:
-                                if 'type' in rule:
-                                    redact = '%s_xxx' % rule['type']
-                                    line = line.replace(match, redact)
-                                else:
-                                    line = line.replace(match, 'redacted_rule_xxx')
+                                token = registry.redact(match, prefix)
+                                line = line.replace(match, token)
+
                 skipline = bool(RE_MATCH_PATHS.search(line))
                 if skipline is False:
                     # rules for non-paths
@@ -138,15 +167,19 @@ def obfuscatefile(root, filepath, crlist):
                         if len(lineparts) > 0:
                             lineparts2 = lineparts[1].split(',')
                             if len(lineparts2) > 0:
-                                securefile = f'entity={lineparts2[0]}'
-                                line = line.replace(securefile, 'entity=redacted_entity_xxx')
+                                original = lineparts2[0]
+                                token = registry.redact(original, 'redacted_entity')
+                                securefile = f'entity={original}'
+                                line = line.replace(securefile, f'entity={token}')
                     if 'update_documents_function_arg: "' in line:
                         lineparts = line.split('update_documents_function_arg: "')
                         if len(lineparts) > 0:
                             lineparts2 = lineparts[1].split('"')
                             if len(lineparts2) > 0:
-                                securefile = f'update_documents_function_arg: "{lineparts2[0]}"'
-                                line = line.replace(securefile, 'update_documents_function_arg: "redacted_arg_xxx"')
+                                original = lineparts2[0]
+                                token = registry.redact(original, 'redacted_arg')
+                                securefile = f'update_documents_function_arg: "{original}"'
+                                line = line.replace(securefile, f'update_documents_function_arg: "{token}"')
                     # rules for paths
                     if ('/' in line or '\\' in line):
                         if 'path=' in line:
@@ -154,41 +187,49 @@ def obfuscatefile(root, filepath, crlist):
                             if len(lineparts) > 0:
                                 lineparts2 = lineparts[1].split(',')
                                 if len(lineparts2) > 0:
-                                    securefile = f'path={lineparts2[0]},'
-                                    line = line.replace(securefile, 'path=redacted_path_xxx,')
+                                    original = lineparts2[0]
+                                    token = registry.redact(original, 'redacted_path')
+                                    securefile = f'path={original},'
+                                    line = line.replace(securefile, f'path={token},')
                         if 'entry=' in line:
                             lineparts = line.split('entry=')
                             if len(lineparts) > 0:
                                 lineparts2 = lineparts[1].split(' in dir')
                                 if len(lineparts2) > 0:
-                                    securefile = f'entry={lineparts2[0]}'
-                                    line = line.replace(securefile, 'entry=redacted_entry_xxx')
+                                    original = lineparts2[0]
+                                    token = registry.redact(original, 'redacted_entry')
+                                    securefile = f'entry={original}'
+                                    line = line.replace(securefile, f'entry={token}')
                         if 'dir_sync_tx2_op.cc' in line:
                             lineparts = line.split('Looking up ')
                             if len(lineparts) > 1:
                                 lineparts2 = lineparts[1].split(' in dir')
                                 if len(lineparts2) > 1:
-                                    securefile = f'Looking up {lineparts2[0]}'  
-                                    line = line.replace(securefile, 'Looking up redacted_path_xxx')
+                                    original = lineparts2[0]
+                                    token = registry.redact(original, 'redacted_path')
+                                    line = line.replace(f'Looking up {original}', f'Looking up {token}')
                             lineparts = line.split('for entry=')
                             if len(lineparts) > 1:
                                 lineparts2 = lineparts[1].split(' in dir=')
                                 if len(lineparts2) > 1:
-                                    securefile = f'entry={lineparts2[0]}'
-                                    line = line.replace(securefile, 'entry=redacted_entry_xxx')
+                                    original = lineparts2[0]
+                                    token = registry.redact(original, 'redacted_entry')
+                                    line = line.replace(f'entry={original}', f'entry={token}')
                         tags = ''.join(re.findall(RE_TAGS, line))
                         lineparts = re.split(RE_SPLIT_LINE, line)
                         for linepart in lineparts:
                             windowspaths = re.findall(RE_WIN_PATH, linepart)
                             paths = [p for p in windowspaths if p not in tags and p not in [i for i in IGNORE_PATHS]]
                             for path in paths:
-                                line = line.replace(path, '\\redacted_path_xxx')
+                                token = registry.redact(path, 'redacted_path')
+                                line = line.replace(path, f'\\{token}')
                         lineparts = re.split('=|\"|\[|\>|\<', line)
-                        for linepart in lineparts:        
+                        for linepart in lineparts:
                             linuxpaths = re.findall(RE_LINUX_PATH, linepart)
                             paths = [p for p in linuxpaths if p not in tags and p not in [i for i in IGNORE_PATHS]]
                             for path in paths:
-                                line = line.replace(path, '/redacted_path_xxx')
+                                token = registry.redact(path, 'redacted_path')
+                                line = line.replace(path, f'/{token}')
                 f_out.write('%s' % line)
             os.remove(filepath)
             os.replace(outfile, filepath)
@@ -197,7 +238,6 @@ def gzfile(path):
     with open(path, 'rb') as f_in:
         with gzip.open('%s.gz' % path, 'wb') as f_out:
             shutil.copyfileobj(f_in, f_out)
-
 
 def targzdirectory(path, name):
     with tarfile.open(name, "w:gz") as tarhandle:
