@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-06-03`] [protectSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/protectSQL) [`Update`] added new switches: -incrForLogBreak, -incrForNewDB, -noIncrForLogBreak, -noIncrForNewDB
 * [`2026-06-02`] [fileSearch.py](https://github.com/cohesity/community-automation-samples/tree/main/python/fileSearch) [`Update`] fixed --showversions error
 * [`2026-05-29`] [deleteSQLBackups.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/deleteSQLBackups) [`New`] delete SQL server backups
 * [`2026-05-29`] [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] improved target server API query
