@@ -11,6 +11,7 @@ param (
     [Parameter()][string]$mfaCode,
     [Parameter()][string]$clusterName,
     [Parameter()][array]$jobName,
+    [Parameter()][array]$policyName,
     [Parameter()][string]$jobList,
     [Parameter()][ValidateSet('MiB','GiB')][string]$unit = 'MiB',
     [Parameter()][int]$daysBack = 7,
@@ -70,6 +71,7 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 $jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Required $false)
 
 $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true"
+$policies = api get -v2 "data-protect/policies"
 
 if($jobNames.Count -gt 0){
     $notfoundJobs = $jobNames | Where-Object {$_ -notin $jobs.protectionGroups.name}
@@ -94,6 +96,18 @@ $now = Get-Date  # -Hour 0 -Minute 0 -Second 0
 $nowUsecs = dateToUsecs $now
 $midnight = Get-Date -Hour 0 -Minute 0 -Second 0
 $daysBackUsecs = dateToUsecs $midnight.AddDays(-$daysBack)
+
+if(@($policyName).Count -gt 0){
+    $myPolicies = $policies.policies | Where-Object {$_.name -in @($policyName)}
+    foreach($policy in $policyName){
+        $thisPolicy = $myPolicies | Where-Object name -eq $policy
+        if(!$thisPolicy){
+            Write-Host "Policy $policy not found!" -ForegroundColor Yellow
+            exit 1
+        }
+    }
+    $jobs.protectionGroups = $jobs.protectionGroups | Where-Object {$_.policyId -in @($myPolicies.id)}
+}
 
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){

@@ -46,6 +46,7 @@ Place both files in a folder together and run the main script, using a local acc
 
 * -jobName: (optional) one or more job names to inspect (comma separated)
 * -jobList: (optional) text file of job names to inspect (one per line)
+* -policyName: (optional) include only jobs from (one or more) policy names (comma separated)
 * -environment: (optional) one or more types (comma separated) to include in query (e.g. kSQL, kVMware)
 * -excludeEnvironment: (optional) one or more types (comma seaparated) to exclude from query  (e.g. kSQL, kVMware)
 * -unit: (optional) display sizes in GiB or MiB (default is MiB)
