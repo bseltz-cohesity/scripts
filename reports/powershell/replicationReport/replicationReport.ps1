@@ -69,6 +69,7 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 }
 
 $jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Required $false)
+$policyNames = @(gatherList -Param $policyName -Name 'jobs' -Required $false)
 
 $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true"
 $policies = api get -v2 "data-protect/policies"
@@ -97,7 +98,7 @@ $nowUsecs = dateToUsecs $now
 $midnight = Get-Date -Hour 0 -Minute 0 -Second 0
 $daysBackUsecs = dateToUsecs $midnight.AddDays(-$daysBack)
 
-if(@($policyName).Count -gt 0){
+if(@($policyNames).Count -gt 0){
     $myPolicies = $policies.policies | Where-Object {$_.name -in @($policyName)}
     foreach($policy in $policyName){
         $thisPolicy = $myPolicies | Where-Object name -eq $policy
