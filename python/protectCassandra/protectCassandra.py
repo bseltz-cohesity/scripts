@@ -296,6 +296,8 @@ else:
         else:
             job['cassandraParams']['objects'] = [o for o in job['cassandraParams']['objects'] if o['id'] != objectid]
             job['cassandraParams']['objects'].append({"id": objectid})
+            if job['cassandraParams']['excludeObjectIds'] is not None:
+                job['cassandraParams']['excludeObjectIds'] = [e for e in job['cassandraParams']['excludeObjectIds'] if e != objectid]
 
 # add exclusions
 if len(excludes) > 0:
