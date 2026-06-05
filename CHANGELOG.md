@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-06-05`] [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] favor local snapshot vs archive
 * [`2026-06-05`] [protectCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectCassandra) [`Update`] unexclude inclusions
 * [`2026-06-04`] [replicationReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/replicationReport) [`Update`] filter on specified policies
 * [`2026-06-03`] [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`Update`] added unique redaction strings for pattern matches
