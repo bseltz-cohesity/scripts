@@ -312,6 +312,11 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
             if($newerThan){
                 $snapshots.snapshots = @($snapshots.snapshots | Where-Object runStartTimeUsecs -ge $newerThanUsecs)
             }
+            foreach($snapshot in $snapshots.snapshots){
+                if($snapshot.snapshotTargetType -eq 'Local'){
+                    $snapshot.snapshotTargetType = 'zzzLocal'
+                }
+            }
             foreach($snapshot in $snapshots.snapshots | Sort-Object -Property runStartTimeUsecs, snapshotTargetType -Descending){
                 $ranges = @($ranges + @{'object' = $obj ;'snapshot' = $snapshot; 'protection' = $protection; 'pit' = $snapshot.runStartTimeUsecs})
                 break
