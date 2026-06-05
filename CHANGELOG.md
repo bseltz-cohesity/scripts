@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-06-05`] [protectCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectCassandra) [`Update`] unexclude inclusions
+* [`2026-06-04`] [replicationReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/replicationReport) [`Update`] filter on specified policies
 * [`2026-06-03`] [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`Update`] added unique redaction strings for pattern matches
 * [`2026-06-03`] [protectSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/protectSQL) [`Update`] added new switches: -incrForLogBreak, -incrForNewDB, -noIncrForLogBreak, -noIncrForNewDB
 * [`2026-06-02`] [fileSearch.py](https://github.com/cohesity/community-automation-samples/tree/main/python/fileSearch) [`Update`] fixed --showversions error
