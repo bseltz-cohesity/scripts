@@ -129,6 +129,10 @@ if($import -ne ''){
             }
         }
     }
+    if($restart){
+        Write-Host "Restarting required services..."
+        $null = api post clusters/services/states @{'action' = 'kRestart'; 'services' = @($restartServices)}
+    }
     exit 0
 }
 
