@@ -46,7 +46,8 @@ param (
     [Parameter()][switch]$showPaths,
     [Parameter()][switch]$commit,
     [Parameter()][switch]$noLogs,
-    [Parameter()][switch]$dbg
+    [Parameter()][switch]$dbg,
+    [Parameter()][switch]$includeArchives
 )
 
 if($sleepTime -lt 20){
@@ -312,9 +313,16 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
             if($newerThan){
                 $snapshots.snapshots = @($snapshots.snapshots | Where-Object runStartTimeUsecs -ge $newerThanUsecs)
             }
-            foreach($snapshot in $snapshots.snapshots){
-                if($snapshot.snapshotTargetType -eq 'Local'){
-                    $snapshot.snapshotTargetType = 'zzzLocal'
+            # foreach($snapshot in $snapshots.snapshots){
+            #     if($snapshot.snapshotTargetType -eq 'Local'){
+            #         $snapshot.snapshotTargetType = 'zzzLocal'
+            #     }
+            # }
+            if(!$includeArchives){
+                $snapshots.snapshots = @($snapshots.snapshots | Where-Object snapshotTargetType -eq 'Local')
+            }else{
+                if(!$USING_HELIOS){
+                    $snapshots.snapshots = @($snapshots.snapshots | Where-Object {!$_.PSObject.Properties['ownershipContext'] -or $_.ownershipContext -ne 'FortKnox'})
                 }
             }
             foreach($snapshot in $snapshots.snapshots | Sort-Object -Property runStartTimeUsecs, snapshotTargetType -Descending){
@@ -373,7 +381,7 @@ foreach($sourceDbName in $sourceDbNames | Sort-Object){
     $targetHostId = $search.objects[0].mssqlParams.hostInfo.id
 
     if(! $showPaths){
-        Write-Host "    Selected Snapshot $(usecsToDate $range.snapshot.runStartTimeUsecs)"
+        Write-Host "    Selected Snapshot $(usecsToDate $range.snapshot.runStartTimeUsecs) ($($range.snapshot.snapshotTargetType))"
         if($desiredPIT -and $desiredPIT -gt $range.pit){
             Write-Host "    Best available PIT is $(usecsToDate $range.pit)" -ForegroundColor Yellow
         }elseif($desiredPIT -and $desiredPIT -lt $range.pit){
