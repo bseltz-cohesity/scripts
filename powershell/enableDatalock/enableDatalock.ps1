@@ -190,6 +190,11 @@ foreach($policy in ($policies.policies | Sort-Object -Property name)){
             }else{
                 $policy.isCBSEnabled = $True
             }
+            if(! $policy.PSObject.Properties['version']){
+                setApiProperty -object $policy -name 'version' -value 1
+            }else{
+                $policy.version = 1
+            }
             $null = api put -v2 data-protect/policies/$($policy.id) $policy
         }else{
             if($disable){
