@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-06-08`] [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`Update`] added multi-line redaction, file/folder name redaction, ignore linux standard paths
 * [`2026-06-08`] [removeUnusedPolicies.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/removeUnusedPolicies) [`Update`] modernized authentication
 * [`2026-06-08`] [viewList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/viewList) [`Update`] modernized authentication
 * [`2026-06-08`] [enableDatalock.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/enableDatalock) [`Update`] fix CBS error
