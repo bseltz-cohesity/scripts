@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-06-08`] [enableDatalock.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/enableDatalock) [`Update`] fix CBS error
 * [`2026-06-06`] [restoreSQLv2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/restoreSQLv2) [`Update`] favor local snapshot vs archive and added -includeArchives option
 * [`2026-06-06`] [gflags.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/gflags) [`Update`] fixed restart after import
 * [`2026-06-05`] [protectCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectCassandra) [`Update`] unexclude inclusions
