@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Storage Per Object Report version 2026.05.22 for Python"""
+"""Storage Per Object Report version 2026.06.09 for Python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -44,7 +44,7 @@ skipdeleted = args.skipdeleted
 debug = args.debug
 includearchives = args.includearchives
 
-scriptVersion = '2026-05-22 (Python)'
+scriptVersion = '2026-06-09 (Python)'
 
 if vips is None or len(vips) == 0:
     vips = ['helios.cohesity.com']
@@ -143,6 +143,7 @@ def reportStorage():
         if job['isActive'] is not True:
             origin = 'replica'
         if job['environment'] not in ['kView']:
+            print('  %s' % job['name'])
             tenant = ''
             if 'permissions' in job and len(job['permissions']) > 0 and 'name' in job['permissions'][0]:
                 tenant = job['permissions'][0]['name']
@@ -164,7 +165,6 @@ def reportStorage():
                         else:
                             resiliencyFactor = 2
             objects = {}
-            print('  %s' % job['name'])
 
             jobObjGrowth = 0
             jobGrowth = 0
@@ -322,11 +322,11 @@ def reportStorage():
                                         if snap is not None and job['environment'] == 'kVMware' and snap['snapshotInfo']['stats']['logicalSizeBytes'] < objects[objId]['logical'] and snap['snapshotInfo']['stats']['logicalSizeBytes'] > 0:
                                             objects[objId]['logical'] = snap['snapshotInfo']['stats']['logicalSizeBytes']
                                         if snap is not None:
-                                            objects[objId]['bytesRead'] += snap['snapshotInfo']['stats']['bytesRead']
+                                            objects[objId]['bytesRead'] += snap['snapshotInfo']['stats'].get('bytesRead', 0)
                                             objects[objId]['lastDataLock'] = lastDataLock
                                         if snap is not None and snap['snapshotInfo']['startTimeUsecs'] > growthdaysusecs:
-                                            objects[objId]['growth'] += snap['snapshotInfo']['stats']['bytesRead']
-                                            jobObjGrowth += snap['snapshotInfo']['stats']['bytesRead']
+                                            objects[objId]['growth'] += snap['snapshotInfo']['stats'].get('bytesRead', 0)
+                                            jobObjGrowth += snap['snapshotInfo']['stats'].get('bytesRead', 0)
                                         if runType == 'kLog':
                                             objects[objId]['numLogs'] += 1
                                         else:
@@ -335,8 +335,9 @@ def reportStorage():
                                             objects[objId]['oldestBackup'] = snap['snapshotInfo']['startTimeUsecs']
                                         if archivalInfo is not None:
                                             objects[objId]['oldestBackup'] = archivalInfo['startTimeUsecs']
-                                            objects[objId]['archiveBytesRead'] += archivalInfo['stats']['bytesRead']                                
+                                            objects[objId]['archiveBytesRead'] += archivalInfo['stats'].get('bytesRead', 0)                              
                                 except Exception as e:
+                                    # print(e)
                                     pass
                                 
                     if 'archivalInfo' in run and run['archivalInfo'] is not None and 'archivalTargetResults' in run['archivalInfo'] and run['archivalInfo']['archivalTargetResults'] is not None and len(run['archivalInfo']['archivalTargetResults']) > 0:
@@ -479,7 +480,7 @@ def reportStorage():
                                 if 'localSnapshotInfo' in object:
                                     snap = object['localSnapshotInfo']
                                     runInfo = run['localBackupInfo']
-                                elif 'originalSnapshotInfo' in object:
+                                elif 'originalBackupInfo' in object:
                                     snap = object['originalBackupInfo']
                                     runInfo = run['originalBackupInfo']
                                 else:
