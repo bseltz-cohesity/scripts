@@ -97,7 +97,7 @@ if outputfile is None:
     outputfile = 'protectionRunsReport-%s.tsv' % dateString
 outfile = os.path.join(outputpath, outputfile)
 f = codecs.open(outfile, 'w')
-f.write('Start Time\tEnd Time\tDuration\tstatus\tslaStatus\tsnapshotStatus\tobjectName\tsourceName\tgroupName\tpolicyName\tObject Type\tbackupType\tSystem Name\tLogical Size %s\tData Read %s\tData Written %s\tTotal File Count\tBacked Up File Count\tOrganization Name\tTag\n' % (unit, unit, unit))
+f.write('Start Time\tEnd Time\tDuration\tstatus\tslaStatus\tsnapshotStatus\tobjectName\tsourceName\tgroupName\tpolicyName\tObject Type\tbackupType\tSystem Name\tLogical Size %s\tData Read %s\tData Written %s\tTotal File Count\tBacked Up File Count\tOrganization Name\tTag\tExpiry\tRetention Days\n' % (unit, unit, unit))
 
 def getCluster():
 
@@ -137,68 +137,80 @@ def getCluster():
                 else:
                     break
                 for run in runs['runs']:
-                    try:
-                        if 'localBackupInfo' in run:
-                            backupInfo = run['localBackupInfo']
-                            snapshotInfo = 'localSnapshotInfo'
-                        elif 'originalBackupInfo' in run:
-                            backupInfo = run['originalBackupInfo']
-                            snapshotInfo = 'originalBackupInfo'
-                        else:
-                            continue
-                        status = backupInfo['status']
-                        localSources = {}
-                        if 'isLocalSnapshotsDeleted' not in run or run['isLocalSnapshotsDeleted'] is False:
-                            runType = backupInfo['runType']
-                            tag = ''
-                            if 'externallyTriggeredBackupTag' in run:
-                                tag = run['externallyTriggeredBackupTag']
-                            if includelogs or runType != 'kLog':
-                                runStartTime = usecsToDate(backupInfo['startTimeUsecs'])
-                                if days is not None and daysBackUsecs > backupInfo['startTimeUsecs']:
-                                    break
-                                if 'isSlaViolated' in backupInfo and backupInfo['isSlaViolated'] is True:
-                                    slaStatus = 'Missed'
-                                else:
-                                    slaStatus = 'Met'
-                                print("    %s  %s" % (runStartTime, status))
-                                for object in run['objects']:
-                                    if environment in ['kOracle', 'kSQL'] and object['object']['objectType'] == 'kHost':
-                                        localSources[object['object']['id']] = object['object']['name']
-                                for object in run['objects']:
-                                    objectName = object['object']['name']
-                                    if len(objectnames) == 0 or objectName.lower() in [o.lower() for o in objectnames]:
-                                        registeredSourceName = objectName
-                                        if environment not in ['kOracle', 'kSQL'] or object['object']['objectType'] != 'kHost':
-                                            if 'sourceId' in object['object']:
-                                                if environment in ['kOracle', 'kSQL']:
-                                                    registeredSourceName = localSources.get(object['object']['sourceId'], objectName)
-                                                else:
+                    # try:
+                    isCAD = False
+                    if 'localBackupInfo' in run:
+                        backupInfo = run['localBackupInfo']
+                        snapshotInfo = 'localSnapshotInfo'
+                    elif 'originalBackupInfo' in run:
+                        backupInfo = run['originalBackupInfo']
+                        snapshotInfo = 'originalBackupInfo'
+                    else:
+                        isCAD = True
+                        backupInfo = run['archivalInfo']['archivalTargetResults'][0]
+                    status = backupInfo['status']
+                    localSources = {}
+                    if 'isLocalSnapshotsDeleted' not in run or run['isLocalSnapshotsDeleted'] is False:
+                        runType = backupInfo['runType']
+                        tag = ''
+                        if 'externallyTriggeredBackupTag' in run:
+                            tag = run['externallyTriggeredBackupTag']
+                        if includelogs or runType != 'kLog':
+                            runStartTime = usecsToDate(backupInfo['startTimeUsecs'])
+                            if days is not None and daysBackUsecs > backupInfo['startTimeUsecs']:
+                                break
+                            if 'isSlaViolated' in backupInfo and backupInfo['isSlaViolated'] is True:
+                                slaStatus = 'Missed'
+                            else:
+                                slaStatus = 'Met'
+                            print("    %s  %s" % (runStartTime, status))
+                            for object in run['objects']:
+                                if environment in ['kOracle', 'kSQL'] and object['object']['objectType'] == 'kHost':
+                                    localSources[object['object']['id']] = object['object']['name']
+                            for object in run['objects']:
+                                if isCAD is True:
+                                    snapshotInfo = 'snapshotInfo' 
+                                    object['snapshotInfo'] = {'snapshotInfo': object['archivalInfo']['archivalTargetResults'][0]}
+                                objectName = object['object']['name']
+                                if len(objectnames) == 0 or objectName.lower() in [o.lower() for o in objectnames]:
+                                    registeredSourceName = objectName
+                                    if environment not in ['kOracle', 'kSQL'] or object['object']['objectType'] != 'kHost':
+                                        if 'sourceId' in object['object']:
+                                            if environment in ['kOracle', 'kSQL']:
+                                                registeredSourceName = localSources.get(object['object']['sourceId'], objectName)
+                                            else:
 
-                                                    registeredSource = [s for s in sources['rootNodes'] if s['rootNode']['id'] == object['object']['sourceId']]
-                                                    if registeredSource is not None and len(registeredSource) > 0:
-                                                        registeredSourceName = registeredSource[0]['rootNode']['name']
+                                                registeredSource = [s for s in sources['rootNodes'] if s['rootNode']['id'] == object['object']['sourceId']]
+                                                if registeredSource is not None and len(registeredSource) > 0:
+                                                    registeredSourceName = registeredSource[0]['rootNode']['name']
 
-                                            objectStatus = object[snapshotInfo]['snapshotInfo']['status']
-                                            if objectStatus == 'kSuccessful':
-                                                objectStatus = 'kSuccess'
-                                            objectStartTime = usecsToDate(object[snapshotInfo]['snapshotInfo']['startTimeUsecs'])
-                                            objectEndTime = None
-                                            objectDurationSeconds = int((nowUsecs - object[snapshotInfo]['snapshotInfo']['startTimeUsecs']) / 1000000)
-                                            if 'endTimeUsecs' in object[snapshotInfo]['snapshotInfo']:
-                                                objectEndTime = usecsToDate(object[snapshotInfo]['snapshotInfo']['endTimeUsecs'])
-                                                objectDurationSeconds = int((object[snapshotInfo]['snapshotInfo']['endTimeUsecs'] - object[snapshotInfo]['snapshotInfo']['startTimeUsecs']) / 1000000)
-                                            objectLogicalSizeBytes = round(object[snapshotInfo]['snapshotInfo']['stats'].get('logicalSizeBytes', 0) / multiplier, 1)
-                                            objectBytesWritten = round(object[snapshotInfo]['snapshotInfo']['stats'].get('bytesWritten', 0) / multiplier, 1)
-                                            objectBytesRead = round(object[snapshotInfo]['snapshotInfo']['stats'].get('bytesRead', 0) / multiplier, 1)
-                                            objectTotalCount = object[snapshotInfo]['snapshotInfo'].get('totalFileCount', 0)
-                                            objectBackedUpCount = object[snapshotInfo]['snapshotInfo'].get('backupFileCount', 0)
-                                            print('        %s' % objectName)
-                                            f.write('%s\t%s\t%s\t%s\t%s\tActive\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (objectStartTime, objectEndTime, objectDurationSeconds, objectStatus, slaStatus, objectName, registeredSourceName, job['name'], policyName, environment, runType, cluster['name'], objectLogicalSizeBytes, objectBytesRead, objectBytesWritten, objectTotalCount, objectBackedUpCount, tenant, tag))
-                                if lastrunonly is True:
-                                    break
-                    except Exception:
-                        pass
+                                        objectStatus = object[snapshotInfo]['snapshotInfo']['status']
+                                        if objectStatus == 'kSuccessful':
+                                            objectStatus = 'kSuccess'
+                                        objectStartTime = usecsToDate(object[snapshotInfo]['snapshotInfo']['startTimeUsecs'])
+                                        objectEndTime = None
+                                        objectDurationSeconds = int((nowUsecs - object[snapshotInfo]['snapshotInfo']['startTimeUsecs']) / 1000000)
+                                        if 'endTimeUsecs' in object[snapshotInfo]['snapshotInfo']:
+                                            objectEndTime = usecsToDate(object[snapshotInfo]['snapshotInfo']['endTimeUsecs'])
+                                            objectDurationSeconds = int((object[snapshotInfo]['snapshotInfo']['endTimeUsecs'] - object[snapshotInfo]['snapshotInfo']['startTimeUsecs']) / 1000000)
+                                        objectLogicalSizeBytes = round(object[snapshotInfo]['snapshotInfo']['stats'].get('logicalSizeBytes', 0) / multiplier, 1)
+                                        objectBytesWritten = round(object[snapshotInfo]['snapshotInfo']['stats'].get('bytesWritten', 0) / multiplier, 1)
+                                        objectBytesRead = round(object[snapshotInfo]['snapshotInfo']['stats'].get('bytesRead', 0) / multiplier, 1)
+                                        objectTotalCount = object[snapshotInfo]['snapshotInfo'].get('totalFileCount', 0)
+                                        objectBackedUpCount = object[snapshotInfo]['snapshotInfo'].get('backupFileCount', 0)
+                                        objectExpirationUsecs = object[snapshotInfo]['snapshotInfo'].get('expiryTimeUsecs',0)
+                                        objectExpiration = 'EXPIRED'
+                                        objectRetention = '0'
+                                        if objectExpirationUsecs > 0:
+                                            objectExpiration = usecsToDate(objectExpirationUsecs)
+                                            objectRetention = round((objectExpirationUsecs - object[snapshotInfo]['snapshotInfo']['startTimeUsecs'])/86400000000,0)
+                                        print('        %s' % objectName)
+                                        f.write('%s\t%s\t%s\t%s\t%s\tActive\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (objectStartTime, objectEndTime, objectDurationSeconds, objectStatus, slaStatus, objectName, registeredSourceName, job['name'], policyName, environment, runType, cluster['name'], objectLogicalSizeBytes, objectBytesRead, objectBytesWritten, objectTotalCount, objectBackedUpCount, tenant, tag, objectExpiration, objectRetention))
+                            if lastrunonly is True:
+                                break
+                    # except Exception as e:
+                    #     print(e)
+                    #     pass
 
 for vip in vips:
 
