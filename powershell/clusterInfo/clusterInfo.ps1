@@ -146,7 +146,7 @@ foreach($chassis in $chassisList | Sort-Object -Property id){
             $needSerial = $false
         }
         $if = $interfaces | Where-Object nodeId -eq $node.id
-        $ints = $if.interfaces | Where-Object {$_.isConnected -eq $True -and $_.PSObject.Properties['speed']}
+        $ints = $if.interfaces # | Where-Object {$_.isConnected -eq $True -and $_.PSObject.Properties['speed']}
         $vips = ($if.interfaces.virtualIp | Where-Object {$_}) -join ', '
         $diskCount = ($node.diskCountByTier.diskCount | Measure-Object -Sum).Sum
         output ("`n                  Node ID: {0}" -f $node.id)
@@ -166,8 +166,30 @@ foreach($chassis in $chassisList | Sort-Object -Property id){
             }     
         }
         $infs = @()
-        foreach($int in $ints){
-            output ("                Interface: {0} ({1})" -f $int.name, $int.speed)
+        $vlans = api get "vlans?_includeTenantInfo=true"
+        
+        foreach($int in $ints | Sort-Object -Property name){
+            # $int | toJson
+            $group = $int.group
+            if($group -notmatch '\.'){
+                $group = "$($group).0"
+            }
+            $vlan = $vlans | Where-Object {$_.ifaceGroupName -eq $group}
+            $speed = 'UNKNOWN'
+            if($int.PSObject.Properties['speed']){
+                $speed = $int.speed
+            }
+            output ("                Interface: {0} ({1}) MTU: {2}" -f $int.name, $speed, $int.mtu)
+            if($vlan){
+                output ("                           FQDN: {0}" -f $vlan.hostname)
+            }
+            if($int.PSObject.Properties['staticIp']){
+                output ("                           Static IP: {0}" -f $int.staticIp)
+            }
+            if($int.PSObject.Properties['virtualIp']){
+                output ("                           Virtual IP: {0}" -f $int.virtualIp)
+            }
+            output ("                           MAC Address: {0}" -f $int.macAddress)
             $infs = @($infs + "$($int.name)($($int.speed))")
         }
         """$($chassis.id)"",""$chassisname"",""$($chassis.serialNumber)"",""$hwmodel"",""$slotNumber"",""$($node.id)"",""$vips"",""$($nodeIp)"",""$nodeIpmiIp"",""$nodeSerial"",""$productModel"",""$($node.nodeSoftwareVersion)"",""$uptime"",""$($infs -join ';')"",""$($diskCount)"",""$($node.offlineDiskCount)""" | Out-File -FilePath $csvfile -Append
