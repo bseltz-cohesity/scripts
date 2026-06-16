@@ -26,6 +26,8 @@ parser.add_argument('-l', '--includelogs', action='store_true')
 parser.add_argument('-n', '--numruns', type=int, default=500)
 parser.add_argument('-o', '--outputpath', type=str, default='.')
 parser.add_argument('-f', '--outputfile', type=str, default=None)
+parser.add_argument('-jn', '--jobname', action='append', type=str)
+parser.add_argument('-jl', '--joblist', type=str)
 parser.add_argument('-on', '--objectname', action='append', type=str)
 parser.add_argument('-ol', '--objectlist', type=str)
 parser.add_argument('-lro', '--lastrunonly', action='store_true')
@@ -48,6 +50,8 @@ includelogs = args.includelogs
 numruns = args.numruns
 outputpath = args.outputpath
 outputfile = args.outputfile
+jobname = args.jobname
+joblist = args.joblist
 objectnames = args.objectname
 objectlist = args.objectlist
 lastrunonly = args.lastrunonly
@@ -68,6 +72,8 @@ def gatherList(param=None, filename=None, name='items', required=True):
     return items
 
 objectnames = gatherList(objectnames, objectlist, name='servers', required=False)
+jobnames = gatherList(jobname, joblist, name='jobs', required=False)
+jobnames = [j.lower() for j in jobnames]
 
 if vips is None or len(vips) == 0:
     vips = ['helios.cohesity.com']
@@ -110,7 +116,8 @@ def getCluster():
         return
 
     for job in sorted(jobs['protectionGroups'], key=lambda job: job['name'].lower()):
-
+        if len(jobnames) > 0 and job['name'].lower() not in jobnames:
+            continue
         if len(job['permissions']) > 0 and 'name' in job['permissions'][0]:
             tenant = job['permissions'][0]['name']
             print('%s (%s)' % (job['name'], tenant))
@@ -183,29 +190,31 @@ def getCluster():
                                                 registeredSource = [s for s in sources['rootNodes'] if s['rootNode']['id'] == object['object']['sourceId']]
                                                 if registeredSource is not None and len(registeredSource) > 0:
                                                     registeredSourceName = registeredSource[0]['rootNode']['name']
-
-                                        objectStatus = object[snapshotInfo]['snapshotInfo']['status']
-                                        if objectStatus == 'kSuccessful':
-                                            objectStatus = 'kSuccess'
-                                        objectStartTime = usecsToDate(object[snapshotInfo]['snapshotInfo']['startTimeUsecs'])
-                                        objectEndTime = None
-                                        objectDurationSeconds = int((nowUsecs - object[snapshotInfo]['snapshotInfo']['startTimeUsecs']) / 1000000)
-                                        if 'endTimeUsecs' in object[snapshotInfo]['snapshotInfo']:
-                                            objectEndTime = usecsToDate(object[snapshotInfo]['snapshotInfo']['endTimeUsecs'])
-                                            objectDurationSeconds = int((object[snapshotInfo]['snapshotInfo']['endTimeUsecs'] - object[snapshotInfo]['snapshotInfo']['startTimeUsecs']) / 1000000)
-                                        objectLogicalSizeBytes = round(object[snapshotInfo]['snapshotInfo']['stats'].get('logicalSizeBytes', 0) / multiplier, 1)
-                                        objectBytesWritten = round(object[snapshotInfo]['snapshotInfo']['stats'].get('bytesWritten', 0) / multiplier, 1)
-                                        objectBytesRead = round(object[snapshotInfo]['snapshotInfo']['stats'].get('bytesRead', 0) / multiplier, 1)
-                                        objectTotalCount = object[snapshotInfo]['snapshotInfo'].get('totalFileCount', 0)
-                                        objectBackedUpCount = object[snapshotInfo]['snapshotInfo'].get('backupFileCount', 0)
-                                        objectExpirationUsecs = object[snapshotInfo]['snapshotInfo'].get('expiryTimeUsecs',0)
-                                        objectExpiration = 'EXPIRED'
-                                        objectRetention = '0'
-                                        if objectExpirationUsecs > 0:
-                                            objectExpiration = usecsToDate(objectExpirationUsecs)
-                                            objectRetention = round((objectExpirationUsecs - object[snapshotInfo]['snapshotInfo']['startTimeUsecs'])/86400000000,0)
-                                        print('        %s' % objectName)
-                                        f.write('%s\t%s\t%s\t%s\t%s\tActive\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (objectStartTime, objectEndTime, objectDurationSeconds, objectStatus, slaStatus, objectName, registeredSourceName, job['name'], policyName, environment, runType, cluster['name'], objectLogicalSizeBytes, objectBytesRead, objectBytesWritten, objectTotalCount, objectBackedUpCount, tenant, tag, objectExpiration, objectRetention))
+                                        try:
+                                            objectStatus = object[snapshotInfo]['snapshotInfo']['status']
+                                            if objectStatus == 'kSuccessful':
+                                                objectStatus = 'kSuccess'
+                                            objectStartTime = usecsToDate(object[snapshotInfo]['snapshotInfo']['startTimeUsecs'])
+                                            objectEndTime = None
+                                            objectDurationSeconds = int((nowUsecs - object[snapshotInfo]['snapshotInfo']['startTimeUsecs']) / 1000000)
+                                            if 'endTimeUsecs' in object[snapshotInfo]['snapshotInfo']:
+                                                objectEndTime = usecsToDate(object[snapshotInfo]['snapshotInfo']['endTimeUsecs'])
+                                                objectDurationSeconds = int((object[snapshotInfo]['snapshotInfo']['endTimeUsecs'] - object[snapshotInfo]['snapshotInfo']['startTimeUsecs']) / 1000000)
+                                            objectLogicalSizeBytes = round(object[snapshotInfo]['snapshotInfo']['stats'].get('logicalSizeBytes', 0) / multiplier, 1)
+                                            objectBytesWritten = round(object[snapshotInfo]['snapshotInfo']['stats'].get('bytesWritten', 0) / multiplier, 1)
+                                            objectBytesRead = round(object[snapshotInfo]['snapshotInfo']['stats'].get('bytesRead', 0) / multiplier, 1)
+                                            objectTotalCount = object[snapshotInfo]['snapshotInfo'].get('totalFileCount', 0)
+                                            objectBackedUpCount = object[snapshotInfo]['snapshotInfo'].get('backupFileCount', 0)
+                                            objectExpirationUsecs = object[snapshotInfo]['snapshotInfo'].get('expiryTimeUsecs',0)
+                                            objectExpiration = 'EXPIRED'
+                                            objectRetention = '0'
+                                            if objectExpirationUsecs > 0:
+                                                objectExpiration = usecsToDate(objectExpirationUsecs)
+                                                objectRetention = round((objectExpirationUsecs - object[snapshotInfo]['snapshotInfo']['startTimeUsecs'])/86400000000,0)
+                                            print('        %s' % objectName)
+                                            f.write('%s\t%s\t%s\t%s\t%s\tActive\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (objectStartTime, objectEndTime, objectDurationSeconds, objectStatus, slaStatus, objectName, registeredSourceName, job['name'], policyName, environment, runType, cluster['name'], objectLogicalSizeBytes, objectBytesRead, objectBytesWritten, objectTotalCount, objectBackedUpCount, tenant, tag, objectExpiration, objectRetention))
+                                        except Exception as e:
+                                            pass
                             if lastrunonly is True:
                                 break
                     # except Exception as e:

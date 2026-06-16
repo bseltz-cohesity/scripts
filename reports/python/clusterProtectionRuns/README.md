@@ -59,6 +59,8 @@ Or via Helios
 * -lro, --lastrunonly: (optional) only display last run per protection group
 * -o, --outputpath: (optional) default is '.'
 * -f, --outputfile: (optional) default is protectionRunsReport-date.tsv
+* -jn, --jobname: (optional) name of protection group to include in report (repeat for multiple)
+* -jl, --joblist: (optional) text file of protection groups to include in report (one per line)
 * -on, --objectname: (optional) name of server/view to include in report (repeat for multiple)
 * -ol, --objectlist: (optional) text file of servers/views to include in report (one per line)
 
