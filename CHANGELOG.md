@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-06-16`] [clusterProtectionRuns.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/clusterProtectionRuns) [`Update`] added --jobname and --joblist parameters
 * [`2026-06-15`] [clusterInfo.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/clusterInfo) [`Update`] added MAC addresses
 * [`2026-06-10`] [clusterProtectionRuns.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/clusterProtectionRuns) [`Update`] added expiration date and retention days columns
 * [`2026-06-09`] [storagePerObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerObjectReport) [`Update`] fixed replicated view snapshot count
