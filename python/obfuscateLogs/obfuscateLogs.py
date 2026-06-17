@@ -408,6 +408,23 @@ SAFE_LINUX_PATHS = frozenset([
     '/sbin/swapon',
     '/sbin/swapoff',
     '/sbin/mkswap',
+    # NetBackup (Veritas) installation paths — not sensitive, should not be redacted
+    '/usr/openv',
+    '/usr/openv/bin',
+    '/usr/openv/lib',
+    '/usr/openv/netbackup',
+    '/usr/openv/netbackup/bin',
+    '/usr/openv/netbackup/bin/admincmd',
+    '/usr/openv/netbackup/bin/goodies',
+    '/usr/openv/netbackup/logs',
+    '/usr/openv/netbackup/db',
+    '/usr/openv/netbackup/ext',
+    '/usr/openv/netbackup/help',
+    '/usr/openv/netbackup/online_help',
+    '/usr/openv/volmgr',
+    '/usr/openv/volmgr/bin',
+    '/usr/openv/var',
+    '/usr/openv/var/global',
 ])
 
 # Regex to quickly test whether a path starts with a known safe prefix.
@@ -417,6 +434,60 @@ _SAFE_PREFIX_RE = re.compile(
     '|'.join(re.escape(p) for p in sorted(SAFE_LINUX_PATHS, key=len, reverse=True)) +
     r')(?:[/\s,;"\']|$)'
 )
+
+
+# ---------------------------------------------------------------------------
+# NetBackup version-number exclusion
+# ---------------------------------------------------------------------------
+# NetBackup version strings (e.g. 10.3.0.1, 9.1.0.1) look exactly like IPv4
+# addresses and would be incorrectly redacted by the IPv4 custom rule.
+#
+# Detection strategy (two-tier):
+#   1. Keyword context: if an NBU-related keyword (NetBackup, nbu, version,
+#      etc.) appears on the same line, any structurally valid NBU version is
+#      preserved regardless of its numeric value.
+#   2. No-keyword structural check: the value must match the narrow pattern
+#      MAJOR.MINOR.0.BUILD where MAJOR is 7-10 and MINOR >= 1.  This covers
+#      the common annotation-free case (e.g. a bare "10.3.0.1" in a path)
+#      while still redacting genuinely ambiguous values like 10.0.0.1 that
+#      are indistinguishable from a private gateway IP without context.
+
+# Structural pattern: major 7-10, minor 0-9, patch 0-9, build 0-99
+RE_NBU_STRUCTURAL = re.compile(
+    r'^(?:[7-9]|10)\.[0-9]\.[0-9]\.(?:[0-9]|[1-9][0-9])$'
+)
+
+# Keywords that indicate a dotted-quad is a product version, not an IP
+RE_NBU_KEYWORDS = re.compile(
+    r'(?i)\b(?:netbackup|veritas|openv|nbu|bpcd|bprd|nbpem|nbjm|nbim'
+    r'|version|release|ver|build|installed|upgrade|patch)\b'
+)
+
+# Types of custom-rule matches that could incorrectly consume version numbers.
+# Add more type prefixes here if new IP-like rules are introduced.
+_IP_LIKE_RULE_TYPES = frozenset([
+    'redacted_ipv4_',
+    'redacted_ip_',
+    'redacted_ipv4',
+])
+
+
+def is_nbu_version(value: str, context: str = '') -> bool:
+    """Return True if *value* looks like a NetBackup version number.
+
+    *context* is the surrounding text (e.g. the full log line).  When it
+    contains an NBU-related keyword the structural check is used as-is.
+    Without a keyword, the minor version must be >= 1 and the patch octet
+    must be 0 — this rejects common IPs like 10.0.0.1 and 8.8.8.8 while
+    still preserving obvious version strings like 10.3.0.1 and 9.1.0.1.
+    """
+    value = value.strip()
+    if not RE_NBU_STRUCTURAL.match(value):
+        return False
+    if context and RE_NBU_KEYWORDS.search(context):
+        return True
+    parts = value.split('.')
+    return int(parts[2]) == 0 and int(parts[1]) >= 1
 
 
 def is_safe_linux_path(path: str) -> bool:
@@ -540,9 +611,13 @@ def redact_filename(filename: str, crlist, registry: 'RedactionRegistry') -> str
             if isinstance(match, tuple):
                 for submatch in match:
                     if submatch:
+                        if prefix in _IP_LIKE_RULE_TYPES and is_nbu_version(submatch, new_name):
+                            continue
                         token = registry.redact(submatch, prefix)
                         new_name = new_name.replace(submatch, token)
             else:
+                if prefix in _IP_LIKE_RULE_TYPES and is_nbu_version(match, new_name):
+                    continue
                 token = registry.redact(match, prefix)
                 new_name = new_name.replace(match, token)
     return new_name
@@ -569,9 +644,13 @@ def apply_custom_rules_to_substring(value: str, crlist, registry: 'RedactionRegi
             if isinstance(match, tuple):
                 for submatch in match:
                     if submatch:
+                        if prefix in _IP_LIKE_RULE_TYPES and is_nbu_version(submatch, value):
+                            continue
                         token = registry.redact(submatch, prefix)
                         value = value.replace(submatch, token)
             else:
+                if prefix in _IP_LIKE_RULE_TYPES and is_nbu_version(match, value):
+                    continue
                 token = registry.redact(match, prefix)
                 value = value.replace(match, token)
     return value
@@ -597,9 +676,13 @@ def apply_custom_rules_multiline(lines: list, crlist, registry: 'RedactionRegist
             if isinstance(match, tuple):
                 for submatch in match:
                     if submatch:
+                        if prefix in _IP_LIKE_RULE_TYPES and is_nbu_version(submatch, joined):
+                            continue
                         token = registry.redact(submatch, prefix)
                         joined = joined.replace(submatch, token)
             else:
+                if prefix in _IP_LIKE_RULE_TYPES and is_nbu_version(match, joined):
+                    continue
                 token = registry.redact(match, prefix)
                 joined = joined.replace(match, token)
 
