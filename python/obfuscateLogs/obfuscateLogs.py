@@ -655,6 +655,16 @@ def obfuscatefile(root, filepath, crlist):
         filename = new_filename
         print(f'  filename redacted -> {filename}', flush=True)
 
+    # Skip binary files — still rename them if the filename needed redacting,
+    # but do not attempt to scan or rewrite their contents.  Binary detection
+    # reads the first 8 KB and looks for null bytes, which are essentially
+    # absent from text/log files but reliably present in binary formats.
+    BINARY_DETECT_BYTES = 8192
+    with open(filepath, 'rb') as _probe:
+        if b'\x00' in _probe.read(BINARY_DETECT_BYTES):
+            print(f'  skipping binary file: {filepath}', flush=True)
+            return
+
     outfile = os.path.join(root, 'redacted_%s' % filename)
     with codecs.open(filepath, 'r', 'latin-1') as f_in:
         with codecs.open(outfile, 'w', 'latin-1') as f_out:
