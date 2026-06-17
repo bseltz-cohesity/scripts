@@ -603,13 +603,33 @@ def apply_custom_rules_multiline(lines: list, crlist, registry: 'RedactionRegist
                 token = registry.redact(match, prefix)
                 joined = joined.replace(match, token)
 
-    # Re-split on newlines, preserving the terminator on each line.
+    # Re-split on newlines after redaction.
+    #
+    # We cannot use the original line lengths to slice up `joined` because
+    # redaction tokens are a different length from the text they replaced —
+    # any substitution shifts every subsequent offset, causing lines to be
+    # truncated, merged, or lose their newline terminator entirely.
+    #
+    # Instead, split `joined` on newlines and reattach the correct terminator
+    # to each piece.  `str.split('\n')` always produces exactly one more
+    # element than the number of newline characters, so this round-trips
+    # cleanly for both LF and CRLF content.
+    parts = joined.split('\n')
     result = []
-    remaining = joined
-    for original_line in lines:
-        # Each original line determines how many characters to peel off.
-        result.append(remaining[: len(original_line)])
-        remaining = remaining[len(original_line):]
+    for i, part in enumerate(parts):
+        if i < len(parts) - 1:
+            # Determine whether the original used CRLF or LF.
+            # Look at the corresponding original line if available; fall back
+            # to plain LF.
+            if i < len(lines) and lines[i].endswith('\r\n'):
+                result.append(part.rstrip('\r') + '\r\n')
+            else:
+                result.append(part + '\n')
+        else:
+            # Last segment: only append if non-empty (handles files that end
+            # with a newline, where split produces a trailing empty string).
+            if part:
+                result.append(part)
     return result
 
 
@@ -792,6 +812,28 @@ def targzdirectory(path, name):
                 relname = fullname.replace(path, '')
                 tarhandle.add(os.path.join(root, f), arcname=relname)
 
+def redact_archive_name(root, filename, crlist):
+    """Redact sensitive substrings from an archive filename (base name only).
+
+    Uses a fresh RedactionRegistry scoped to this filename so tokens don't
+    bleed across unrelated archives.  Returns the new full filepath.
+    If the name is unchanged the original filepath is returned without any
+    filesystem operation.
+    """
+    if not crlist:
+        return os.path.join(root, filename)
+    registry = RedactionRegistry()
+    new_filename = redact_filename(filename, crlist, registry)
+    if new_filename == filename:
+        return os.path.join(root, filename)
+    new_filepath = os.path.join(root, new_filename)
+    old_filepath = os.path.join(root, filename)
+    if os.path.exists(old_filepath):
+        print(f'  archive renamed: {filename} -> {new_filename}', flush=True)
+        os.replace(old_filepath, new_filepath)
+    return new_filepath
+
+
 def process_file(root, filename, crlist, parallel=True, max_workers=None):
     filepath = os.path.join(root, filename)
     filename_short, file_extension = os.path.splitext(filename)
@@ -821,14 +863,17 @@ def process_file(root, filename, crlist, parallel=True, max_workers=None):
             tar.close()
             os.remove(unzippedfile)
             walkdir(untarred_folder, crlist, parallel=parallel, max_workers=max_workers)
-            # re-tar and re-zip
+            # re-tar and re-zip, then redact the output archive filename
             targzdirectory(untarred_folder, filepath)
             shutil.rmtree(untarred_folder)
+            redact_archive_name(root, filename, crlist)
         else:
             obfuscatefile(root, unzippedfile, crlist)
-            # re-zip
+            # re-zip then redact the output .gz filename
             gzfile(unzippedfile)
             os.remove(unzippedfile)
+            gz_filename = os.path.basename(unzippedfile) + '.gz'
+            redact_archive_name(root, gz_filename, crlist)
     elif file_extension.lower() == '.tar':
         # untar tar file
         untarred_folder = filepath[0:-4]
@@ -837,8 +882,11 @@ def process_file(root, filename, crlist, parallel=True, max_workers=None):
         tar.close()
         os.remove(filepath)
         walkdir(untarred_folder, crlist, parallel=parallel, max_workers=max_workers)
-        targzdirectory(untarred_folder, '%s.gz' % filepath)
+        # re-tar and re-zip, then redact the output archive filename
+        out_gz = '%s.gz' % filepath
+        targzdirectory(untarred_folder, out_gz)
         shutil.rmtree(untarred_folder)
+        redact_archive_name(root, os.path.basename(out_gz), crlist)
     elif file_extension.lower() == 'zip':
         print('*** unhandled zip file *** %s' % filepath)
     else:
