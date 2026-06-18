@@ -50,6 +50,7 @@ $normalizeStatus = @{
     'kSuccess' = 'Succeeded';
     'kWarning' = 'SucceededWithWarning';
     'kFailure' = 'Failed';
+    'kFailed' = 'Failed';
     'kCanceled' = 'Canceled';
     'kSkipped' = 'Skipped';
     'Succeeded' = 'Succeeded';
@@ -92,7 +93,11 @@ function reportReplications(){
             $replicationEndTime = usecsToDate $result.endTimeUsecs
             $replicationDurationSeconds = ("{0:n0}" -f ($replicationEndTime - $objectStartTime).totalSeconds).replace(',','')
         }
-        $cluster.name, 'Replication', $result.clusterName, $(dateToString $objectStartTime), $(dateToString $replicationEndTime), $replicationDurationSeconds, $normalizeStatus[$result.status], $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $objectLogicalSizeBytes, $tenant -join "," | Out-File -FilePath $outfileName -Append
+        $replicationStatus = $normalizeStatus[$result.status]
+        if($replicationStatus -eq 'Succeeded' -and $normalizeStatus[$objectStatus] -ne $replicationStatus){
+            $replicationStatus = $normalizeStatus[$objectStatus]
+        }
+        $cluster.name, 'Replication', $result.clusterName, $(dateToString $objectStartTime), $(dateToString $replicationEndTime), $replicationDurationSeconds, $replicationStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $objectLogicalSizeBytes, $tenant -join "," | Out-File -FilePath $outfileName -Append
     }
 }
 
@@ -106,7 +111,11 @@ function reportArchives(){
             $archivalEndTime = usecsToDate $result.endTimeUsecs
             $archivalDurationSeconds = ("{0:n0}" -f ($archivalEndTime - $objectStartTime).totalSeconds).replace(',','')
         }
-        $cluster.name, 'Archival', $result.targetName, $(dateToString $objectStartTime), $(dateToString $archivalEndTime), $archivalDurationSeconds, $normalizeStatus[$result.status], $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $objectLogicalSizeBytes, $tenant -join "," | Out-File -FilePath $outfileName -Append
+        $archiveStatus = $normalizeStatus[$result.status]
+        if($archiveStatus -eq 'Succeeded' -and $normalizeStatus[$objectStatus] -ne $archiveStatus){
+            $archiveStatus = $normalizeStatus[$objectStatus]
+        }
+        $cluster.name, 'Archival', $result.targetName, $(dateToString $objectStartTime), $(dateToString $archivalEndTime), $archivalDurationSeconds, $archiveStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $objectLogicalSizeBytes, $tenant -join "," | Out-File -FilePath $outfileName -Append
     }
 }
 
@@ -242,6 +251,7 @@ function reportRuns(){
                                     $snapshotInfo = $object.archivalInfo.archivalTargetResults[0]
                                     reportBackup
                                 }
+                                $objectStatus = $snapshotInfo.status
                                 $objectLogicalSizeBytes = toUnits $snapshotInfo.stats.logicalSizeBytes
                                 if($snapshotInfo.startTimeUsecs){
                                     $objectStartTime = usecsToDate $snapshotInfo.startTimeUsecs
