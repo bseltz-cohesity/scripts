@@ -31,7 +31,8 @@ param (
     [Parameter()][switch]$addExcludePath,
     [Parameter()][switch]$removeIncludePath,
     [Parameter()][switch]$removeExcludePath,
-    [Parameter()][switch]$clearExcludePaths
+    [Parameter()][switch]$clearExcludePaths,
+    [Parameter()][switch]$allJobs
 )
 
 # source the cohesity-api helper code
@@ -108,7 +109,7 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
     return ($items | Sort-Object -Unique)
 }
 
-$jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Required $True)
+$jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Required $False)
 $indexPaths = @(gatherList -Param $indexPath -FilePath $indexList -Name 'index paths' -Required $False)
 
 $jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true"
@@ -117,6 +118,11 @@ if($jobNames.Count -gt 0){
     $notfoundJobs = $jobNames | Where-Object {$_ -notin $jobs.protectionGroups.name}
     if($notfoundJobs){
         Write-Host "Jobs not found $($notfoundJobs -join ', ')" -ForegroundColor Yellow
+    }
+}else{
+    if(!$allJobs){
+        Write-Host "No jobs specified" -ForegroundColor Yellow
+        exit 1
     }
 }
 
@@ -174,7 +180,7 @@ $defaultIndexingPolicy = @{
 
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
     $updateJob = $false
-    if($job.name -in $jobNames){
+    if($job.name -in $jobNames -or $allJobs){
         Write-Host "$($job.name)"
         if($newName){
             $job.name = $newName
@@ -324,10 +330,10 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         }
         # add indexing include paths
         if($addIncludePath -or $addExcludePath -or $removeExcludePath -or $removeIncludePath -or $clearExcludePaths){
-            Write-Host "    updating indexing"
             $indexingPolicy = findIndexingPolicy $job
             if($indexingPolicy){
                 if($indexingPolicy.enableIndexing -eq $True){
+                    Write-Host "    updating indexing"
                     if($clearExcludePaths){
                         $indexingPolicy.excludePaths = $null
                     }
@@ -359,7 +365,11 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                         $indexingPolicy.excludePaths = $null
                     }
                     $updateJob = $True
+                }else{
+                    Write-Host "    indexing is disabled"
                 }
+            }else{
+                Write-Host "    indexing not applicable"
             }
         }
     }
