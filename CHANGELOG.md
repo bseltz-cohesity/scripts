@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-06-23`] [updateJob.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/updateJob) [`Update`] added -allJobs options
 * [`2026-06-18`] [snapshotList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/snapshotList) [`Update`] modernized authentication
 * [`2026-06-17`] [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`Update`] various improvements
 * [`2026-06-17`] [clusterProtectionActivities.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterProtectionActivities) [`New`] protection activities report
