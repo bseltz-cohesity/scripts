@@ -45,6 +45,7 @@ To include custom rules:
 
 * -l, --logpath: path of folder containing logs (Required)
 * -cr, --customrules: (optional) path to custom rules JSON file (see below)
+* -sp, --safepaths: (optional) text file containing user-specified safe paths to avoid redacting
 * -f, --freespacemultiplier: (optional) multiple of free space required for logpath (defailt is 3)
 * -p, --parallel: (optional) Launch parallel tasks for concurrent file processing
 * -w, --workers: (optional) No. of concurrent processes to run if parallel processing is selected. If it is not provided with '-p' argument then it will default to the number of processors on the machine

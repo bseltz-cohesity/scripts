@@ -435,6 +435,36 @@ _SAFE_PREFIX_RE = re.compile(
     r')(?:[/\s,;"\']|$)'
 )
 
+# ---------------------------------------------------------------------------
+# User-defined safe paths (loaded at runtime via --safepaths)
+# ---------------------------------------------------------------------------
+_user_safe_paths: set = set()
+_user_safe_prefix_re = None   # compiled when paths are loaded
+
+
+def load_user_safe_paths(filepath: str) -> None:
+    """Load additional safe paths from a plain-text file (one path per line).
+
+    Lines that are blank or start with '#' are ignored.  The paths are added
+    to the global user safe-path set and a prefix regex is compiled so that
+    any sub-path under a listed entry is also protected.
+    """
+    global _user_safe_paths, _user_safe_prefix_re
+    paths = set()
+    with open(filepath, 'r') as fh:
+        for raw in fh:
+            entry = raw.strip()
+            if entry and not entry.startswith('#'):
+                paths.add(entry)
+    _user_safe_paths = paths
+    if paths:
+        _user_safe_prefix_re = re.compile(
+            r'^(?:' +
+            '|'.join(re.escape(p) for p in sorted(paths, key=len, reverse=True)) +
+            r')(?:[/\s,;"\']|$)'
+        )
+    print(f'  loaded {len(paths)} user-defined safe path(s) from {filepath}', flush=True)
+
 
 # ---------------------------------------------------------------------------
 # NetBackup version-number exclusion
@@ -495,7 +525,26 @@ def is_safe_linux_path(path: str) -> bool:
     stripped = path.strip()
     if stripped in SAFE_LINUX_PATHS:
         return True
-    return bool(_SAFE_PREFIX_RE.match(stripped))
+    if _SAFE_PREFIX_RE.match(stripped):
+        return True
+    # Check user-supplied safe paths (--safepaths)
+    if _user_safe_paths:
+        if stripped in _user_safe_paths:
+            return True
+        if _user_safe_prefix_re and _user_safe_prefix_re.match(stripped):
+            return True
+    return False
+
+
+def mask_dates(text: str) -> str:
+    """Replace '/' inside slash-separated dates with '_' so that RE_LINUX_PATH
+    does not start a path match inside a date like 01/30/2026 or 01/30/26.
+
+    The returned string is only used for *finding* path candidates; all actual
+    replacements are performed on the original line, so date text is never
+    altered in the output.
+    """
+    return RE_DATE_SLASH.sub(lambda m: m.group().replace('/', '_'), text)
 
 
 match_paths = [
@@ -552,6 +601,10 @@ RE_TAGS = re.compile(r'(<.*?[\w:|\.|-|"|=]+>)')
 RE_SPLIT_LINE = re.compile(r'[="\[><]')
 RE_WIN_PATH = re.compile(r'(\\.+[\w:.|\\-]+)')
 RE_LINUX_PATH = re.compile(r'(\/.+[\w:.|\\-]+)')
+# Full slash-separated date pattern (MM/DD/YYYY or MM/DD/YY).  Used to mask
+# date slashes before RE_LINUX_PATH runs so that the '/' inside a date is not
+# mistaken for a path separator.
+RE_DATE_SLASH = re.compile(r'\b\d{1,2}/\d{1,2}/(?:\d{4}|\d{2})\b')
 
 crlist = None
 
@@ -833,9 +886,16 @@ def _process_single_line(line: str, registry: 'RedactionRegistry', crlist=None) 
                         # --- Change 1: skip safe Linux paths ---
                         if not is_safe_linux_path(raw_original):
                             redacted_original = apply_custom_rules_to_substring(raw_original, crlist, registry)
-                            token = registry.redact(redacted_original, 'redacted_path')
                             securefile = f'path={raw_original},'
-                            line = line.replace(securefile, f'path={token},')
+                            if redacted_original != raw_original:
+                                # A custom rule already tokenised sensitive content within the
+                                # path (e.g. a hostname).  Surface those tokens directly so the
+                                # same hostname gets the same code whether it appears standalone
+                                # or embedded in a path.
+                                line = line.replace(securefile, f'path={redacted_original},')
+                            else:
+                                token = registry.redact(redacted_original, 'redacted_path')
+                                line = line.replace(securefile, f'path={token},')
             if 'entry=' in line:
                 lineparts = line.split('entry=')
                 if len(lineparts) > 0:
@@ -844,9 +904,12 @@ def _process_single_line(line: str, registry: 'RedactionRegistry', crlist=None) 
                         raw_original = lineparts2[0]
                         if not is_safe_linux_path(raw_original):
                             redacted_original = apply_custom_rules_to_substring(raw_original, crlist, registry)
-                            token = registry.redact(redacted_original, 'redacted_entry')
                             securefile = f'entry={raw_original}'
-                            line = line.replace(securefile, f'entry={token}')
+                            if redacted_original != raw_original:
+                                line = line.replace(securefile, f'entry={redacted_original}')
+                            else:
+                                token = registry.redact(redacted_original, 'redacted_entry')
+                                line = line.replace(securefile, f'entry={token}')
             if 'dir_sync_tx2_op.cc' in line:
                 lineparts = line.split('Looking up ')
                 if len(lineparts) > 1:
@@ -855,8 +918,11 @@ def _process_single_line(line: str, registry: 'RedactionRegistry', crlist=None) 
                         raw_original = lineparts2[0]
                         if not is_safe_linux_path(raw_original):
                             redacted_original = apply_custom_rules_to_substring(raw_original, crlist, registry)
-                            token = registry.redact(redacted_original, 'redacted_path')
-                            line = line.replace(f'Looking up {raw_original}', f'Looking up {token}')
+                            if redacted_original != raw_original:
+                                line = line.replace(f'Looking up {raw_original}', f'Looking up {redacted_original}')
+                            else:
+                                token = registry.redact(redacted_original, 'redacted_path')
+                                line = line.replace(f'Looking up {raw_original}', f'Looking up {token}')
                 lineparts = line.split('for entry=')
                 if len(lineparts) > 1:
                     lineparts2 = lineparts[1].split(' in dir=')
@@ -864,8 +930,11 @@ def _process_single_line(line: str, registry: 'RedactionRegistry', crlist=None) 
                         raw_original = lineparts2[0]
                         if not is_safe_linux_path(raw_original):
                             redacted_original = apply_custom_rules_to_substring(raw_original, crlist, registry)
-                            token = registry.redact(redacted_original, 'redacted_entry')
-                            line = line.replace(f'entry={raw_original}', f'entry={token}')
+                            if redacted_original != raw_original:
+                                line = line.replace(f'entry={raw_original}', f'entry={redacted_original}')
+                            else:
+                                token = registry.redact(redacted_original, 'redacted_entry')
+                                line = line.replace(f'entry={raw_original}', f'entry={token}')
             tags = ''.join(re.findall(RE_TAGS, line))
             lineparts = re.split(RE_SPLIT_LINE, line)
             for linepart in lineparts:
@@ -873,11 +942,19 @@ def _process_single_line(line: str, registry: 'RedactionRegistry', crlist=None) 
                 paths = [p for p in windowspaths if p not in tags and p not in [i for i in IGNORE_PATHS]]
                 for path in paths:
                     redacted_path = apply_custom_rules_to_substring(path, crlist, registry)
-                    token = registry.redact(redacted_path, 'redacted_path')
-                    line = line.replace(path, f'\\{token}')
+                    if redacted_path != path:
+                        line = line.replace(path, redacted_path)
+                    else:
+                        token = registry.redact(redacted_path, 'redacted_path')
+                        line = line.replace(path, f'\\{token}')
             lineparts = re.split('=|\"|\[|\>|\<', line)
             for linepart in lineparts:
-                linuxpaths = re.findall(RE_LINUX_PATH, linepart)
+                # Mask date slashes before path detection so that a date like
+                # 01/30/2026 is not parsed as a Linux path fragment (/30/2026).
+                # Path strings found in the masked copy are identical to those
+                # in the original (only date-internal slashes differ), so they
+                # can be used directly for line.replace() below.
+                linuxpaths = re.findall(RE_LINUX_PATH, mask_dates(linepart))
                 # --- Change 1: exclude safe Linux system paths ---
                 paths = [
                     p for p in linuxpaths
@@ -887,8 +964,11 @@ def _process_single_line(line: str, registry: 'RedactionRegistry', crlist=None) 
                 ]
                 for path in paths:
                     redacted_path = apply_custom_rules_to_substring(path, crlist, registry)
-                    token = registry.redact(redacted_path, 'redacted_path')
-                    line = line.replace(path, f'/{token}')
+                    if redacted_path != path:
+                        line = line.replace(path, redacted_path)
+                    else:
+                        token = registry.redact(redacted_path, 'redacted_path')
+                        line = line.replace(path, f'/{token}')
     return line
 
 
@@ -1062,6 +1142,8 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--parallel', action='store_true', help='Run in parallel using ProcessPoolExecutor')
     parser.add_argument('-f', '--freespacemultiplier', type=int, default=3, help='require free space multiple')
     parser.add_argument('-cr', '--customrules', type=str, default=None, help='custom rules file')
+    parser.add_argument('-sp', '--safepaths', type=str, default=None,
+                        help='text file of additional paths to never redact (one per line; # comments supported)')
     parser.add_argument('-o', '--outpath', type=str, default=None)
     args = parser.parse_args()
     
@@ -1073,6 +1155,13 @@ if __name__ == '__main__':
         outpath = logpath
 
     GiB = 1024 * 1024 * 1024
+
+    if args.safepaths is not None:
+        if os.path.exists(args.safepaths):
+            load_user_safe_paths(args.safepaths)
+        else:
+            print(f'safepaths file not found: {args.safepaths}')
+            exit(1)
 
     if customrules is not None:
         if os.path.exists(customrules):
