@@ -49,6 +49,7 @@ To include custom rules:
 * -f, --freespacemultiplier: (optional) multiple of free space required for logpath (default is 3)
 * -p, --parallel: (optional) Launch parallel tasks for concurrent file processing
 * -w, --workers: (optional) No. of concurrent processes to run if parallel processing is selected. If it is not provided with '-p' argument then it will default to the number of processors on the machine
+* -v, --version: (optional) print script version and exit
 
 ## Custom Rules
 

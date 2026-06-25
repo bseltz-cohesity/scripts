@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-"""obfuscate logs - version 2026-06-08"""
+"""obfuscate logs"""
+
+VERSION = '2026-06-25'
 
 import os
 import gzip
@@ -1137,6 +1139,7 @@ if __name__ == '__main__':
 
     # command line arguments
     parser = argparse.ArgumentParser()
+    parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {VERSION}')
     parser.add_argument('-l', '--logpath', type=str, required=True)
     parser.add_argument('-w', '--workers', type=int, default=2, help='Number of worker processes')
     parser.add_argument('-p', '--parallel', action='store_true', help='Run in parallel using ProcessPoolExecutor')
