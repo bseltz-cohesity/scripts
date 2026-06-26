@@ -466,7 +466,17 @@ def load_user_safe_paths(filepath: str) -> None:
             '|'.join(re.escape(p) for p in sorted(paths, key=len, reverse=True)) +
             r')(?:[/\s,;"\']|$)'
         )
-    print(f'  loaded {len(paths)} user-defined safe path(s) from {filepath}', flush=True)
+
+
+def _worker_initializer(safepaths_file) -> None:
+    """Initializer for ProcessPoolExecutor workers.
+
+    Each spawned worker process imports the module fresh and has empty globals.
+    Re-load user safe paths here so is_safe_linux_path() works correctly in
+    every worker, not just the main process.
+    """
+    if safepaths_file:
+        load_user_safe_paths(safepaths_file)
 
 
 # ---------------------------------------------------------------------------
@@ -1148,12 +1158,15 @@ def process_file(root, filename, crlist, parallel=True, max_workers=None, regist
                 shutil.rmtree(untarred_folder)
             return
         os.remove(filepath)
-        walkdir(untarred_folder, crlist, parallel=parallel, max_workers=max_workers, registry=registry)
-        # re-tar and re-zip, then redact the output archive filename
-        out_gz = '%s.gz' % filepath
-        targzdirectory(untarred_folder, out_gz)
-        shutil.rmtree(untarred_folder)
-        redact_archive_name(root, os.path.basename(out_gz), crlist, registry=registry)
+        if os.path.isdir(untarred_folder):
+            walkdir(untarred_folder, crlist, parallel=parallel, max_workers=max_workers, registry=registry)
+            # re-tar and re-zip, then redact the output archive filename
+            out_gz = '%s.gz' % filepath
+            targzdirectory(untarred_folder, out_gz)
+            shutil.rmtree(untarred_folder)
+            redact_archive_name(root, os.path.basename(out_gz), crlist, registry=registry)
+        else:
+            print(f'  skipping (archive extracted no files): {filepath}', flush=True)
     elif file_extension.lower() == 'zip':
         print('*** unhandled zip file *** %s' % filepath)
     else:
@@ -1168,7 +1181,7 @@ def redact_dirname(name: str, crlist, registry: 'RedactionRegistry') -> str:
     return redact_filename(name, crlist, registry)
 
 
-def walkdir(thispath, crlist, parallel=False, max_workers=None, registry=None):
+def walkdir(thispath, crlist, parallel=False, max_workers=None, registry=None, safepaths_file=None):
     # Collect all directory paths up front so we can rename them bottom-up
     # after all file processing is done (renaming top-down would break the
     # paths that os.walk still needs to visit).
@@ -1176,7 +1189,9 @@ def walkdir(thispath, crlist, parallel=False, max_workers=None, registry=None):
 
     tasks = []
     if parallel:
-        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        with ProcessPoolExecutor(max_workers=max_workers,
+                                  initializer=_worker_initializer,
+                                  initargs=(safepaths_file,)) as executor:
             for root, dirs, files in os.walk(thispath, topdown=True):
                 all_dirs.append((root, sorted(dirs[:])))
                 for filename in sorted(files):
@@ -1243,7 +1258,7 @@ if __name__ == '__main__':
                         help='text file of additional paths to never redact (one per line; # comments supported)')
     parser.add_argument('-o', '--outpath', type=str, default=None)
     args = parser.parse_args()
-    args.parallel = True
+    
     logpath = args.logpath
     freespacemultiplier = args.freespacemultiplier
     customrules = args.customrules
@@ -1286,6 +1301,7 @@ if __name__ == '__main__':
     # redaction token across every file processed in this run.
     # Parallel mode uses a LockedRedactionRegistry backed by a Manager server
     # so worker processes can safely share token state across process boundaries.
+    args.parallel = True
     if args.parallel:
         _manager = multiprocessing.Manager()
         registry = LockedRedactionRegistry(_manager)
@@ -1294,10 +1310,9 @@ if __name__ == '__main__':
 
     start_time = time.time()
     walkdir(logpath, crlist, parallel=args.parallel, max_workers=args.workers,
-            registry=registry)
+            registry=registry, safepaths_file=args.safepaths)
     end_time = time.time()
     
     # Calculate and print the execution time
     execution_time = end_time - start_time
     print(f"\nExecution time: {execution_time} seconds\n")
-    
