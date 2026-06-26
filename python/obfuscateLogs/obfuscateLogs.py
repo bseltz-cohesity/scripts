@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """obfuscate logs"""
 
-VERSION = '2026-06-25'
+VERSION = '2026-06-26'
 
 import os
 import gzip
@@ -11,6 +11,7 @@ import json
 import codecs
 import tarfile
 from concurrent.futures import ProcessPoolExecutor
+import multiprocessing
 import time
 import argparse
 
@@ -645,6 +646,64 @@ class RedactionRegistry:
         return mapping[original]
 
 
+class LockedRedactionRegistry:
+    """Process-safe redaction registry for parallel mode.
+
+    Backed by multiprocessing.Manager proxy objects so that token assignments
+    are shared — and consistent — across all worker processes in a run.
+
+    Uses a flat key format '<prefix>\\x00<original>' to avoid nested-dict
+    mutation issues with Manager proxies.  A manager Lock serialises writes
+    so only one process can mint a new token at a time.
+
+    Performance: each worker process keeps a plain-dict local cache.  The
+    vast majority of redact() calls are repeated lookups for the same handful
+    of hostnames/paths in a log file, so they hit the local cache without any
+    IPC.  IPC only occurs on the first time a worker encounters a given string
+    (cache miss → one Manager.dict.get), and locking only occurs when a brand-
+    new token actually needs to be minted.
+    """
+
+    def __init__(self, manager):
+        # Shared state — accessed via IPC from every worker process.
+        # Flat dict: '<prefix>\x00<original>' -> token string
+        self._maps = manager.dict()
+        # Per-prefix counters: prefix -> int
+        self._counters = manager.dict()
+        self._lock = manager.Lock()
+        # Per-process local cache — plain dict, zero IPC cost.
+        # Tokens are immutable once assigned, so the cache is always valid.
+        self._local_cache: dict = {}
+
+    def redact(self, original: str, prefix: str) -> str:
+        """Return the stable redaction token for *original* under *prefix*."""
+        key = f'{prefix}\x00{original}'
+
+        # 1. Local cache — no IPC; hits the vast majority of calls.
+        token = self._local_cache.get(key)
+        if token is not None:
+            return token
+
+        # 2. Shared dict read — one IPC call; no lock needed for a read.
+        token = self._maps.get(key)
+        if token is not None:
+            self._local_cache[key] = token
+            return token
+
+        # 3. New token — acquire lock, re-check, then mint.
+        with self._lock:
+            token = self._maps.get(key)
+            if token is not None:
+                self._local_cache[key] = token
+                return token
+            count = self._counters.get(prefix, 0) + 1
+            self._counters[prefix] = count
+            token = f'{prefix}_{count:03d}'
+            self._maps[key] = token
+            self._local_cache[key] = token
+            return token
+
+
 # ---------------------------------------------------------------------------
 # Filename redaction
 # ---------------------------------------------------------------------------
@@ -775,14 +834,21 @@ def apply_custom_rules_multiline(lines: list, crlist, registry: 'RedactionRegist
 # Core file obfuscation
 # ---------------------------------------------------------------------------
 
-def obfuscatefile(root, filepath, crlist):
+def obfuscatefile(root, filepath, crlist, registry=None):
     filename = os.path.basename(filepath)
     print(filepath, flush=True)
     if filename.startswith('redacted_'):
         return
 
-    # One registry per file so tokens are consistent within a file
-    registry = RedactionRegistry()
+    # Skip symlinks whose target does not exist (broken symlinks) and any path
+    # that is not a regular file.  os.path.isfile() returns False for both.
+    if not os.path.isfile(filepath):
+        print(f'  skipping (not a regular file or broken symlink): {filepath}', flush=True)
+        return
+
+    # Use the shared registry when provided; fall back to a local one otherwise.
+    if registry is None:
+        registry = RedactionRegistry()
 
     # --- Change 3: Redact the filename itself ---
     new_filename = redact_filename(filename, crlist, registry)
@@ -987,17 +1053,19 @@ def targzdirectory(path, name):
                 relname = fullname.replace(path, '')
                 tarhandle.add(os.path.join(root, f), arcname=relname)
 
-def redact_archive_name(root, filename, crlist):
+def redact_archive_name(root, filename, crlist, registry=None):
     """Redact sensitive substrings from an archive filename (base name only).
 
-    Uses a fresh RedactionRegistry scoped to this filename so tokens don't
-    bleed across unrelated archives.  Returns the new full filepath.
+    Uses the shared registry when provided so archive filename tokens are
+    consistent with tokens assigned inside file content.  Falls back to a
+    local registry if none is supplied.  Returns the new full filepath.
     If the name is unchanged the original filepath is returned without any
     filesystem operation.
     """
     if not crlist:
         return os.path.join(root, filename)
-    registry = RedactionRegistry()
+    if registry is None:
+        registry = RedactionRegistry()
     new_filename = redact_filename(filename, crlist, registry)
     if new_filename == filename:
         return os.path.join(root, filename)
@@ -1009,7 +1077,7 @@ def redact_archive_name(root, filename, crlist):
     return new_filepath
 
 
-def process_file(root, filename, crlist, parallel=True, max_workers=None):
+def process_file(root, filename, crlist, parallel=True, max_workers=None, registry=None):
     filepath = os.path.join(root, filename)
     filename_short, file_extension = os.path.splitext(filename)
     # rename .tgz to .tar.gz
@@ -1024,48 +1092,72 @@ def process_file(root, filename, crlist, parallel=True, max_workers=None):
     if file_extension.lower() == '.gz':
         # unzip gz file
         unzippedfile = os.path.join(root, filename_short)
-        with gzip.open(filepath, 'rb') as f_in:
-            with open(unzippedfile, 'wb') as f_out:
-                shutil.copyfileobj(f_in, f_out)
+        try:
+            with gzip.open(filepath, 'rb') as f_in:
+                with open(unzippedfile, 'wb') as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+        except (gzip.BadGzipFile, EOFError, OSError) as e:
+            print(f'  skipping (failed to decompress): {filepath}: {e}', flush=True)
+            # Remove the partial output file if it was created
+            if os.path.exists(unzippedfile):
+                os.remove(unzippedfile)
+            return
         os.remove(filepath)
         unzipped_filename_short, unzipped_file_extension = os.path.splitext(unzippedfile)
 
         if unzipped_file_extension.lower() == '.tar':
             # untar tar file
             untarred_folder = unzippedfile[0:-4]
-            tar = tarfile.open(unzippedfile, 'r')
-            tar.extractall(untarred_folder)
-            tar.close()
+            try:
+                tar = tarfile.open(unzippedfile, 'r')
+                tar.extractall(untarred_folder)
+                tar.close()
+            except (tarfile.TarError, EOFError, OSError) as e:
+                print(f'  skipping (failed to extract): {unzippedfile}: {e}', flush=True)
+                if os.path.exists(unzippedfile):
+                    os.remove(unzippedfile)
+                if os.path.exists(untarred_folder):
+                    shutil.rmtree(untarred_folder)
+                return
             os.remove(unzippedfile)
-            walkdir(untarred_folder, crlist, parallel=parallel, max_workers=max_workers)
-            # re-tar and re-zip, then redact the output archive filename
-            targzdirectory(untarred_folder, filepath)
-            shutil.rmtree(untarred_folder)
-            redact_archive_name(root, filename, crlist)
+            if os.path.isdir(untarred_folder):
+                walkdir(untarred_folder, crlist, parallel=parallel, max_workers=max_workers, registry=registry)
+                # re-tar and re-zip, then redact the output archive filename
+                targzdirectory(untarred_folder, filepath)
+                shutil.rmtree(untarred_folder)
+                redact_archive_name(root, filename, crlist, registry=registry)
+            else:
+                print(f'  skipping (archive extracted no files): {filepath}', flush=True)
         else:
-            obfuscatefile(root, unzippedfile, crlist)
+            obfuscatefile(root, unzippedfile, crlist, registry=registry)
             # re-zip then redact the output .gz filename
             gzfile(unzippedfile)
             os.remove(unzippedfile)
             gz_filename = os.path.basename(unzippedfile) + '.gz'
-            redact_archive_name(root, gz_filename, crlist)
+            redact_archive_name(root, gz_filename, crlist, registry=registry)
     elif file_extension.lower() == '.tar':
         # untar tar file
         untarred_folder = filepath[0:-4]
-        tar = tarfile.open(filepath, 'r')
-        tar.extractall(untarred_folder)
-        tar.close()
+        try:
+            tar = tarfile.open(filepath, 'r')
+            tar.extractall(untarred_folder)
+            tar.close()
+        except (tarfile.TarError, EOFError, OSError) as e:
+            print(f'  skipping (failed to extract): {filepath}: {e}', flush=True)
+            if os.path.exists(untarred_folder):
+                shutil.rmtree(untarred_folder)
+            return
         os.remove(filepath)
-        walkdir(untarred_folder, crlist, parallel=parallel, max_workers=max_workers)
+        walkdir(untarred_folder, crlist, parallel=parallel, max_workers=max_workers, registry=registry)
         # re-tar and re-zip, then redact the output archive filename
         out_gz = '%s.gz' % filepath
         targzdirectory(untarred_folder, out_gz)
         shutil.rmtree(untarred_folder)
-        redact_archive_name(root, os.path.basename(out_gz), crlist)
+        redact_archive_name(root, os.path.basename(out_gz), crlist, registry=registry)
     elif file_extension.lower() == 'zip':
         print('*** unhandled zip file *** %s' % filepath)
     else:
-        obfuscatefile(root, filepath, crlist)
+        obfuscatefile(root, filepath, crlist, registry=registry)
 
 def redact_dirname(name: str, crlist, registry: 'RedactionRegistry') -> str:
     """Apply custom redaction rules to a single directory name component.
@@ -1076,7 +1168,7 @@ def redact_dirname(name: str, crlist, registry: 'RedactionRegistry') -> str:
     return redact_filename(name, crlist, registry)
 
 
-def walkdir(thispath, crlist, parallel=False, max_workers=None):
+def walkdir(thispath, crlist, parallel=False, max_workers=None, registry=None):
     # Collect all directory paths up front so we can rename them bottom-up
     # after all file processing is done (renaming top-down would break the
     # paths that os.walk still needs to visit).
@@ -1088,7 +1180,8 @@ def walkdir(thispath, crlist, parallel=False, max_workers=None):
             for root, dirs, files in os.walk(thispath, topdown=True):
                 all_dirs.append((root, sorted(dirs[:])))
                 for filename in sorted(files):
-                    future = executor.submit(process_file, root, filename, crlist)
+                    future = executor.submit(process_file, root, filename, crlist,
+                                             registry=registry)
                     future.add_done_callback(task_done)
                     tasks.append(future)
         # Wait for all file tasks to complete before renaming directories
@@ -1101,16 +1194,17 @@ def walkdir(thispath, crlist, parallel=False, max_workers=None):
         for root, dirs, files in os.walk(thispath, topdown=True):
             all_dirs.append((root, sorted(dirs[:])))
             for filename in sorted(files):
-                process_file(root, filename, crlist, parallel=False, max_workers=max_workers)
+                process_file(root, filename, crlist, parallel=False,
+                             max_workers=max_workers, registry=registry)
 
     # Rename directories bottom-up so child renames do not invalidate parent paths.
-    # A shared registry per walkdir call keeps tokens stable across the whole tree.
-    if crlist:
-        dir_registry = RedactionRegistry()
+    # Uses the shared registry so directory-name tokens are consistent with the
+    # tokens assigned inside file content.
+    if crlist and registry is not None:
         # Reverse so deepest directories come first
         for root, dirnames in reversed(all_dirs):
             for dirname in dirnames:
-                new_dirname = redact_dirname(dirname, crlist, dir_registry)
+                new_dirname = redact_dirname(dirname, crlist, registry)
                 if new_dirname != dirname:
                     old_path = os.path.join(root, dirname)
                     new_path = os.path.join(root, new_dirname)
@@ -1149,7 +1243,7 @@ if __name__ == '__main__':
                         help='text file of additional paths to never redact (one per line; # comments supported)')
     parser.add_argument('-o', '--outpath', type=str, default=None)
     args = parser.parse_args()
-    
+    args.parallel = True
     logpath = args.logpath
     freespacemultiplier = args.freespacemultiplier
     customrules = args.customrules
@@ -1188,8 +1282,19 @@ if __name__ == '__main__':
         print('log folder free space is %s GiB' % round(freespace / GiB, 2))
         print('at least %s GiB free space is recommended to proceed' % round(logfoldersize * freespacemultiplier / GiB, 2))
         exit()
+    # Build a shared registry so that the same value always receives the same
+    # redaction token across every file processed in this run.
+    # Parallel mode uses a LockedRedactionRegistry backed by a Manager server
+    # so worker processes can safely share token state across process boundaries.
+    if args.parallel:
+        _manager = multiprocessing.Manager()
+        registry = LockedRedactionRegistry(_manager)
+    else:
+        registry = RedactionRegistry()
+
     start_time = time.time()
-    walkdir(logpath, crlist, parallel=True, max_workers=args.workers)
+    walkdir(logpath, crlist, parallel=args.parallel, max_workers=args.workers,
+            registry=registry)
     end_time = time.time()
     
     # Calculate and print the execution time
