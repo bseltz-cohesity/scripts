@@ -214,6 +214,7 @@ def reportStorage():
             lastDataLock = '-'
             endUsecs = nowUsecs
             lastRunId = '0'
+            isCad = False
             while 1:
                 if debug is True:
                     print('    getting protection runs')
@@ -224,6 +225,9 @@ def reportStorage():
                     runs['runs'] = [r for r in runs['runs'] if r['id'] < lastRunId]
                 for run in runs['runs']:
                     if 'isLocalSnapshotsDeleted' not in run or run['isLocalSnapshotsDeleted'] is not True:
+                        if 'isCloudArchivalDirect' in run and run['isCloudArchivalDirect'] is True:
+                            isCad = True
+
                         # per object stats
                         if 'objects' in run and run['objects'] is not None and len(run['objects']) > 0:
                             for object in [o for o in run['objects'] if o['object']['environment'] != job['environment']]:
@@ -358,25 +362,33 @@ def reportStorage():
                         endUsecs = runs['runs'][-1]['archivalInfo']['archivalTargetResults'][0]['endTimeUsecs']
             # process output
             jobFESize = 0
-            isCad = False
+            # isCad = False
             for object in sorted(objects.keys()):
                 thisObject = objects[object]
                 if 'logical' in thisObject:
                     jobFESize += thisObject['logical']
                 if 'bytesRead' in thisObject:
                     jobFESize += thisObject['bytesRead']
-                if 'archiveLogical' in thisObject and thisObject['archiveLogical'] > 0 and jobFESize == 0:
-                    jobFESize += thisObject['archiveLogical']
-                if 'archiveBytesRead' in thisObject and jobFESize == 0:
-                    jobFESize += thisObject['archiveBytesRead']
-                    isCad = True
+                # if 'archiveLogical' in thisObject and thisObject['archiveLogical'] > 0 and jobFESize == 0:
+                #     jobFESize += thisObject['archiveLogical']
+                # if 'archiveBytesRead' in thisObject and jobFESize == 0:
+                #     jobFESize += thisObject['archiveBytesRead']
+                #     isCad = True
+            if jobFESize == 0:
+                for object in sorted(objects.keys()):
+                    thisObject = objects[object]
+                    if 'archiveLogical' in thisObject and thisObject['archiveLogical'] > 0:
+                        jobFESize += thisObject['archiveLogical']
+                    if 'archiveBytesRead' in thisObject:
+                        jobFESize += thisObject['archiveBytesRead']
+                        isCad = True
             for object in sorted(objects.keys()):
                 thisObject = objects[object]
-                
+                # display(thisObject)
                 if ('logical' in thisObject and 'bytesRead' in thisObject) or ('archiveLogical' in thisObject and 'archiveBytesRead' in thisObject):
                     
                     objFESize = round(thisObject['logical'] / multiplier, 1)
-                    if thisObject['archiveLogical'] > 0:
+                    if thisObject['archiveLogical'] > 0 and objFESize == 0:
                         objFESize = round(thisObject['archiveLogical'] / multiplier, 1)
                     objGrowth = round(thisObject['growth'] / (jobReduction * multiplier), 1)
                     if jobObjGrowth != 0:
@@ -388,6 +400,8 @@ def reportStorage():
                             objWeight = (thisObject['archiveLogical'] + thisObject['archiveBytesRead']) / jobFESize
                     else:
                         objWeight = 0
+                    if objWeight > 1:
+                        objWeight = 1
                     if jobWritten > 0:
                         objWritten = round(objWeight * jobWritten / multiplier, 1)
                     elif isCad is False:
@@ -435,6 +449,7 @@ def reportStorage():
                                             vaultStats += '[%s]%s ' % (vaultSummary['vaultName'], round((objWeight * cloudJob['storageConsumed']) / multiplier, 1))
                                             if isCad is True:
                                                 jobReduction = round(jobFESize / cloudJob['storageConsumed'], 1)
+                    # print('    %s  %s %s' % (thisObject['name'], totalArchived, objWeight))
                     totalArchived = round(totalArchived / multiplier, 1)
                     alloc = objFESize
                     if job['environment'] in ['kVMware', 'kAD', 'kHyperV'] or (job['environment'] == 'kPhysical' and job['physicalParams']['protectionType'] == 'kVolume'):

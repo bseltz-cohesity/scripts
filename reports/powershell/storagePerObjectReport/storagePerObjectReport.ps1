@@ -262,6 +262,7 @@ function reportStorage(){
             $lastDataLock = '-'
             $lastRunId = 0
             $runCount = 0
+            $isCad = $False
             while($True){
                 if($dbg){
                     output "    getting runs"
@@ -272,6 +273,9 @@ function reportStorage(){
                 }
                 foreach($run in $runs.runs){
                     if($run.isLocalSnapshotsDeleted -ne $True){
+                        if($run.PSObject.Properties['isCloudArchivalDirect'] -and $run.isCloudArchivalDirect -eq $True){
+                            $isCad = $True
+                        }
                         $runCount += 1
                         $snap = $null
                         if($run.PSObject.Properties['localBackupInfo']){
@@ -515,7 +519,7 @@ function reportStorage(){
             }
 
             # process output
-            $isCad = $false
+            # $isCad = $false
             $jobFESize = 0
             foreach($objId in $objects.Keys){
                 $thisObject = $objects[$objId]
@@ -524,10 +528,23 @@ function reportStorage(){
                 }
                 $jobFESize += $thisObject['logical']
                 $jobFESize += $thisObject['bytesRead']
-                if($thisObject['archiveLogical'] -gt 0 -and $jobFESize -eq 0){
-                    $jobFESize += $thisObject['archiveLogical']
-                    $jobFESize += $thisObject['archiveBytesRead']
-                    $isCad = $True
+                # if($thisObject['archiveLogical'] -gt 0 -and $jobFESize -eq 0){
+                #     $jobFESize += $thisObject['archiveLogical']
+                #     $jobFESize += $thisObject['archiveBytesRead']
+                #     $isCad = $True
+                # }
+            }
+            if($jobFESize -eq 0){
+                foreach($objId in $objects.Keys){
+                    $thisObject = $objects[$objId]
+                    if($consolidateDBs -and $job.environment -in @('kSQL', 'kOracle') -and $thisObject['parentObject'] -eq $false){
+                        continue
+                    }
+                    if($thisObject['archiveLogical'] -gt 0){
+                        $jobFESize += $thisObject['archiveLogical']
+                        $jobFESize += $thisObject['archiveBytesRead']
+                        $isCad = $True
+                    }
                 }
             }
             foreach($objId in $objects.Keys | Sort-Object){
@@ -611,6 +628,7 @@ function reportStorage(){
                         }
                     }
                 }
+
                 $fqObjectName = $thisObject['name']
                 if($thisObject['name'] -ne $sourceName){
                     $fqObjectName = "$($sourceName)/$($thisObject['name'])" -replace '//', '/'
