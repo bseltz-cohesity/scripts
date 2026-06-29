@@ -1,4 +1,4 @@
-# version: 2026-05-22
+# version: 2026-06-29
 
 # process commandline arguments
 [CmdletBinding()]
@@ -25,7 +25,7 @@ param (
     [Parameter()][array]$environments = $null
 )
 
-$scriptversion = '2026-05-22 (PowerShell)'
+$scriptversion = '2026-06-29 (PowerShell)'
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -86,6 +86,7 @@ function getCloudStats(){
         }
         output "  getting external target stats..."
         $cloudStats = api get $cloudStatURL -timeout 600
+        # $cloudStats | toJson | Out-File "$($cluster.name)-vaultstats.json"
     }
     return $cloudStats
 }
@@ -550,8 +551,11 @@ function reportStorage(){
                 $objGrowth = $objGrowth * $resiliencyFactor
                 if($jobFESize -gt 0){
                     $objWeight = ($thisObject['logical'] + $thisObject['bytesRead']) / $jobFESize
-                    if($thisObject['archiveLogical'] -gt 0){
+                    # Write-Host "$($thisObject['name'])  $objWeight  $($thisObject['logical']) + $($thisObject['bytesRead']) $jobFESize"
+
+                    if($objWeight -eq 0 -and $thisObject['archiveLogical'] -gt 0){
                         $objWeight = ($thisObject['archiveLogical'] + $thisObject['archiveBytesRead']) / $jobFESize
+                        # Write-Host "$($thisObject['name'])  $objWeight  $($thisObject['archiveLogical']) + $($thisObject['archiveBytesRead']) $jobFESize"
                     }
                 }else{
                     $objWeight = 0
