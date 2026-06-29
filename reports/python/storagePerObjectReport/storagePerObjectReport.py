@@ -83,6 +83,8 @@ def getCloudStats(cluster):
         for vault in vaults:
             cloudStatURL += '&vaultIds=%s' % vault['id']
         cloudStats = api('get', cloudStatURL)
+        if debug is True:
+            display(cloudStats)
     return cloudStats
 
 
