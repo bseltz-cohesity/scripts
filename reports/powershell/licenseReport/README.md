@@ -27,8 +27,8 @@ Place both files in a folder together and run the main script like so:
 ```powershell
 # example command
 ./licenseReport.ps1 -vip mycluster `
-                         -username myusername `
-                         -domain mydomain.net
+                    -username myusername `
+                    -domain mydomain.net
 # end example
 ```
 
