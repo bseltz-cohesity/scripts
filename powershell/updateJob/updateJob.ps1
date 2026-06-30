@@ -112,7 +112,7 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 $jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Required $False)
 $indexPaths = @(gatherList -Param $indexPath -FilePath $indexList -Name 'index paths' -Required $False)
 
-$jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true"
+$jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true" # &includeTenants=true"
 
 if($jobNames.Count -gt 0){
     $notfoundJobs = $jobNames | Where-Object {$_ -notin $jobs.protectionGroups.name}
