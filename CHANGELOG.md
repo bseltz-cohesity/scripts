@@ -1,5 +1,10 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-06-30`] [updateJob.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/updateJob) [`Update`] enforce single tenant
+* [`2026-06-30`] [deleteObjectBackups.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/deleteObjectBackups) [`Update`] fixes
+* [`2026-06-29`] [storagePerObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerObjectReport) [`Update`] fixes
+* [`2026-06-29`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] fixes
+* [`2026-06-29`] [licenseReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/licenseReport) [`Update`] reposted
 * [`2026-06-26`] [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`Update`] added -sp, --safepaths option, -v, --version option, excluded dates from redaction, fixes
 * [`2026-06-23`] [mutualCiphers.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/mutualCiphers) [`New`] find mutual TLS ciphers
 * [`2026-06-23`] [updateJob.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/updateJob) [`Update`] added -allJobs options
