@@ -109,48 +109,50 @@ if($delete){
 }
 
 foreach($serverName in $vms){
-    $search = api get -v2 "data-protect/search/protected-objects?searchString=$serverName&filterSnapshotToUsecs=$(timeAgo $olderThan days)"
+    $search = api get -v2 "data-protect/search/objects?searchString=$serverName&filterSnapshotToUsecs=$(timeAgo $olderThan days)"
     $objects = $search.objects | Where-Object { $_.name -eq $serverName }
     foreach($object in $objects){
-        $snaps =  api get -v2 "data-protect/objects/$($object.id)/snapshots?toTimeUsecs=$(timeAgo $olderThan days)"
-        foreach($snap in $snaps.snapshots){
-            if($jobName -and $jobName -ne $snap.protectionGroupName){
-                continue
-            }
-            if($snap.snapshotTargetType -eq 'Local'){
-                $runStartTimeUsecs = $snap.runStartTimeUsecs
-                if($delete){
-                    $pgId = $snap.protectionGroupId
-                    $jobId = @($snap.protectionGroupId -split ':')[2]
-                    if($snap.PSObject.Properties['sourceGroupId']){
-                        $pgId = $snap.sourceGroupId
+        foreach($protectionInfo in $object.objectProtectionInfos){
+            $snaps =  api get -v2 "data-protect/objects/$($protectionInfo.objectId)/snapshots?toTimeUsecs=$(timeAgo $olderThan days)"
+            foreach($snap in $snaps.snapshots){
+                if($jobName -and $jobName -ne $snap.protectionGroupName){
+                    continue
+                }
+                if($snap.snapshotTargetType -eq 'Local'){
+                    $runStartTimeUsecs = $snap.runStartTimeUsecs
+                    if($delete){
+                        $pgId = $snap.protectionGroupId
+                        $jobId = @($snap.protectionGroupId -split ':')[2]
+                        if($snap.PSObject.Properties['sourceGroupId']){
+                            $pgId = $snap.sourceGroupId
+                        }
+                        $p = @($pgId -split ':')
+                        $deleteObjectParams = @{
+                            "jobRuns" = @(
+                                @{
+                                    "copyRunTargets" = @(
+                                        @{
+                                            "daysToKeep" = 0;
+                                            "type" = "kLocal"
+                                        }
+                                    );
+                                    "jobUid" = @{
+                                        "clusterId" = [int64]$p[0];
+                                        "clusterIncarnationId" = [int64]$p[1];
+                                        "id" = [int64]$p[2]
+                                    };
+                                    "runStartTimeUsecs" = $runStartTimeUsecs;
+                                    "sourceIds" = @(
+                                        $protectionInfo.objectId
+                                    )
+                                }
+                            )
+                        }
+                        log "Deleting $serverName from $($snap.protectionGroupName) ($(usecsToDate $runStartTimeUsecs))"
+                        $null = api put protectionRuns $deleteObjectParams
+                    }else{
+                        log "Would delete $serverName from $($snap.protectionGroupName) ($(usecsToDate $runStartTimeUsecs))"
                     }
-                    $p = @($pgId -split ':')
-                    $deleteObjectParams = @{
-                        "jobRuns" = @(
-                            @{
-                                "copyRunTargets" = @(
-                                    @{
-                                        "daysToKeep" = 0;
-                                        "type" = "kLocal"
-                                    }
-                                );
-                                "jobUid" = @{
-                                    "clusterId" = [int64]$p[0];
-                                    "clusterIncarnationId" = [int64]$p[1];
-                                    "id" = [int64]$p[2]
-                                };
-                                "runStartTimeUsecs" = $runStartTimeUsecs;
-                                "sourceIds" = @(
-                                    $object.id
-                                )
-                            }
-                        )
-                    }
-                    log "Deleting $serverName from $($snap.protectionGroupName) ($(usecsToDate $runStartTimeUsecs))"
-                    $null = api put protectionRuns $deleteObjectParams
-                }else{
-                    log "Would delete $serverName from $($snap.protectionGroupName) ($(usecsToDate $runStartTimeUsecs))"
                 }
             }
         }
