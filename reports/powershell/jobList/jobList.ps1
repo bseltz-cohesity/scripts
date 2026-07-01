@@ -224,13 +224,15 @@ $html += '</span>
     <th>Job Name</th>
     <th>Environment</th>
     <th>Local/Replicated</th>
+    <th>Tenant</th>
     <th>Policy</th>
     <th>Storage Domain</th>
     <th>Encrypted</th>
+    <th>Host Type</th>
     <th>Start Time</th>
 </tr>'
 
-"Job Name,Environment,Local/Replicated,Policy,Storage Domain,Encrypted,Start Time" | Out-File -FilePath $csvFile
+"Job Name,Environment,Local/Replicated,Tenant,Policy,Storage Domain,Encrypted,Host Type,Start Time" | Out-File -FilePath $csvFile
 
 $storageDomains = api get viewBoxes
 $jobs = api get protectionJobs?allUnderHierarchy=true
@@ -238,7 +240,9 @@ $policies = api get protectionPolicies
 
 foreach($job in $jobs | Sort-Object -Property name){
     $encrypted = 'n/a'
+    $hostType = 'n/a'
     $jobName = $job.name
+    $tenant = $job.tenantId -replace '/',''
     $jobName
     $jobType = $job.environment.subString(1)
     $startTime =  "{0:d2}:{1:d2}" -f $job.startTime.hour, $job.startTime.minute 
@@ -252,6 +256,18 @@ foreach($job in $jobs | Sort-Object -Property name){
         $isReplicated = 'Replicated'
         $policyName = 'n/a'
     }
+    if($isReplicated -eq 'Local' -and $jobType -in @('Physical', 'PhysicalFiles')){
+        $firstSourceId = $job.sourceIds[0]
+        $search = api get -v2 "data-protect/search/objects?objectIds=$firstSourceId"
+        if(@($search.objects).Count -gt 0){
+            $osType = $search.objects[0].osType
+            if($osType -eq 'kWindows'){
+                $hostType = 'Windows'
+            }else{
+                $hostType = 'Non-Windows'
+            }
+        }
+    }
     $storageDomain = $storageDomains | Where-Object id -eq $job.viewBoxId
     if($storageDomain.storagePolicy.encryptionPolicy -eq 'kEncryptionNone'){
         $encrypted = $false
@@ -264,8 +280,10 @@ foreach($job in $jobs | Sort-Object -Property name){
               <td>{3}</td>
               <td>{4}</td>
               <td>{5}</td>
-              <td>{6}</td></tr>" -f $jobName, $jobType, $isReplicated, $policyName, $storageDomain.name, $encrypted, $startTime
-    "{0},{1},{2},{3},{4},{5},{6}" -f $jobName, $jobType, $isReplicated, $policyName, $storageDomain.name, $encrypted, $startTime | Out-File -FilePath $csvFile -Append
+              <td>{6}</td>
+              <td>{7}</td>
+              <td>{8}</td></tr>" -f $jobName, $jobType, $isReplicated, $tenant, $policyName, $storageDomain.name, $encrypted, $hostType, $startTime
+    "{0},{1},{2},{3},{4},{5},{6},{7},{8}" -f $jobName, $jobType, $isReplicated, $tenant, $policyName, $storageDomain.name, $encrypted, $hostType, $startTime | Out-File -FilePath $csvFile -Append
 }
 
 $html += "</table>                
