@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-07-01`] [storagePerObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerObjectReport) [`Update`] adjusted archive consumption
+* [`2026-07-01`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] adjusted archive consumption
 * [`2026-06-30`] [updateJob.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/updateJob) [`Update`] enforce single tenant
 * [`2026-06-30`] [deleteObjectBackups.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/deleteObjectBackups) [`Update`] fixes
 * [`2026-06-29`] [storagePerObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerObjectReport) [`Update`] fixes
