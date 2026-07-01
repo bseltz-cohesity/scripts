@@ -1,4 +1,4 @@
-# version: 2026-06-29
+# version: 2026-07-01
 
 # process commandline arguments
 [CmdletBinding()]
@@ -25,7 +25,7 @@ param (
     [Parameter()][array]$environments = $null
 )
 
-$scriptversion = '2026-06-29 (PowerShell)'
+$scriptversion = '2026-07-01 (PowerShell)'
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -614,11 +614,20 @@ function reportStorage(){
                 $vaultStats = ''
                 if($cloudStats){
                     foreach($vaultSummary in $cloudStats.dataTransferSummary){
+                        # calculate vault storage factor
+                        $vaultJobTotal = 0
+                        $vaultStorageFactor = 1
+                        foreach($cloudJob in $vaultSummary.dataTransferPerProtectionJob){
+                            $vaultJobTotal += $cloudJob.storageConsumed
+                        }
+                        if($vaultJobTotal -gt 0){
+                            $vaultStorageFactor = $vaultSummary.storageConsumedBytes / $vaultJobTotal
+                        }
                         foreach($cloudJob in $vaultSummary.dataTransferPerProtectionJob){
                             if($cloudJob.protectionJobName -eq $job.name){
                                 if($cloudJob.storageConsumed -gt 0){
-                                    $totalArchived += ($objWeight * $cloudJob.storageConsumed)
-                                    $vaultStats += "[$($vaultSummary.vaultName)]$(toUnits ($objWeight * $cloudJob.storageConsumed)) "
+                                    $totalArchived += ($vaultStorageFactor * $objWeight * $cloudJob.storageConsumed)
+                                    $vaultStats += "[$($vaultSummary.vaultName)]$(toUnits ($vaultStorageFactor * $objWeight * $cloudJob.storageConsumed)) "
                                     # Write-Host "$($thisObject['name'])  $objWeight  $(toUnits $cloudJob.storageConsumed)"
                                     if($isCad -eq $True){
                                         $jobReduction = [math]::Round($jobFESize / $cloudJob.storageConsumed, 1)
@@ -857,11 +866,20 @@ function reportStorage(){
         $vaultStats = ''
         if($cloudStats){
             foreach($vaultSummary in $cloudStats.dataTransferSummary){
+                # calculate vault storage factor
+                $vaultJobTotal = 0
+                $vaultStorageFactor = 1
+                foreach($cloudJob in $vaultSummary.dataTransferPerProtectionJob){
+                    $vaultJobTotal += $cloudJob.storageConsumed
+                }
+                if($vaultJobTotal -gt 0){
+                    $vaultStorageFactor = $vaultSummary.storageConsumedBytes / $vaultJobTotal
+                }
                 foreach($cloudJob in $vaultSummary.dataTransferPerProtectionJob){
                     if($cloudJob.protectionJobName -eq $jobName){
                         if($cloudJob.storageConsumed -gt 0){
-                            $totalArchived += ($objWeight * $cloudJob.storageConsumed)
-                            $vaultStats += "[$($vaultSummary.vaultName)]$(toUnits ($objWeight * $cloudJob.storageConsumed)) "
+                            $totalArchived += ($vaultStorageFactor * $objWeight * $cloudJob.storageConsumed)
+                            $vaultStats += "[$($vaultSummary.vaultName)]$(toUnits ($vaultStorageFactor * $objWeight * $cloudJob.storageConsumed)) "
                         }
                     }
                 }

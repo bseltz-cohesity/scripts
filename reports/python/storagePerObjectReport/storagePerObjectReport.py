@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Storage Per Object Report version 2026.06.29 for Python"""
+"""Storage Per Object Report version 2026.07.01 for Python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -44,7 +44,7 @@ skipdeleted = args.skipdeleted
 debug = args.debug
 includearchives = args.includearchives
 
-scriptVersion = '2026-06-29 (Python)'
+scriptVersion = '2026-07-01 (Python)'
 
 if vips is None or len(vips) == 0:
     vips = ['helios.cohesity.com']
@@ -77,14 +77,19 @@ def getCloudStats(cluster):
     vaults = api('get', 'vaults?includeFortKnoxVault=true')
     cloudStats = None
     if vaults is not None and len(vaults) > 0 and includearchives is True:
+        print('  getting external target stats...')
+        startCloudStats = dateToUsecs()
         nowMsecs = int((dateToUsecs()) / 1000)
         cloudStart = cluster['createdTimeMsecs']
         cloudStatURL = 'reports/dataTransferToVaults?endTimeMsecs=%s&startTimeMsecs=%s' % (nowMsecs, cloudStart)
         for vault in vaults:
             cloudStatURL += '&vaultIds=%s' % vault['id']
-        cloudStats = api('get', cloudStatURL)
+        cloudStats = api('get', cloudStatURL, timeout=600)
+        endCloudStats = dateToUsecs()
+        durationCloudStats = round((endCloudStats - startCloudStats) / 1000000,0)
         if debug is True:
             display(cloudStats)
+            print('external target stats took %s seconds' % durationCloudStats)
     return cloudStats
 
 
@@ -444,11 +449,18 @@ def reportStorage():
                     if cloudStats is not None and 'dataTransferSummary' in cloudStats and len(cloudStats['dataTransferSummary']) > 0:
                         for vaultSummary in cloudStats['dataTransferSummary']:
                             if vaultSummary is not None and 'dataTransferPerProtectionJob' in vaultSummary and len(vaultSummary['dataTransferPerProtectionJob']) > 0:
+                                # calculate vault storage factor
+                                vaultJobTotal = 0
+                                vaultStorageFactor = 1
+                                for cloudJob in vaultSummary['dataTransferPerProtectionJob']:
+                                    vaultJobTotal += cloudJob['storageConsumed']
+                                if vaultJobTotal > 0:
+                                    vaultStorageFactor = vaultSummary['storageConsumedBytes'] / vaultJobTotal
                                 for cloudJob in vaultSummary['dataTransferPerProtectionJob']:
                                     if cloudJob['protectionJobName'] == job['name']:
                                         if cloudJob['storageConsumed'] > 0:
-                                            totalArchived += (objWeight * cloudJob['storageConsumed'])
-                                            vaultStats += '[%s]%s ' % (vaultSummary['vaultName'], round((objWeight * cloudJob['storageConsumed']) / multiplier, 1))
+                                            totalArchived += (vaultStorageFactor * objWeight * cloudJob['storageConsumed'])
+                                            vaultStats += '[%s]%s ' % (vaultSummary['vaultName'], round((vaultStorageFactor * objWeight * cloudJob['storageConsumed']) / multiplier, 1))
                                             if isCad is True:
                                                 jobReduction = round(jobFESize / cloudJob['storageConsumed'], 1)
                     # print('    %s  %s %s' % (thisObject['name'], totalArchived, objWeight))
@@ -672,12 +684,19 @@ def reportStorage():
             vaultStats = ''
             if cloudStats is not None and 'dataTransferSummary' in cloudStats and len(cloudStats['dataTransferSummary']) > 0:
                 for vaultSummary in cloudStats['dataTransferSummary']:
+                    # calculate vault storage factor
+                    vaultJobTotal = 0
+                    vaultStorageFactor = 1
+                    for cloudJob in vaultSummary['dataTransferPerProtectionJob']:
+                        vaultJobTotal += cloudJob['storageConsumed']
+                    if vaultJobTotal > 0:
+                        vaultStorageFactor = vaultSummary['storageConsumedBytes'] / vaultJobTotal
                     if vaultSummary is not None and 'dataTransferPerProtectionJob' in vaultSummary and len(vaultSummary['dataTransferPerProtectionJob']) > 0:
                         for cloudJob in vaultSummary['dataTransferPerProtectionJob']:
                             if cloudJob['protectionJobName'] == jobName:
                                 if cloudJob['storageConsumed'] > 0:
-                                    totalArchived += (objWeight * cloudJob['storageConsumed'])
-                                    vaultStats += '[%s]%s ' % (vaultSummary['vaultName'], round((objWeight * cloudJob['storageConsumed']) / multiplier, 1))
+                                    totalArchived += (vaultStorageFactor * objWeight * cloudJob['storageConsumed'])
+                                    vaultStats += '[%s]%s ' % (vaultSummary['vaultName'], round((vaultStorageFactor * objWeight * cloudJob['storageConsumed']) / multiplier, 1))
             totalArchived = round(totalArchived / multiplier, 1)
             viewDescription = ''
             if 'description' in view:
