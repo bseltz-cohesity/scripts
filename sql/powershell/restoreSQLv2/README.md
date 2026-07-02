@@ -30,7 +30,11 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 
 Place both files in a folder together and run the main script like so:
 
-To restore all databases (except system databases) to the original location:
+## Example Command Lines
+
+### Restoring all databases
+
+To restore all databases (except system databases) to the original location, overwriting the existing databases:
 
 ```powershell
 ./restoreSQLv2.ps1 -vip mycluster `
@@ -51,6 +55,335 @@ To restore all databases (except system databases) to an alternate server:
                    -sourceServer sqlserver1.mydomain.net `
                    -allDBs `
                    -targetServer sqlserver2.mydomain.net `
+                   -commit
+```
+
+To restore all databases, including the system databases (master, model, msdb):
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -allDBs `
+                   -includeSystemDBs `
+                   -overWrite `
+                   -commit
+```
+
+To restore only databases that were backed up within the last 7 days:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -allDBs `
+                   -newerThan 7 `
+                   -overWrite `
+                   -commit
+```
+
+### Restoring specific databases
+
+To restore one or more named databases (comma separated) to their original location:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -sourceDB MyDB1, MyDB2 `
+                   -overWrite `
+                   -commit
+```
+
+To restore a database from a non-default SQL instance, specify the instance along with the database name:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -sourceDB SQLINSTANCE1/MyDB1 `
+                   -overWrite `
+                   -commit
+```
+
+To restore a list of databases from a text file (one database name per line):
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -sourceDBList ./dbList.txt `
+                   -overWrite `
+                   -commit
+```
+
+### Renaming databases during restore
+
+To restore a single database under a new name (e.g. cloning to a test copy):
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -sourceDB MyDB `
+                   -targetDB MyDB_Clone `
+                   -commit
+```
+
+To restore multiple databases with a prefix applied to each name (e.g. creating Dev copies):
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -allDBs `
+                   -prefix Dev `
+                   -commit
+```
+
+To restore multiple databases with a suffix applied to each name:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -allDBs `
+                   -suffix Test `
+                   -commit
+```
+
+### Restoring to an alternate server or instance
+
+To restore a single database to an alternate server under a new name:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -sourceDB MyDB `
+                   -targetServer sqlserver2.mydomain.net `
+                   -targetDB MyDB_Copy `
+                   -commit
+```
+
+To restore to a different SQL instance on the same (or an alternate) server:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -allDBs `
+                   -targetServer sqlserver2.mydomain.net `
+                   -targetInstance SQLINSTANCE2 `
+                   -commit
+```
+
+### Controlling file placement
+
+To restore specifying custom locations for the data and log files:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -sourceDB MyDB `
+                   -targetDB MyDB_Copy `
+                   -mdfFolder C:\SQLData `
+                   -ldfFolder C:\SQLLogs `
+                   -commit
+```
+
+To preview the file paths for the selected databases without performing a restore:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -allDBs `
+                   -showPaths
+```
+
+To export file path info for a server to a JSON file for later reuse:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -exportPaths
+```
+
+To restore using previously exported file path info instead of querying the source again:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -allDBs `
+                   -importPaths `
+                   -overWrite `
+                   -commit
+```
+
+To restore database files as flat (unattached) files to a folder, rather than attaching them as a live database:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -sourceDB MyDB `
+                   -flatFilePath C:\restorefiles `
+                   -commit
+```
+
+### Point-in-time restores
+
+To restore to a specific point in time:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -sourceDB MyDB `
+                   -logTime '2026-06-15 14:30:00' `
+                   -overWrite `
+                   -commit
+```
+
+To restore replaying the very latest available logs (to the millisecond):
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -allDBs `
+                   -noStop `
+                   -overWrite `
+                   -commit
+```
+
+To restore using only the full/incremental backup at or before a point in time, without replaying any logs:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -sourceDB MyDB `
+                   -logTime '2026-06-15 14:30:00' `
+                   -noLogs `
+                   -overWrite `
+                   -commit
+```
+
+To stage a database for further log restores by leaving it in NORECOVERY mode:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -sourceDB MyDB `
+                   -targetServer sqlserver2.mydomain.net `
+                   -noRecovery `
+                   -commit
+```
+
+### Monitoring restore progress
+
+To wait for the restore to finish and report the final status of each database:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -allDBs `
+                   -overWrite `
+                   -wait `
+                   -commit
+```
+
+To display live percent-complete progress for each database as it restores:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -allDBs `
+                   -overWrite `
+                   -progress `
+                   -commit
+```
+
+### Authentication variations
+
+To connect using an API key instead of a username and password:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myApiKeyUser `
+                   -useApiKey `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -allDBs `
+                   -overWrite `
+                   -commit
+```
+
+To connect through Helios/MCM to a specific managed cluster:
+
+```powershell
+./restoreSQLv2.ps1 -vip helios.cohesity.com `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -mcm `
+                   -clusterName mycluster `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -allDBs `
+                   -overWrite `
+                   -commit
+```
+
+To connect using a TOTP multi-factor authentication code:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -mfaCode 123456 `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -allDBs `
+                   -overWrite `
+                   -commit
+```
+
+To connect while impersonating a specific tenant/organization:
+
+```powershell
+./restoreSQLv2.ps1 -vip mycluster `
+                   -username myusername `
+                   -domain mydomain.net `
+                   -tenant myOrgName `
+                   -sourceServer sqlserver1.mydomain.net `
+                   -allDBs `
+                   -overWrite `
                    -commit
 ```
 
