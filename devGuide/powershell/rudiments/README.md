@@ -4,7 +4,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 Provided here are some rudimentary examples to provide understanding of basic principles of Cohesity API authentication and access. These examples use PowerShell's Invoke-RestMethod commandlet (cohesity-api.ps1 uses these same techniques under the covers).
 
-## Download these example scripta
+## Download these example scripts
 
 Run these commands from PowerShell to download the script(s) into your current directory
 
