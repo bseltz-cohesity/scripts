@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-Provided here are some rudimentary examples to provide understanding of basic principles of Cohesity API authentication and access. These examples use PowerShell's Invoke-RestMethod commandlet (cohesity-api.ps1 uses these same techniques under the covers).
+Provided here are some rudimentary examples to provide understanding of basic principles of Cohesity API authentication and access. These examples use PowerShell's Invoke-RestMethod commandlet (they do not user cohesity-api.ps1. cohesity-api.ps1 uses these same techniques under the covers).
 
 ## Download these example scripts
 
