@@ -1,5 +1,14 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-07-06`] [webSession.ps1](https://github.com/cohesity/community-automation-samples/tree/main/devGuide/powershell/rudiments) [`New`] for PowerShell development guide
+* [`2026-07-06`] [userSession.ps1](https://github.com/cohesity/community-automation-samples/tree/main/devGuide/powershell/rudiments) [`New`] for PowerShell development guide
+* [`2026-07-06`] [helios.ps1](https://github.com/cohesity/community-automation-samples/tree/main/devGuide/powershell/rudiments) [`New`] for PowerShell development guide
+* [`2026-07-06`] [apiKey.ps1](https://github.com/cohesity/community-automation-samples/tree/main/devGuide/powershell/rudiments) [`New`] for PowerShell development guide
+* [`2026-07-06`] [accessToken.ps1](https://github.com/cohesity/community-automation-samples/tree/main/devGuide/powershell/rudiments) [`New`] for PowerShell development guide
+* [`2026-07-06`] [runs-example.ps1](https://github.com/cohesity/community-automation-samples/tree/main/devGuide/powershell/examples/runs-example) [`New`] for PowerShell development guide
+* [`2026-07-06`] [auth-example.ps1](https://github.com/cohesity/community-automation-samples/tree/main/devGuide/powershell/examples/auth-example) [`New`] for PowerShell development guide
+* [`2026-07-06`] [auth-example-multi.ps1](https://github.com/cohesity/community-automation-samples/tree/main/devGuide/powershell/examples/auth-example-multi) [`New`] for PowerShell development guide
+* [`2026-07-06`] [auth-example-CCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/devGuide/powershell/examples/auth-example-CCS) [`New`] for PowerShell development guide
 * [`2026-07-01`] [jobList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/jobList) [`Update`] added tenant and host type columns
 * [`2026-07-01`] [storagePerObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerObjectReport) [`Update`] adjusted archive consumption
 * [`2026-07-01`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] adjusted archive consumption
