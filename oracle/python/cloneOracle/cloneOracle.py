@@ -53,6 +53,7 @@ parser.add_argument('-postscriptargs', '--postscriptargs', type=str, default='')
 parser.add_argument('-t', '--scripttimeout', type=int, default=900)  # pre post script timeout
 parser.add_argument('-dbg', '--dbg', action='store_true')
 parser.add_argument('-ds', '--dontskipclonenid', action='store_true')
+parser.add_argument('-if', '--interface', type=str, default=None)
 
 args = parser.parse_args()
 
@@ -97,6 +98,7 @@ postscriptargs = args.postscriptargs
 scripttimeout = args.scripttimeout
 dbg = args.dbg
 dontskipclonenid = args.dontskipclonenid
+interface = args.interface
 
 if dbg:
     enableCohesityAPIDebugger()
@@ -443,6 +445,29 @@ if prescript is not None or postscript is not None:
                 "timeoutSecs": scripttimeout
             }
         }
+
+# select interface
+if interface is not None:
+    if '.' not in interface:
+        interface = '%s.0' % interface
+    vlans = api('get', 'vlans')
+    if vlans is not None:
+        vlan = [v for v in vlans if v['ifaceGroupName'].lower() == interface.lower() or str(v['id']) == interface]
+        if len(vlan) == 0:
+            print('interface %s not found' % interface)
+            if len(vlans) > 0:
+                print('valid interfaces are:')
+                for v in vlans:
+                    print('  %s' % v['ifaceGroupName'])
+            exit(1)
+        else:
+            cloneParams['restoreVlanParams'] = {
+                "vlanId": vlan[0]['id'],
+                "interfaceName": vlan[0]['ifaceGroupName'].lower().split('.')[0]
+            }
+    else:
+        print('interface %s not found' % interface)
+        exit(1)
 
 ### execute the clone task
 response = api('post', '/cloneApplication', cloneParams)

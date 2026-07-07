@@ -68,6 +68,7 @@ The script takes the following parameters:
 * -w, --wait: (optional) wait for completion
 * -dbg, --dbg: (optional) display api payload and exit (without restoring)
 * -ds, --dontskipclonenid: (optional) don't skip clone Nid step
+* -if, --interface: (optional) name of Cohesity cluster interface to use (e.g. intf_group1.63)
 
 ## Point in Time Recovery
 
