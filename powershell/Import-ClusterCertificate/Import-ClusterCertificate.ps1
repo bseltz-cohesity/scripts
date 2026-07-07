@@ -80,11 +80,11 @@
 .EXAMPLE
     # Full pipeline: pull the cluster's root/intermediate CA + any
     # registered trusted CAs, import them all locally on the ADFR MS
-    .\Import-ADFRTrustedCACert.ps1 -vip mycluster.corp.local -username admin -domain local
+    .\Import-ClusterCertificate -vip mycluster.corp.local -username admin -domain local
 
 .EXAMPLE
     # Import-only: you already have the CA cert file, just trust it
-    .\Import-ADFRTrustedCACert.ps1 -CaCertFile C:\certs\clusterCA.pem
+    .\Import-ClusterCertificate -CaCertFile C:\certs\clusterCA.pem
 
 .NOTES
     Must be run elevated (Administrator) -- writing to
