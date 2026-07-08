@@ -45,6 +45,8 @@ To set a gflag:
              -restart
 ```
 
+Note: service names are formatted like kIris, kMagneto, kBridge, etc.
+
 To import a list of gflags (csv file must be in the format 'serviceName,flagName,flagValue,reason'):
 
 ```powershell
