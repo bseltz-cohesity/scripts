@@ -71,7 +71,7 @@ To import a list of gflags (csv file must be in the format 'serviceName,flagName
 ## Other Parameters
 
 * -import: (optional) CSV file to import
-* -servicename: (optional) service name (required for -set)
+* -servicename: (optional) service name (required for -set, e.g. kMagneto)
 * -flagname: (optional) flag name (required for -set)
 * -flagvalue: (optional) flag value (required for -set)
 * -reason: (optional) reason (required for -set)
