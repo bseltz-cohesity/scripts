@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-07-09`] [protectCCSSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCCSSQL) [`New`] protect MS SQL databases in CCS
 * [`2026-07-07`] [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Update`] added -if, --interface parameter
 * [`2026-07-07`] [Import-ClusterCertificate.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/Import-ClusterCertificate) [`New`] export certificate from cluster and import it into the Windows trusted root store
 * [`2026-07-06`] [webSession.ps1](https://github.com/cohesity/community-automation-samples/tree/main/devGuide/powershell/rudiments) [`New`] for PowerShell development guide
