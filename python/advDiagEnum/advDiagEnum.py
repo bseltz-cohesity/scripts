@@ -1,0 +1,100 @@
+#!/usr/bin/env python
+"""List Advanced Diagnostics"""
+
+### import pyhesity wrapper module
+from pyhesity import *
+
+### command line arguments
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
+parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-t', '--tenant', type=str, default=None)
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-m', '--mfacode', type=str, default=None)
+parser.add_argument('-e', '--emailmfacode', action='store_true')
+
+args = parser.parse_args()
+
+vip = args.vip
+username = args.username
+domain = args.domain
+tenant = args.tenant
+clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
+emailmfacode = args.emailmfacode
+
+# authentication =========================================================
+# demand clustername if connecting to helios or mcm
+if (mcm or vip.lower() == 'helios.cohesity.com') and clustername is None:
+    print('-c, --clustername is required when connecting to Helios or MCM')
+    exit(1)
+
+# authenticate
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, emailMfaCode=emailmfacode, tenantId=tenant)
+
+# exit if not authenticated
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
+
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    heliosCluster(clustername)
+    if LAST_API_ERROR() != 'OK':
+        exit(1)
+# end authentication =====================================================
+
+### import csv module
+import csv
+
+valueTypes = ['Int64', 'Double', 'String', 'Bytes']
+metricTypes = ['Bytes', 'MicroSeconds', 'MilliSeconds', 'Seconds', 'Minutes', 'Count', 'Centigrade', 'Farenheit', 'RPM', 'Pct']
+
+f = open('advDiagEnum.csv', 'w', newline='')
+csvWriter = csv.writer(f)
+# csvWriter.writerow(['Schema', 'SchemaDescriptiveName', 'Attributes', 'MetricName', 'MetricDescriptiveName', 'ValueType', 'MetricUnit', 'AggregationIntervalSec'])
+csvWriter.writerow(['SchemaName', 'SchemaInternalName', 'MetricName', 'MetricInternalName', 'ValueType', 'MetricUnit', 'AggregationIntervalSec', 'Attributes'])
+
+schemas = api('get', 'statistics/entitiesSchema?includeInternalSchemas=true')
+for schema in schemas:
+    schemaName = schema['name']
+    schemaDescriptiveName = schema['schemaDescriptiveName']
+    print('\nSchema: %s (%s)' % (schemaName, schemaDescriptiveName))
+    attributesDescriptor = schema['attributesDescriptor']
+    attributeVec = attributesDescriptor['attributeVec']
+    attributes = ''
+    for attribute in attributeVec:
+        keyName = attribute['keyName']
+        valueType = attribute['valueType']
+        attributes += '%s (%s), ' % (keyName, valueTypes[valueType])
+    attributes = attributes[0:-2]
+    print('        attributes: %s' % attributes)
+    timeSeriesDescriptorVec = schema['timeSeriesDescriptorVec']
+    print('        timeSeriesDescriptors:')
+    for timeSeriesDescriptor in timeSeriesDescriptorVec:
+        metricName = timeSeriesDescriptor['metricName']
+        metricDescriptiveName = timeSeriesDescriptor.get('metricDescriptiveName', metricName)
+        valueType = timeSeriesDescriptor['valueType']
+        metricUnitType = timeSeriesDescriptor['metricUnit']['type']
+        aggregationDescriptor = timeSeriesDescriptor.get('aggregationDescriptor', '')
+        aggregationIntervalSec = ''
+        if aggregationDescriptor is not None and 'aggregationIntervalSec' in aggregationDescriptor:
+            # display(aggregationDescriptor)
+            aggregationIntervalSec = aggregationDescriptor['aggregationIntervalSec']
+        elif 'rawMetricPublishIntervalHintSecs' in timeSeriesDescriptor:
+            aggregationIntervalSec = timeSeriesDescriptor['rawMetricPublishIntervalHintSecs']
+
+        print('                    %s (%s) [%s]<%s>' % (metricName, metricDescriptiveName, valueTypes[valueType], metricTypes[metricUnitType]))
+        csvWriter.writerow([schemaDescriptiveName, schemaName, metricDescriptiveName, metricName, valueTypes[valueType], metricTypes[metricUnitType], aggregationIntervalSec, attributes])
+f.close()
+print('\nOutput saved to advDiagEnum.csv\n')
