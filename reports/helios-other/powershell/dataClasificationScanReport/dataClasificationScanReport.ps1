@@ -17,8 +17,6 @@ param (
 apiauth -vip $vip -username $username -domain 'local' -helios
 
 ### determine start and end dates
-### note: unlike the alerts API, the Data Classification (DLP) APIs use
-### Unix milliseconds rather than microseconds for their time filters
 $today = Get-Date
 $uStart = timeAgo $days 'days'
 $uEnd = dateToUsecs ($today)
@@ -83,14 +81,11 @@ foreach($scan in $scans){
 
         $runId = $run.id
         $runDate = usecsToDate $run.startTimeUsecs
-        # if($run.health.status -notin @('Succeeded', 'SucceededWithWarning')){
-        #     continue
-        # }
+
         ### step 3: drill into each object that was scanned in this run
         foreach($scanObject in $run.objects){
             $object = $scanObject.object
             $objectStatus = $scanObject.localSnapshots[0].health.status
-            # "    $($object.name)"
             if($objectName -and $object.name -ne $objectName){
                 continue
             }
@@ -99,7 +94,6 @@ foreach($scan in $scans){
             $clusterName = $object.clusterName
             $envType = $object.environment
             $objType = $object.objectType
-            # $object | toJson
             Write-Host "$($scan.name) -> $($object.name) ($runDate)"
 
             if($objectStatus -notin @('Succeeded', 'SucceededWithWarning')){
@@ -111,7 +105,6 @@ foreach($scan in $scans){
             $filesReported = 0
             $totalFiles = 0
             $rowsWritten = 0
-            # $object | toJson
 
             while(1){
                 $body = @{
@@ -131,7 +124,6 @@ foreach($scan in $scans){
                 }
 
                 $result = api post -mcm "argus/api/v1/public/dlp/sensitive-files" $body
-                # $result | toJson
                 $totalFiles = $result.total
 
                 foreach($file in $result.sensitiveFiles){
