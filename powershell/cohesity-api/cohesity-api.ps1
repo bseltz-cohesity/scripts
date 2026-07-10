@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2026.05.13 - Brian Seltzer
+#  Version 2026.07.10 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2025-01-10 - added Get-Runs function
@@ -27,10 +27,11 @@
 # 2026-05-04 - bug hunt - various minor fixes
 # 2026-05-05 - updated api error logging
 # 2026-05-13 - reordered auth attempts
+# 2026-07-10 - added fixCsv and displayCsv functions
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2026.05.13'
+$versionCohesityAPI = '2026.07.10'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -1809,6 +1810,23 @@ function getViews([switch]$includeInactive){
         $myViews += $views.views
     }
     return $myViews
+}
+
+# fix CSV file imported from other OS
+function fixCsv($csvFile){
+    (Get-Content $csvFile) | Set-Content $csvFile
+}
+
+# display CSV file
+function displayCsv($csvFile){
+    if($PSVersionTable.Platform -ne 'Unix'){
+        # Windows
+        $thiscsv = Import-Csv $csvFile
+        $thiscsv | Out-GridView
+    }else{
+        # Mac OS
+        open $csvFile
+    }
 }
 
 # reportError "Using cohesity-api version $versionCohesityAPI" -quiet
