@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Storage Per Object Report version 2026.07.01 for Python"""
+"""Storage Per Object Report version 2026.07.10 for Python"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -44,7 +44,7 @@ skipdeleted = args.skipdeleted
 debug = args.debug
 includearchives = args.includearchives
 
-scriptVersion = '2026-07-01 (Python)'
+scriptVersion = '2026-07-10 (Python)'
 
 if vips is None or len(vips) == 0:
     vips = ['helios.cohesity.com']
@@ -488,7 +488,7 @@ def reportStorage():
         else:
             stats = viewRunStats
             if 'statsList' in stats and stats['statsList'] is not None:
-                thisStat = [s for s in stats['statsList'] if s['id'] == int(v1JobId)]
+                thisStat = [s for s in stats['statsList'] if s['id'] == int(v1JobId) or s['name'].lower() == job['name'].lower()]
             endUsecs = nowUsecs
             lastDataLock = '-'
             lastRunId = '0'
@@ -570,7 +570,7 @@ def reportStorage():
     # views
     views = api('get', 'file-services/views?maxCount=2000&includeTenants=true&includeStats=true&includeProtectionGroups=true&includeInactive=true', v=2)
     if 'views' in views and views['views'] is not None and len(views['views']) > 0:
-        stats = api('get', 'stats/consumers?msecsBeforeCurrentTimeToCompare=%s&consumerType=kViews' % (growthdays * 86400000))
+        # stats = api('get', 'stats/consumers?msecsBeforeCurrentTimeToCompare=%s&consumerType=kViews' % (growthdays * 86400000))
         viewJobStats = {}
 
         # build total view job consumptions
