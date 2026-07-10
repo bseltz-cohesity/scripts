@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-07-10`] [storagePerObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerObjectReport) [`Update`] view stats fix
+* [`2026-07-10`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] view stats fix
 * [`2026-07-10`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added fixCsv and displayCsv functions
 * [`2026-07-09`] [protectCCSSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCCSSQL) [`New`] protect MS SQL databases in CCS
 * [`2026-07-07`] [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Update`] added -if, --interface parameter
