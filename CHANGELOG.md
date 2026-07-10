@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-07-10`] [advDiagEnum.py](https://github.com/cohesity/community-automation-samples/tree/main/python/advDiagEnum) [`New`] enumerate advanced diagnostics schemas and metrics using python
 * [`2026-07-10`] [storagePerObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerObjectReport) [`Update`] view stats fix
 * [`2026-07-10`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] view stats fix
 * [`2026-07-10`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added fixCsv and displayCsv functions
