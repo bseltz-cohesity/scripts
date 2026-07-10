@@ -1,4 +1,4 @@
-# version: 2026-07-01
+# version: 2026-07-10
 
 # process commandline arguments
 [CmdletBinding()]
@@ -25,7 +25,7 @@ param (
     [Parameter()][array]$environments = $null
 )
 
-$scriptversion = '2026-07-01 (PowerShell)'
+$scriptversion = '2026-07-10 (PowerShell)'
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -86,7 +86,6 @@ function getCloudStats(){
         }
         output "  getting external target stats..."
         $cloudStats = api get $cloudStatURL -timeout 600
-        # $cloudStats | toJson | Out-File "$($cluster.name)-vaultstats.json"
     }
     return $cloudStats
 }
@@ -128,7 +127,6 @@ function reportStorage(){
     }
     if($includeArchives){
         $cloudStats = getCloudStats
-        # $cloudStats | toJson | Out-File cloudstats-$($cluster.name).json
     }
     
     if($skipDeleted){
@@ -450,7 +448,6 @@ function reportStorage(){
             if($consolidateDBs){
                 foreach($objId in $objects.Keys){
                     $thisObject = $objects[$objId]
-                    # Write-Host $thisObject['name']
                     if($job.environment -in @('kOracle', 'kSQL') -and $thisObject['parentObject'] -eq $false -and $thisObject['environment'] -eq $job.environment){
                         $sourceName = ''
                         if('sourceId' -in $thisObject.Keys){
@@ -464,16 +461,9 @@ function reportStorage(){
                                 if($source -and $source.PSObject.Properties['rootNodes'] -and $source.rootNodes.Count -gt 0){
                                     $source = $source.rootNodes[0]
                                     $sourceName = $source.rootNode.name
-                                    # Write-Host $source.rootNode.environment
                                     $sourceNames["$($thisObject['sourceId'])"] = $sourceName
                                 }
-                                # $source = api get "protectionSources?id=$($thisObject['sourceId'])&excludeTypes=kFolder,kDatacenter,kComputeResource,kClusterComputeResource,kResourcePool,kDatastore,kHostSystem,kVirtualMachine,kVirtualApp,kStandaloneHost,kStoragePod,kNetwork,kDistributedVirtualPortgroup,kTagCategory,kTag&useCachedData=true" -quiet
-                                # if($source -and $source.PSObject.Properties['protectionSource']){
-                                #     $sourceName = $source.protectionSource.name
-                                #     $sourceNames["$($thisObject['sourceId'])"] = $sourceName
-                                # }
                             }
-                            # Write-Host "Source name: $sourceName"
                             if($thisObject['sourceId'] -notin $parentObjects.Keys){
                                 
                                 $parentObjects[$thisObject['sourceId']] = @{}
@@ -519,7 +509,6 @@ function reportStorage(){
             }
 
             # process output
-            # $isCad = $false
             $jobFESize = 0
             foreach($objId in $objects.Keys){
                 $thisObject = $objects[$objId]
@@ -528,11 +517,6 @@ function reportStorage(){
                 }
                 $jobFESize += $thisObject['logical']
                 $jobFESize += $thisObject['bytesRead']
-                # if($thisObject['archiveLogical'] -gt 0 -and $jobFESize -eq 0){
-                #     $jobFESize += $thisObject['archiveLogical']
-                #     $jobFESize += $thisObject['archiveBytesRead']
-                #     $isCad = $True
-                # }
             }
             if($jobFESize -eq 0){
                 foreach($objId in $objects.Keys){
@@ -568,11 +552,8 @@ function reportStorage(){
                 $objGrowth = $objGrowth * $resiliencyFactor
                 if($jobFESize -gt 0){
                     $objWeight = ($thisObject['logical'] + $thisObject['bytesRead']) / $jobFESize
-                    # Write-Host "$($thisObject['name'])  $objWeight  $($thisObject['logical']) + $($thisObject['bytesRead']) $jobFESize"
-
                     if($objWeight -eq 0 -and $thisObject['archiveLogical'] -gt 0){
                         $objWeight = ($thisObject['archiveLogical'] + $thisObject['archiveBytesRead']) / $jobFESize
-                        # Write-Host "$($thisObject['name'])  $objWeight  $($thisObject['archiveLogical']) + $($thisObject['archiveBytesRead']) $jobFESize"
                     }
                 }else{
                     $objWeight = 0
@@ -628,7 +609,6 @@ function reportStorage(){
                                 if($cloudJob.storageConsumed -gt 0){
                                     $totalArchived += ($vaultStorageFactor * $objWeight * $cloudJob.storageConsumed)
                                     $vaultStats += "[$($vaultSummary.vaultName)]$(toUnits ($vaultStorageFactor * $objWeight * $cloudJob.storageConsumed)) "
-                                    # Write-Host "$($thisObject['name'])  $objWeight  $(toUnits $cloudJob.storageConsumed)"
                                     if($isCad -eq $True){
                                         $jobReduction = [math]::Round($jobFESize / $cloudJob.storageConsumed, 1)
                                     }
@@ -661,9 +641,8 @@ function reportStorage(){
             }
         }elseif($job.environment -in @('kView')){
             $stats = $viewRunStats
-            # $stats | toJson
             if($stats){
-                $thisStat = $stats.statsList | Where-Object {$_.id -eq $primaryJobId}
+                $thisStat = $stats.statsList | Where-Object {$_.id -eq $primaryJobId -or $_.name -eq $job.name}
             }
             $endUsecs = $nowUsecs
             $lastDataLock = '-'
@@ -758,7 +737,7 @@ function reportStorage(){
     
     # views
     $views = api get -v2 "file-services/views?maxCount=2000&includeTenants=true&includeStats=true&includeProtectionGroups=true&includeInactive=true"
-    $stats = api get "stats/consumers?msecsBeforeCurrentTimeToCompare=$msecsBeforeCurrentTimeToCompare&consumerType=kViews"
+    # $stats = api get "stats/consumers?msecsBeforeCurrentTimeToCompare=$msecsBeforeCurrentTimeToCompare&consumerType=kViews"
     $viewJobStats = @{}
     
     # build total job FE sizes
