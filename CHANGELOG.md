@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-07-14`] [epicThroughputCalculator.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/epicThroughputCalculator) [`New`] Epic backup/restore throughput calculator
 * [`2026-07-13`] [epicGflagRecommendations.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/epicGflagRecommendations) [`New`] calculate cluster and agent gflag settings for Epic backup performance
 * [`2026-07-13`] [epicGflagRecommendations.sh](https://github.com/cohesity/community-automation-samples/tree/main/bash/epicGflagRecommendations) [`New`] calculate cluster and agent gflag settings for Epic backup performance
 * [`2026-07-10`] [dataClasificationScanReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/dataClasificationScanReport) [`New`] generate a data classification scan report
