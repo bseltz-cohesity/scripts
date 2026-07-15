@@ -101,7 +101,7 @@ $sourceName = $source.protectionSource.name
 
 # get the protectionJob
 Write-Host "`nLooking for existing protection job..."
-$job = (api get -v2 "data-protect/protection-groups?environments=kAWS").protectionGroups | Where-Object {$_.name -eq $jobName}
+$job = (api get -v2 "data-protect/protection-groups?environments=kHyperV").protectionGroups | Where-Object {$_.name -eq $jobName}
 
 if(! $job){
 
