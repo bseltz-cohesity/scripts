@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""expire old snapshots"""
+"""expire old snapshots (V2 API)"""
 
 # usage: ./expireOldSnapshots.py -v mycluster -u admin [ -d local ] -k 30 [ -e ] [ -r ]
 
@@ -114,7 +114,9 @@ def gatherList(param=None, filename=None, name='items', required=True):
 jobnames = gatherList(jobnames, joblist, name='jobs', required=False)
 dates = gatherList(dates, datelist, name='dates', required=False)
 
-jobs = api('get', 'protectionJobs')
+# V2 protection groups
+jobs = api('get', 'data-protect/protection-groups', v=2)['protectionGroups']
+jobs = [j for j in jobs if j.get('isDeleted') is not True]
 
 # catch invalid job names
 notfoundjobs = [n for n in jobnames if n.lower() not in [j['name'].lower() for j in jobs]]
@@ -122,14 +124,21 @@ if len(notfoundjobs) > 0:
     print('Jobs not found: %s' % ', '.join(notfoundjobs))
     exit(1)
 
+# V2 protection groups don't return an 'isActive' field directly (even though it's a valid
+# filter on the list endpoint), so resolve the set of active job ids up front if we need it
+activeJobIds = set()
+if activeonly is True:
+    activeJobs = api('get', 'data-protect/protection-groups?isActive=true', v=2)['protectionGroups']
+    activeJobIds = set(j['id'] for j in activeJobs)
+
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 
 remoteCluster = None
 if confirmreplication is True:
-    remoteClusters = api('get','remoteClusters')
+    remoteClusters = api('get', 'remote-clusters', v=2)['remoteClusters']
 if replicationtarget is not None:
-    remoteCluster = [r for r in remoteClusters if r['name'].lower() == replicationtarget.lower()]
+    remoteCluster = [r for r in remoteClusters if r['clusterName'].lower() == replicationtarget.lower()]
     if len(remoteCluster) == 0:
         print('remote cluster %s not found' % replicationtarget)
         exit(1)
@@ -137,84 +146,122 @@ if replicationtarget is not None:
         remoteCluster = remoteCluster[0]
 
 print("Searching for old snapshots...")
-finishedStates = ['kSuccess', 'kFailure', 'kWarning']
+finishedStates = ['Succeeded', 'Failed', 'SucceededWithWarning']
 
 contexts = {}
 jobLists = {}
+
+
+# a run backed up directly on this cluster has 'localBackupInfo'; a run replicated in from
+# another cluster has 'originalBackupInfo' instead (no 'localBackupInfo' at all)
+def getRunBackupInfo(run):
+    if run.get('localBackupInfo') is not None:
+        return run['localBackupInfo']
+    if run.get('originalBackupInfo') is not None:
+        return run['originalBackupInfo']
+    return None
+
+
+# same local/replicated split applies per-object: 'localSnapshotInfo' for locally backed up
+# objects, 'originalBackupInfo' for objects that arrived via replication
+def getObjectExpiry(obj):
+    localInfo = obj.get('localSnapshotInfo')
+    if localInfo is not None and localInfo.get('snapshotInfo') is not None and localInfo['snapshotInfo'].get('expiryTimeUsecs') is not None:
+        return localInfo['snapshotInfo']['expiryTimeUsecs']
+    originalInfo = obj.get('originalBackupInfo')
+    if originalInfo is not None and originalInfo.get('snapshotInfo') is not None and originalInfo['snapshotInfo'].get('expiryTimeUsecs') is not None:
+        return originalInfo['snapshotInfo']['expiryTimeUsecs']
+    return None
+
+
+# current expiry lives per-object (there's no run-level expiry field in V2) - all objects in
+# a run share the same retention, so the first object with a valid expiry is representative
+def getCurrentExpiry(run):
+    for obj in run.get('objects', []):
+        expiry = getObjectExpiry(obj)
+        if expiry is not None:
+            return expiry
+    return None
+
 
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
 
     if len(jobnames) == 0 or job['name'].lower() in [j.lower() for j in jobnames]:
         print('\n%s' % job['name'])
+        jobUrlId = job['id']
         endUsecs = nowUsecs
         while 1:
-            runs = api('get', 'protectionRuns?jobId=%s&numRuns=%s&endTimeUsecs=%s&excludeTasks=true' % (job['id'], numruns, endUsecs))
-            if len(runs) > 0:
-                endUsecs = runs[-1]['backupRun']['stats']['startTimeUsecs'] - 1
-            else:
+            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&endTimeUsecs=%s' % (jobUrlId, numruns, endUsecs), v=2)
+            if runs is None or 'runs' not in runs or runs['runs'] is None or len(runs['runs']) == 0:
                 break
-            for run in runs:
-                if 'backupRun' in run:
-                    status = run['backupRun']['status']
-                    if status in finishedStates:
-                        startdate = usecsToDate(run['backupRun']['stats']['startTimeUsecs'])
-                        startdateusecs = run['backupRun']['stats']['startTimeUsecs']
-                    else:
-                        continue
-                elif 'copyRun' in run and len(run['copyRun']) > 0:
-                    status = run['copyRun'][0]['status']
-                    if status in finishedStates:
-                        startdate = usecsToDate(run['copyRun'][0]['runStartTimeUsecs'])
-                        startdateusecs = run['copyRun'][0]['runStartTimeUsecs']
-                    else:
-                        continue
+            rawRuns = runs['runs']
+
+            # figure out where the next page should end, based on the oldest run in this page
+            lastRun = rawRuns[-1]
+            lastBackupInfo = getRunBackupInfo(lastRun)
+            if lastBackupInfo is not None:
+                endUsecs = lastBackupInfo['startTimeUsecs'] - 1
+            else:
+                endUsecs = int(lastRun['id'].split(':')[1]) - 1
+
+            for run in rawRuns:
+                backupInfo = getRunBackupInfo(run)
+                if backupInfo is None:
+                    continue
+                status = backupInfo.get('status')
+                if status not in finishedStates:
+                    continue
+                startdateusecs = backupInfo['startTimeUsecs']
+                startdate = usecsToDate(startdateusecs)
+
                 # check for replication
                 replicated = False
-                if activeonly is not True or 'isActive' not in job or job['isActive'] is True:
-                    for copyRun in run['copyRun']:
-                        if copyRun['target']['type'] == 'kRemote':
-                            if copyRun['status'] == 'kSuccess' or forceconfirmation is True:
-                                if replicationtarget is None or copyRun['target']['replicationTarget']['clusterId'] == remoteCluster['clusterId']: # ('clusterName' in copyRun['target']['replicationTarget'] and copyRun['target']['replicationTarget']['clusterName'].lower() == replicationtarget.lower()):
-                                    if activeconfirmation:
-                                        repltargetObj = [r for r in remoteClusters if r['clusterId'] == copyRun['target']['replicationTarget']['clusterId']]
-                                        if len(repltargetObj) == 0:
-                                            print('remote cluster with ID %s not found' % copyRun['target']['replicationTarget']['clusterId'])
+                if activeonly is not True or job['id'] in activeJobIds:
+                    replicationTargetResults = (run.get('replicationInfo') or {}).get('replicationTargetResults') or []
+                    for replicationTargetResult in replicationTargetResults:
+                        if replicationTargetResult.get('status') == 'Succeeded' or forceconfirmation is True:
+                            if replicationtarget is None or replicationTargetResult.get('clusterId') == remoteCluster['clusterId']:
+                                if activeconfirmation:
+                                    repltarget = replicationTargetResult.get('clusterName')
+                                    if not repltarget:
+                                        print('remote cluster with ID %s not found' % replicationTargetResult.get('clusterId'))
+                                        exit(1)
+                                    context = getContext()
+                                    if repltarget not in contexts.keys():
+                                        apiauth(vip=repltarget, username=username, domain=domain, password=password, useApiKey=useApiKey, noretry=True, quiet=True)
+                                        # exit if not authenticated
+                                        if apiconnected() is False:
+                                            print('authentication failed')
                                             exit(1)
-                                        repltarget = repltargetObj[0]['name'] # copyRun['target']['replicationTarget']['clusterName']
-                                        context = getContext()
-                                        if repltarget not in contexts.keys():
-                                            apiauth(vip=repltarget, username=username, domain=domain, password=password, useApiKey=useApiKey, noretry=True, quiet=True)
-                                            # exit if not authenticated
-                                            if apiconnected() is False:
-                                                print('authentication failed')
-                                                exit(1)
-                                            contexts[repltarget] = getContext()
-                                            jobLists[repltarget] = api('get', 'protectionJobs')
-                                        else:
-                                            setContext(contexts[repltarget])
-                                        repljob = [j for j in jobLists[repltarget] if j['name'] == job['name']]
-                                        if repljob is not None and len(repljob) > 0:
-                                            replicaRun = api('get', 'protectionRuns?startedTimeUsecs=%s&jobId=%s' % (startdateusecs, repljob[0]['id']))
-                                            if replicaRun is not None and len(replicaRun) > 0:
-                                                for replicaCopyRun in replicaRun[0]['copyRun']:
-                                                    if replicaCopyRun['target']['type'] == 'kLocal':
-                                                        if 'expiryTimeUsecs' in replicaCopyRun and replicaCopyRun['expiryTimeUsecs'] > nowUsecs and replicaCopyRun['status'] == 'kSuccess':
-                                                            replicated = True
-                                        setContext(context)
-                                    else:    
-                                        replicated = True
+                                        contexts[repltarget] = getContext()
+                                        jobLists[repltarget] = api('get', 'data-protect/protection-groups', v=2)['protectionGroups']
+                                    else:
+                                        setContext(contexts[repltarget])
+                                    repljob = [j for j in jobLists[repltarget] if j['name'] == job['name']]
+                                    if repljob is not None and len(repljob) > 0:
+                                        replicaRuns = api('get', 'data-protect/protection-groups/%s/runs?startTimeUsecs=%s&endTimeUsecs=%s&includeObjectDetails=true' % (repljob[0]['id'], startdateusecs - 1, startdateusecs + 1), v=2)
+                                        if replicaRuns is not None and 'runs' in replicaRuns and replicaRuns['runs'] is not None:
+                                            for replicaRun in replicaRuns['runs']:
+                                                replicaBackupInfo = getRunBackupInfo(replicaRun)
+                                                if replicaBackupInfo is not None and replicaBackupInfo.get('startTimeUsecs') == startdateusecs and replicaBackupInfo.get('status') == 'Succeeded':
+                                                    replicaExpiry = getCurrentExpiry(replicaRun)
+                                                    if replicaExpiry is not None and replicaExpiry > nowUsecs:
+                                                        replicated = True
+                                    setContext(context)
+                                else:
+                                    replicated = True
                 else:
                     replicated = True
 
                 # check for archive
                 archived = False
-                for copyRun in run['copyRun']:
-                    if copyRun['target']['type'] == 'kArchival':
-                        if copyRun['status'] == 'kSuccess':
-                            if archivetarget is None or ('vaultName' in copyRun['target']['archivalTarget'] and copyRun['target']['archivalTarget']['vaultName'].lower() == archivetarget.lower()):
-                                archived = True
+                archivalTargetResults = (run.get('archivalInfo') or {}).get('archivalTargetResults') or []
+                for archivalTargetResult in archivalTargetResults:
+                    if archivalTargetResult.get('status') == 'Succeeded':
+                        if archivetarget is None or (archivalTargetResult.get('targetName') is not None and archivalTargetResult['targetName'].lower() == archivetarget.lower()):
+                            archived = True
 
-                if startdateusecs < timeAgo(daystokeep, 'days') and run['backupRun']['snapshotsDeleted'] is False:
+                if startdateusecs < timeAgo(daystokeep, 'days') and run.get('isLocalSnapshotsDeleted') is not True:
                     skip = False
                     if len(dates) > 0:
                         matchingdates = [d for d in dates if d in startdate]
@@ -238,30 +285,22 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                         print("    Skipping %s (monthly)" % startdate)
                     if skip is False:
                         if expire:
-                            exactRun = api('get', '/backupjobruns?exactMatchStartTimeUsecs=%s&id=%s' % (startdateusecs, job['id']))
-                            jobUid = exactRun[0]['backupJobRuns']['protectionRuns'][0]['backupRun']['base']['jobUid']
+                            # V2: no jobUid lookup needed (that was only ever required in V1 to
+                            # resolve replicated runs); the run's own id is enough, and
+                            # 'deleteSnapshot' expires it immediately without daysToKeep math.
                             expireRun = {
-                                "jobRuns":
-                                    [
-                                        {
-                                            "expiryTimeUsecs": 0,
-                                            "jobUid": {
-                                                "clusterId": jobUid['clusterId'],
-                                                "clusterIncarnationId": jobUid['clusterIncarnationId'],
-                                                "id": jobUid['objectId'],
-                                            },
-                                            "runStartTimeUsecs": startdateusecs,
-                                            "copyRunTargets": [
-                                                {
-                                                    "daysToKeep": 0,
-                                                    "type": "kLocal",
-                                                }
-                                            ]
+                                "updateProtectionGroupRunParams": [
+                                    {
+                                        "runId": run['id'],
+                                        "replicationSnapshotConfig": {},
+                                        "localSnapshotConfig": {
+                                            "deleteSnapshot": True
                                         }
-                                    ]
+                                    }
+                                ]
                             }
                             print("    Expiring %s" % startdate)
-                            api('put', 'protectionRuns', expireRun)
+                            api('put', 'data-protect/protection-groups/%s/runs' % jobUrlId, expireRun, v=2)
                         else:
                             if confirmarchive is True or confirmreplication is True:
                                 print("    would expire %s (remote copy confirmed)" % startdate)
