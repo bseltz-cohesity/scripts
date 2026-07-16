@@ -69,7 +69,7 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 $jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Required $false)
 
 # filter on job name (V2 protection groups API)
-$jobs = (api get -v2 "data-protect/protection-groups").protectionGroups # | Where-Object {$_.isDeleted -ne $True}
+$jobs = (api get -v2 "data-protect/protection-groups").protectionGroups | Where-Object {$_.isDeleted -ne $True}
 $myjoblist = @()
 if($jobNames.Length -gt 0){
     foreach($j in $jobNames){
@@ -101,24 +101,51 @@ if($jobMatch.Length -gt 0){
     $myjoblist = @($matchJobList)
 }
 
-function changeRetention($run, $jobUrlId, $jobName){
+# a run backed up directly on this cluster has 'localBackupInfo'; a run replicated in from
+# another cluster has 'originalBackupInfo' instead (no 'localBackupInfo' at all)
+function getRunBackupInfo($run){
+    if($run.PSObject.Properties['localBackupInfo'] -and $run.localBackupInfo){
+        return $run.localBackupInfo
+    }elseif($run.PSObject.Properties['originalBackupInfo'] -and $run.originalBackupInfo){
+        return $run.originalBackupInfo
+    }else{
+        return $null
+    }
+}
+
+# same local/replicated split applies per-object: 'localSnapshotInfo' for locally backed up
+# objects, 'originalBackupInfo' for objects that arrived via replication
+function getObjectExpiry($object){
+    if($object.PSObject.Properties['localSnapshotInfo'] -and $object.localSnapshotInfo -and $object.localSnapshotInfo.snapshotInfo -and $null -ne $object.localSnapshotInfo.snapshotInfo.expiryTimeUsecs){
+        return $object.localSnapshotInfo.snapshotInfo.expiryTimeUsecs
+    }elseif($object.PSObject.Properties['originalBackupInfo'] -and $object.originalBackupInfo -and $object.originalBackupInfo.snapshotInfo -and $null -ne $object.originalBackupInfo.snapshotInfo.expiryTimeUsecs){
+        return $object.originalBackupInfo.snapshotInfo.expiryTimeUsecs
+    }else{
+        return $null
+    }
+}
+
+function changeRetention($run, $backupInfo, $jobUrlId, $jobName){
     # V2 run object (from data-protect/protection-groups/{id}/runs, with includeObjectDetails=true)
-    $startDateUsecs = $run.localBackupInfo.startTimeUsecs
+    $startDateUsecs = $backupInfo.startTimeUsecs
     $startDate = usecsToDate $startDateUsecs
     $newExpireUsecs = [int64](dateToUsecs $startDate.addDays($daysToKeep))
     $newExpireDate = usecsToDate $newExpireUsecs
 
-    # current local expiry lives per-object under objects[].localSnapshotInfo.snapshotInfo.expiryTimeUsecs
-    # (there's no run-level expiry field in V2) - all objects in a run share the same retention,
-    # so the first object with a valid local snapshot is representative
-    $objectWithExpiry = $run.objects | Where-Object {$_.PSObject.Properties['localSnapshotInfo'] -and
-                                                      $_.localSnapshotInfo.snapshotInfo -and
-                                                      $null -ne $_.localSnapshotInfo.snapshotInfo.expiryTimeUsecs} | Select-Object -First 1
-    if(!$objectWithExpiry){
-        Write-Host "No local snapshot expiry found for $jobName ($($startDate)) - skipping" -ForegroundColor Yellow
+    # current expiry lives per-object (there's no run-level expiry field in V2) - all objects in
+    # a run share the same retention, so the first object with a valid expiry is representative
+    $oldExpireUsecs = $null
+    foreach($object in $run.objects){
+        $expiry = getObjectExpiry $object
+        if($null -ne $expiry){
+            $oldExpireUsecs = $expiry
+            break
+        }
+    }
+    if($null -eq $oldExpireUsecs){
+        Write-Host "No snapshot expiry found for $jobName ($($startDate)) - skipping" -ForegroundColor Yellow
         return
     }
-    $oldExpireUsecs = $objectWithExpiry.localSnapshotInfo.snapshotInfo.expiryTimeUsecs
 
     if($newExpireUsecs -gt $oldExpireUsecs){
         $daysToChange = [int][math]::Round(($newExpireUsecs - $oldExpireUsecs) / 86400000000)
@@ -174,11 +201,18 @@ if($backupType -eq 'AllExceptLogs'){
 }
 
 foreach($job in $myjoblist){
-    $runs = (api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$maxRuns&runTypes=$myBackupType&startTimeUsecs=$afterUsecs&endTimeUsecs=$beforeUsecs&excludeNonRestorableRuns=true&includeObjectDetails=true").runs | Where-Object {$_.PSObject.Properties['localBackupInfo'] -and
-                                                                                                                                                                                                                                                                        $_.isLocalSnapshotsDeleted -ne $True -and
-                                                                                                                                                                                                                                                                        $_.localBackupInfo.startTimeUsecs -gt $afterUsecs -and
-                                                                                                                                                                                                                                                                        $_.localBackupInfo.endTimeUsecs -le $beforeUsecs}
+    $runs = (api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$maxRuns&runTypes=$myBackupType&startTimeUsecs=$afterUsecs&endTimeUsecs=$beforeUsecs&excludeNonRestorableRuns=true&includeObjectDetails=true").runs
     foreach($run in $runs){
-        changeRetention $run $job.id $job.name
+        $backupInfo = getRunBackupInfo $run
+        if(!$backupInfo){
+            continue
+        }
+        if($run.isLocalSnapshotsDeleted -eq $True){
+            continue
+        }
+        if($backupInfo.startTimeUsecs -le $afterUsecs -or $backupInfo.endTimeUsecs -gt $beforeUsecs){
+            continue
+        }
+        changeRetention $run $backupInfo $job.id $job.name
     }
 }

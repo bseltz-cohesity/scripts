@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""change local retention"""
+"""change local retention (V2 API)"""
 
 # import pyhesity wrapper module
 from pyhesity import *
@@ -102,7 +102,9 @@ def gatherList(param=None, filename=None, name='items', required=True):
 
 jobnames = gatherList(jobnames, joblist, name='jobs', required=False)
 
-jobs = api('get', 'protectionJobs')
+# V2 protection groups
+jobs = api('get', 'data-protect/protection-groups', v=2)['protectionGroups']
+jobs = [j for j in jobs if j.get('isDeleted') is not True]
 
 # catch invalid job names
 notfoundjobs = [n for n in jobnames if n.lower() not in [j['name'].lower() for j in jobs]]
@@ -110,25 +112,72 @@ if len(notfoundjobs) > 0:
     print('Jobs not found: %s' % ', '.join(notfoundjobs))
     exit(1)
 
-myBackupType = 'kRegular&runTypes=kFull&runTypes=kSystem'
-if backupType != 'AllExceptLogs':
+# V1's 'kRegular' run type is called 'kIncremental' in the V2 API
+myBackupType = 'kIncremental,kFull,kSystem'
+if backupType == 'kRegular':
+    myBackupType = 'kIncremental'
+elif backupType != 'AllExceptLogs':
     myBackupType = backupType
+
+
+# a run backed up directly on this cluster has 'localBackupInfo'; a run replicated in from
+# another cluster has 'originalBackupInfo' instead (no 'localBackupInfo' at all)
+def getRunBackupInfo(run):
+    if run.get('localBackupInfo') is not None:
+        return run['localBackupInfo']
+    if run.get('originalBackupInfo') is not None:
+        return run['originalBackupInfo']
+    return None
+
+
+# same local/replicated split applies per-object: 'localSnapshotInfo' for locally backed up
+# objects, 'originalBackupInfo' for objects that arrived via replication
+def getObjectExpiry(obj):
+    localInfo = obj.get('localSnapshotInfo')
+    if localInfo is not None and localInfo.get('snapshotInfo') is not None and localInfo['snapshotInfo'].get('expiryTimeUsecs') is not None:
+        return localInfo['snapshotInfo']['expiryTimeUsecs']
+    originalInfo = obj.get('originalBackupInfo')
+    if originalInfo is not None and originalInfo.get('snapshotInfo') is not None and originalInfo['snapshotInfo'].get('expiryTimeUsecs') is not None:
+        return originalInfo['snapshotInfo']['expiryTimeUsecs']
+    return None
+
 
 for job in sorted(jobs, key=lambda job: job['name'].lower()):
     if len(jobnames) == 0 or job['name'].lower() in [j.lower() for j in jobnames]:
         print('\n%s' % job['name'])
+        jobUrlId = job['id']
         endUsecs = nowUsecs
         runFound = False
         while 1:
-            runs = api('get', 'protectionRuns?jobId=%s&numRuns=%s&endTimeUsecs=%s&excludeTasks=true&excludeNonRestoreableRuns=true&runTypes=%s' % (job['id'], numruns, endUsecs, myBackupType))
-            if len(runs) > 0:
-                endUsecs = runs[-1]['backupRun']['stats']['startTimeUsecs'] - 1
-            else:
+            runs = api('get', 'data-protect/protection-groups/%s/runs?numRuns=%s&endTimeUsecs=%s&excludeNonRestorableRuns=true&includeObjectDetails=true&runTypes=%s' % (jobUrlId, numruns, endUsecs, myBackupType), v=2)
+            if runs is None or 'runs' not in runs or runs['runs'] is None or len(runs['runs']) == 0:
                 break
-            for run in runs:
+            rawRuns = runs['runs']
+
+            # figure out where the next page should end, based on the oldest run in this page
+            # (regardless of whether it's one we'll actually process below)
+            lastRun = rawRuns[-1]
+            lastRunBackupInfo = getRunBackupInfo(lastRun)
+            if lastRunBackupInfo is not None:
+                endUsecs = lastRunBackupInfo['startTimeUsecs'] - 1
+            else:
+                endUsecs = int(lastRun['id'].split(':')[1]) - 1
+
+            for run in rawRuns:
                 try:
-                    runType = run['backupRun']['runType'][1:].replace('Regular', 'Incremental')
-                    runTime = usecsToDate(run['backupRun']['stats']['startTimeUsecs'], fmt='%Y-%m-%d %H:%M')
+                    # runs backed up locally have 'localBackupInfo'; runs replicated in from
+                    # another cluster have 'originalBackupInfo' instead - both are relevant here
+                    backupInfo = getRunBackupInfo(run)
+                    if backupInfo is None:
+                        continue
+                    if run.get('isLocalSnapshotsDeleted') is True:
+                        continue
+
+                    runType = backupInfo.get('runType', 'kUnknown')[1:]
+                    runStartTimeUsecs = backupInfo['startTimeUsecs']
+                    runTime = usecsToDate(runStartTimeUsecs, fmt='%Y-%m-%d %H:%M')
+                    runIdentifier = run.get('protectionGroupInstanceId', run['id'])
+
                     if rundate is not None:
                         if runTime != rundate:
                             if runTime < rundate and runFound is False:
@@ -138,71 +187,73 @@ for job in sorted(jobs, key=lambda job: job['name'].lower()):
                         else:
                             runFound = True
                     if runid is not None:
-                        if run['backupRun']['jobRunId'] != runid:
-                            if run['backupRun']['jobRunId'] < runid and runFound is False:
+                        if runIdentifier != runid:
+                            if isinstance(runIdentifier, int) and runIdentifier < runid and runFound is False:
                                 print('    Run with ID %s not found' % runid)
                                 exit(1)
                             continue
                         else:
                             runFound = True
-                    if run['backupRun']['snapshotsDeleted'] is not True:
-                        if includelogs is True or run['backupRun']['runType'] != 'kLog':
-                            runStartTimeUsecs = run['backupRun']['stats']['startTimeUsecs']
-                            if runStartTimeUsecs > newerthanusecs and runStartTimeUsecs < olderthanusecs:
-                                runStartTime = usecsToDate(runStartTimeUsecs, fmt='%Y-%m-%d %H:%M')
-                                localRun = [c for c in run['copyRun'] if c['target']['type'] == 'kLocal']
-                                currentExpireTimeUsecs = localRun[0]['expiryTimeUsecs']
-                                retentionUsecs = currentExpireTimeUsecs - runStartTimeUsecs
-                                if greaterthan == 0 or retentionUsecs > (greaterthanusecs + 3600000000):
-                                    newExpireTimeUsecs = runStartTimeUsecs + (keepfor * 86400000000)
-                                    extendByDays = dayDiff(newExpireTimeUsecs, currentExpireTimeUsecs)
-                                    actionString = ''
-                                    if allowreduction is False and extendByDays < 0:
-                                        actionString = 'reduction disallowed'
-                                    if extendByDays == 0:
-                                        actionString = 'no change'
-                                    if (allowreduction is True and extendByDays < 0) or extendByDays > 0:
-                                        if extendByDays > 0:
-                                            actionString = 'would extend'
-                                        else:
-                                            actionString = 'would reduce'
-                                        if commit:
-                                            if extendByDays > 0:
-                                                actionString = 'extended'
-                                            else:
-                                                actionString = 'reduced'
-                                            thisRun = api('get', '/backupjobruns?allUnderHierarchy=true&exactMatchStartTimeUsecs=%s&id=%s' % (runStartTimeUsecs, job['id']))
-                                            jobUid = thisRun[0]['backupJobRuns']['jobDescription']['primaryJobUid']
-                                            # update retention of job run
-                                            runParameters = {
-                                                "jobRuns": [
-                                                    {
-                                                        "jobUid": {
-                                                            "clusterId": jobUid['clusterId'],
-                                                            "clusterIncarnationId": jobUid['clusterIncarnationId'],
-                                                            "id": jobUid['objectId']
-                                                        },
-                                                        "runStartTimeUsecs": run['copyRun'][0]['runStartTimeUsecs'],
-                                                        "copyRunTargets": [
-                                                            {
-                                                                "daysToKeep": extendByDays,
-                                                                "type": "kLocal"
-                                                            }
-                                                        ]
-                                                    }
-                                                ]
-                                            }
-                                            result = api('put', 'protectionRuns', runParameters)
-                                    if extendByDays == 0:
-                                        print("    %s - %s (%-17s%s -> %s    (%s)" % (run['backupRun']['jobRunId'], runStartTime, runType + '):', usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString))
-                                    elif extendByDays < 0 and allowreduction is not True:
-                                        print("    %s - %s (%-17s%s -> %s    (%s: %s days)" % (run['backupRun']['jobRunId'], runStartTime, runType + '):', usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
+
+                    if includelogs is True or runType != 'Log':
+                        if runStartTimeUsecs > newerthanusecs and runStartTimeUsecs < olderthanusecs:
+                            # current expiry lives per-object (there's no run-level expiry field
+                            # in V2) - all objects in a run share the same retention, so the first
+                            # object with a valid expiry is representative
+                            currentExpireTimeUsecs = None
+                            for obj in run.get('objects', []):
+                                expiry = getObjectExpiry(obj)
+                                if expiry is not None:
+                                    currentExpireTimeUsecs = expiry
+                                    break
+                            if currentExpireTimeUsecs is None:
+                                continue
+
+                            retentionUsecs = currentExpireTimeUsecs - runStartTimeUsecs
+                            if greaterthan == 0 or retentionUsecs > (greaterthanusecs + 3600000000):
+                                newExpireTimeUsecs = runStartTimeUsecs + (keepfor * 86400000000)
+                                extendByDays = dayDiff(newExpireTimeUsecs, currentExpireTimeUsecs)
+                                actionString = ''
+                                if allowreduction is False and extendByDays < 0:
+                                    actionString = 'reduction disallowed'
+                                if extendByDays == 0:
+                                    actionString = 'no change'
+                                if (allowreduction is True and extendByDays < 0) or extendByDays > 0:
+                                    if extendByDays > 0:
+                                        actionString = 'would extend'
                                     else:
-                                        print("    %s - %s (%-17s%s -> %s    (%s by %s days)" % (run['backupRun']['jobRunId'], runStartTime, runType + '):', usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
-                                f.write('%s,%s,%s,%s,%s,%s,%s,%s\n' % (job['name'], run['backupRun']['jobRunId'], runStartTime, runType, usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
+                                        actionString = 'would reduce'
+                                    if commit:
+                                        if extendByDays > 0:
+                                            actionString = 'extended'
+                                        else:
+                                            actionString = 'reduced'
+                                        # V2 update: no jobUid lookup needed (that was only ever
+                                        # required in V1 to resolve replicated runs); the run's
+                                        # own id is enough to target the update.
+                                        runParameters = {
+                                            "updateProtectionGroupRunParams": [
+                                                {
+                                                    "runId": run['id'],
+                                                    "replicationSnapshotConfig": {},
+                                                    "localSnapshotConfig": {
+                                                        "daysToKeep": extendByDays
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                        result = api('put', 'data-protect/protection-groups/%s/runs' % jobUrlId, runParameters, v=2)
+                                if extendByDays == 0:
+                                    print("    %s - %s (%-17s%s -> %s    (%s)" % (runIdentifier, runTime, runType + '):', usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString))
+                                elif extendByDays < 0 and allowreduction is not True:
+                                    print("    %s - %s (%-17s%s -> %s    (%s: %s days)" % (runIdentifier, runTime, runType + '):', usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
+                                else:
+                                    print("    %s - %s (%-17s%s -> %s    (%s by %s days)" % (runIdentifier, runTime, runType + '):', usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
+                                f.write('%s,%s,%s,%s,%s,%s,%s,%s\n' % (job['name'], runIdentifier, runTime, runType, usecsToDate(currentExpireTimeUsecs, fmt='%Y-%m-%d'), usecsToDate(newExpireTimeUsecs, fmt='%Y-%m-%d'), actionString, extendByDays))
                 except Exception:
                     print('an error occurred')
-            if run['backupRun']['stats']['startTimeUsecs'] < newerthanusecs:
+
+            if endUsecs < newerthanusecs:
                 break
 
 f.close()
