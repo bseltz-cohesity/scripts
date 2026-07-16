@@ -1,6 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
-* [`2026-07-16`] [expireOldSnapshots.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/expireOldSnapshots) [`Update`] updated to use V2 APIs
+* [`2026-07-16`] [expireOldSnapshots.py](https://github.com/cohesity/community-automation-samples/tree/main/python/expireOldSnapshots) [`Update`] updated to use V2 APIs
 * [`2026-07-16`] [expireOldSnapshots.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/expireOldSnapshots) [`Update`] updated to use V2 APIs
 * [`2026-07-16`] [changeLocalRetention.py](https://github.com/cohesity/community-automation-samples/tree/main/python/changeLocalRetention) [`Update`] updated to use V2 APIs
 * [`2026-07-16`] [changeLocalRetention.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/changeLocalRetention) [`Update`] updated to use V2 APIs
