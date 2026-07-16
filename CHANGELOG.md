@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-07-16`] [changeLocalRetention.py](https://github.com/cohesity/community-automation-samples/tree/main/python/changeLocalRetention) [`Update`] updated to use V2 APIs
+* [`2026-07-16`] [changeLocalRetention.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/changeLocalRetention) [`Update`] updated to use V2 APIs
 * [`2026-07-15`] [protectHypervVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectHypervVMs) [`Update`] bug fix
 * [`2026-07-14`] [redundantProtectionReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/redundantProtectionReport) [`Update`] modernized authentication
 * [`2026-07-14`] [epicThroughputCalculator.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/epicThroughputCalculator) [`New`] Epic backup/restore throughput calculator
