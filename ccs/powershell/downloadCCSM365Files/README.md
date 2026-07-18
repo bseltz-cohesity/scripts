@@ -25,9 +25,17 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 Place both files in a folder together and run the main script like so:
 
 ```powershell
+# download from onedrive
 ./downloadCCSM365Files.ps1 -region us-east-2 `
                            -objectName someuser@mydomain.onmicrosoft.com `
-                           -filePath '/Documents/report.docx'
+                           -filePath '/Documents/report.docx' `
+                           -objectType OneDrive
+
+# download from sharepoint
+./downloadCCSM365Files.ps1 -region us-east-2 `
+                           -objectName 'Communication Site' `
+                           -filePath '/Site Pages/Home.aspx' `
+                           -objectType Sharepoint
 ```
 
 ## Authentication Parameters
