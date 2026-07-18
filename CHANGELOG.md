@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-07-18`] [downloadCCSM365Files.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/downloadCCSM365Files) [`New`] Download M365 OneDrive and Sharepoint files from CCS
 * [`2026-07-17`] [heliosDashboard.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/heliosDashboard) [`New`] Build an HTML Helios cluster health dashboard Using PowerShell
 * [`2026-07-16`] [expireOldSnapshots.py](https://github.com/cohesity/community-automation-samples/tree/main/python/expireOldSnapshots) [`Update`] updated to use V2 APIs
 * [`2026-07-16`] [expireOldSnapshots.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/expireOldSnapshots) [`Update`] updated to use V2 APIs
