@@ -114,7 +114,8 @@ $downloads = 0
 
 # find the requested object
 $protectedObjects = api get -v2 "data-protect/search/protected-objects?o365ObjectTypes=$($sourceEnvironment[$objectType])&searchString=$objectName&environments=kO365&regionIds=$region" # ,kUser
-$thisObject = $protectedObjects.objects | Where-Object name -eq $objectName
+
+$thisObject = $protectedObjects.objects | Where-Object {$_.name -eq $objectName -or $_.o365Params.primarySMTPAddress -eq $objectName}
 if($thisObject -and $sourceName){
     $thisObject = $thisObject | Where-Object {$_.sourceInfo.name -eq $sourceName}
 }
