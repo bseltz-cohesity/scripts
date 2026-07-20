@@ -91,6 +91,30 @@ function Get-SeverityBadge($severity) {
     }
 }
 
+function Get-RunStatusBadge($status) {
+    switch ($status) {
+        'Succeeded' { return '<span class="badge badge-ok">Succeeded</span>' }
+        'SucceededWithWarning' { return '<span class="badge badge-warning">Succeeded w/ Warning</span>' }
+        'Failed' { return '<span class="badge badge-critical">Failed</span>' }
+        'Running' { return '<span class="badge badge-info">Running</span>' }
+        'Accepted' { return '<span class="badge badge-info">Accepted</span>' }
+        'Finalizing' { return '<span class="badge badge-info">Finalizing</span>' }
+        'Canceling' { return '<span class="badge badge-muted">Canceling</span>' }
+        'Canceled' { return '<span class="badge badge-muted">Canceled</span>' }
+        'Skipped' { return '<span class="badge badge-muted">Skipped</span>' }
+        'Missed' { return '<span class="badge badge-muted">Missed</span>' }
+        'OnHold' { return '<span class="badge badge-muted">On Hold</span>' }
+        'LegalHold' { return '<span class="badge badge-muted">Legal Hold</span>' }
+        'Paused' { return '<span class="badge badge-muted">Paused</span>' }
+        default { return '<span class="badge badge-muted">n/a</span>' }
+    }
+}
+
+function Get-PausedBadge($isPaused) {
+    if ($isPaused -eq $true) { return '<span class="badge badge-warning">Paused</span>' }
+    return '<span class="no-data">&ndash;</span>'
+}
+
 function Get-PieColor($pct) {
     if ($pct -ge 90) { return '#e74c3c' }
     elseif ($pct -ge 70) { return '#f39c12' }
@@ -109,6 +133,19 @@ function Get-AlertCountHtml($critCount, $warnCount) {
     $warnClass = if ($warnCount -gt 0) { 'warn' } else { 'zero' }
     return "<span class=`"$critClass`">$critCount critical</span><span class=`"$warnClass`">$warnCount warning</span>"
 }
+
+# returns the most relevant run-summary object (local/replication/archival) for a
+# protection group's last run, so we have one place to pull status/time/messages from
+function Get-LastRunSummary($pg) {
+    $lastRun = $pg.lastRun
+    if (-not $lastRun) { return $null }
+    if ($lastRun.localBackupInfo) { return $lastRun.localBackupInfo }
+    if ($lastRun.originalBackupInfo) { return $lastRun.originalBackupInfo }
+    if ($lastRun.archivalInfo) { return $lastRun.archivalInfo.archivalTargetResults[0] }
+    return $null
+}
+
+$showProtectionGroups = $True
 
 "`nGathering cluster and alert data from $vip...`n"
 
@@ -172,23 +209,83 @@ foreach ($a in $openAlerts) {
     elseif ($a.severity -eq 'kWarning') { $statsByClusterMap[$cid].numWarningAlerts++ }
 }
 
+# "latest alert" per cluster prefers critical alerts over warnings - if a cluster has any open
+# critical alert, its most recent critical alert is shown here even if a warning came in more
+# recently. Only when a cluster has no open critical alerts does its most recent warning show.
 $latestAlertMap = @{}
-foreach ($a in ($openAlerts | Sort-Object latestTimestampUsecs -Descending)) {
-    $cid = $a.ResolvedClusterId
-    if (-not $latestAlertMap.ContainsKey($cid)) {
-        $latestAlertMap[$cid] = $a
-    }
+foreach ($grp in ($openAlerts | Group-Object ResolvedClusterId)) {
+    $criticalAlerts = @($grp.Group | Where-Object { $_.severity -eq 'kCritical' })
+    $candidates = if (@($criticalAlerts).Count -gt 0) { $criticalAlerts } else { $grp.Group }
+    $latestAlertMap[$grp.Name] = $candidates | Sort-Object latestTimestampUsecs -Descending | Select-Object -First 1
 }
 
-# group alerts by cluster, cap at 3 per cluster (newest first), clusters listed alphabetically
+# group alerts by cluster, cap at 3 per cluster, clusters listed alphabetically. Critical alerts
+# fill the 3 slots first (newest first); only if criticals don't fill all 3 slots do the newest
+# warnings fill the remainder.
 $sortedAlertDetails = @()
 $alertsByCluster = $openAlerts | Group-Object ResolvedClusterName | Sort-Object Name
 $zebraIndex = 0
 foreach ($grp in $alertsByCluster) {
-    $groupRows = $grp.Group | Sort-Object latestTimestampUsecs -Descending | Select-Object -First 3
+    $criticalRows = @($grp.Group | Where-Object { $_.severity -eq 'kCritical' } | Sort-Object latestTimestampUsecs -Descending | Select-Object -First 3)
+    $remainingSlots = 3 - @($criticalRows).Count
+    $warningRows = if ($remainingSlots -gt 0) { @($grp.Group | Where-Object { $_.severity -eq 'kWarning' } | Sort-Object latestTimestampUsecs -Descending | Select-Object -First $remainingSlots) } else { @() }
+    $groupRows = @($criticalRows) + @($warningRows)
     $thisZebraIndex = $zebraIndex
     $sortedAlertDetails += @($groupRows | Select-Object *, @{Name = 'ZebraGroup'; Expression = { $thisZebraIndex } })
     $zebraIndex++
+}
+
+# 3) protection groups per cluster, used for the optional Protection Groups table -----------------
+# only fetched when -showProtectionGroups is passed, since it's an extra round of calls that isn't
+# needed for the core dashboard. The Helios-wide /mcm/data-protect/protection-groups endpoint
+# doesn't return correct/complete data, so instead this queries each cluster's own v2 API
+# (/v2/data-protect/protection-groups) individually. heliosCluster switches the API session's
+# access-cluster context so calls route through Helios to that specific cluster; it's reset back
+# to the Helios-wide context (heliosCluster '-') once all clusters have been queried.
+# includeLastRunInfo=true pulls back each group's most recent run (status, start time, and any
+# error/warning messages) in the same call. Paginated via paginationCookie in case a cluster has
+# more Protection Groups than fit in a single page.
+$sortedProtectionGroups = @()
+if ($showProtectionGroups) {
+    "Gathering protection group data from $vip...`n"
+
+    $pgByCluster = @{}
+    foreach ($cluster in $clusters) {
+        if ($cluster.isConnectedToHelios -ne $true) {
+            # skip disconnected clusters - there's nothing current to fetch
+            continue
+        }
+        $null = heliosCluster $cluster.clusterName
+
+        $clusterProtectionGroups = @()
+        $paginationCookie = $null
+        do {
+            $uri = "data-protect/protection-groups?isDeleted=false&isActive=true&includeTenants=true&includeLastRunInfo=true"
+            if ($paginationCookie) { $uri += "&paginationCookie=$paginationCookie" }
+            $pgResp = api get -v2 $uri
+            $clusterProtectionGroups += @($pgResp.protectionGroups) | Where-Object { $null -ne $_ }
+            $paginationCookie = $pgResp.paginationCookie
+        } while ($paginationCookie)
+
+        if (@($clusterProtectionGroups).Count -gt 0) {
+            foreach ($pg in $clusterProtectionGroups) {
+                $pg | Add-Member -NotePropertyName 'ResolvedClusterName' -NotePropertyValue $cluster.clusterName -Force
+            }
+            $pgByCluster[$cluster.clusterName] = $clusterProtectionGroups
+        }
+    }
+    # return the API session to the Helios-wide context
+    $null = heliosCluster '-'
+
+    # group by cluster (alphabetically), groups within a cluster sorted by name, zebra striped
+    # per cluster like the alert detail table above
+    $pgZebraIndex = 0
+    foreach ($clusterName in ($pgByCluster.Keys | Sort-Object)) {
+        $groupRows = $pgByCluster[$clusterName] | Sort-Object name
+        $thisZebraIndex = $pgZebraIndex
+        $sortedProtectionGroups += @($groupRows | Select-Object *, @{Name = 'ZebraGroup'; Expression = { $thisZebraIndex } })
+        $pgZebraIndex++
+    }
 }
 
 # 4) build summary counters ----------------------------------------------------------------------
@@ -201,6 +298,9 @@ $totalWarningAlerts = @($openAlerts | Where-Object { $_.severity -eq 'kWarning' 
 
 "`nFound $totalClusters clusters ($connectedClusters connected, $disconnectedClusters disconnected)"
 "$totalCriticalAlerts active critical alerts, $totalWarningAlerts active warning alerts (last $alertDays days)`n"
+if ($showProtectionGroups) {
+    "$(@($sortedProtectionGroups).Count) protection groups found across all clusters`n"
+}
 
 # 5) build the HTML ------------------------------------------------------------------------------
 $sb = [System.Text.StringBuilder]::new()
@@ -298,6 +398,8 @@ $sb = [System.Text.StringBuilder]::new()
   table.dashboard-table tr.zebra-b td { background: var(--zebra); }
   table.dashboard-table.alerts-table tr:hover td { background: var(--card-bg); }
   table.dashboard-table.alerts-table tr.zebra-b:hover td { background: var(--zebra); }
+  table.alert-detail-table th, table.alert-detail-table td { padding: 6px 10px; }
+  .date-cell { white-space: nowrap; }
   .cluster-name { font-weight: 600; text-transform: uppercase; }
   .badge {
     display: inline-block;
@@ -438,18 +540,70 @@ foreach ($cluster in $clusters) {
 
 [void]$sb.Append('</tbody></table>')
 
+# optional protection groups table ----------------------------------------------------------------
+if ($showProtectionGroups) {
+    [void]$sb.Append("<h2 class=`"section-title`">Protection Groups ($(@($sortedProtectionGroups).Count) total, grouped by cluster)</h2>")
+    [void]$sb.Append(@'
+<table class="dashboard-table alerts-table">
+<thead>
+<tr>
+  <th>Cluster</th>
+  <th>Protection Group</th>
+  <th>Last Run</th>
+  <th>Last Status</th>
+  <th>Paused</th>
+  <th>Errors / Warnings</th>
+</tr>
+</thead>
+<tbody>
+'@)
+
+    if (@($sortedProtectionGroups).Count -eq 0) {
+        [void]$sb.Append('<tr><td colspan="6"><span class="no-data">No protection groups found.</span></td></tr>')
+    }
+    else {
+        foreach ($pg in $sortedProtectionGroups) {
+            $pgClusterName = HtmlEncode $pg.ResolvedClusterName
+            $pgName = HtmlEncode $pg.name
+
+            $runSummary = Get-LastRunSummary $pg
+            $lastRunHtml = if ($runSummary -and $runSummary.startTimeUsecs) { HtmlEncode (Format-Timestamp $runSummary.startTimeUsecs) } else { '<span class="no-data">&ndash;</span>' }
+            $lastStatusHtml = if ($runSummary -and $runSummary.status) { Get-RunStatusBadge $runSummary.status } else { '<span class="badge badge-muted">n/a</span>' }
+            $pausedHtml = Get-PausedBadge $pg.isPaused
+
+            $messages = @()
+            if ($runSummary -and $runSummary.messages) { $messages = @($runSummary.messages) | Where-Object { $_ } }
+            $issuesHtml = if (@($messages).Count -gt 0) { "<span class=`"desc`">$(HtmlEncode ($messages -join '; '))</span>" } else { '<span class="no-data">&ndash;</span>' }
+
+            $zebraClass = if (($pg.ZebraGroup % 2) -eq 0) { 'zebra-a' } else { 'zebra-b' }
+
+            [void]$sb.Append("<tr class=`"$zebraClass`">")
+            [void]$sb.Append("<td class=`"cluster-name`">$pgClusterName</td>")
+            [void]$sb.Append("<td>$pgName</td>")
+            [void]$sb.Append("<td>$lastRunHtml</td>")
+            [void]$sb.Append("<td>$lastStatusHtml</td>")
+            [void]$sb.Append("<td>$pausedHtml</td>")
+            [void]$sb.Append("<td class=`"alert-summary`">$issuesHtml</td>")
+            [void]$sb.Append('</tr>')
+        }
+    }
+
+    [void]$sb.Append('</tbody></table>')
+}
+
 # alert detail table
 [void]$sb.Append("<h2 class=`"section-title`">Open Critical &amp; Warning Alerts ($(@($sortedAlertDetails).Count) shown, up to 3 per cluster)</h2>")
 [void]$sb.Append(@'
-<table class="dashboard-table alerts-table">
+<table class="dashboard-table alerts-table alert-detail-table">
 <thead>
 <tr>
   <th>Cluster</th>
   <th>Severity</th>
   <th>Category</th>
   <th>Alert</th>
-  <th>First Seen</th>
-  <th>Last Seen</th>
+  <th>Description</th>
+  <th class="date-cell">First Seen</th>
+  <th class="date-cell">Last Seen</th>
   <th>Occurrences</th>
 </tr>
 </thead>
@@ -457,7 +611,7 @@ foreach ($cluster in $clusters) {
 '@)
 
 if (@($sortedAlertDetails).Count -eq 0) {
-    [void]$sb.Append('<tr><td colspan="7"><span class="no-data">No open critical or warning alerts in the selected window.</span></td></tr>')
+    [void]$sb.Append('<tr><td colspan="8"><span class="no-data">No open critical or warning alerts in the selected window.</span></td></tr>')
 }
 else {
     foreach ($a in $sortedAlertDetails) {
@@ -466,6 +620,7 @@ else {
         $alertName = HtmlEncode $a.alertDocument.alertName
         if (-not $alertName) { $alertName = HtmlEncode $a.alertCode }
         $alertSummary = HtmlEncode $a.alertDocument.alertSummary
+        $alertDescriptionHtml = if ($a.alertDocument.alertDescription) { HtmlEncode $a.alertDocument.alertDescription } else { '<span class="no-data">&ndash;</span>' }
         $firstSeen = Format-Timestamp $a.firstTimestampUsecs
         $lastSeen = Format-Timestamp $a.latestTimestampUsecs
         $occurrences = if ($a.dedupCount -and $a.dedupCount -gt 0) { $a.dedupCount } else { 1 }
@@ -482,14 +637,16 @@ else {
         [void]$sb.Append("<td>$(Get-SeverityBadge $a.severity)</td>")
         [void]$sb.Append("<td>$category</td>")
         [void]$sb.Append("<td class=`"alert-summary`">$alertCell</td>")
-        [void]$sb.Append("<td>$firstSeen</td>")
-        [void]$sb.Append("<td>$lastSeen</td>")
+        [void]$sb.Append("<td class=`"alert-summary`">$alertDescriptionHtml</td>")
+        [void]$sb.Append("<td class=`"date-cell`">$firstSeen</td>")
+        [void]$sb.Append("<td class=`"date-cell`">$lastSeen</td>")
         [void]$sb.Append("<td>$occurrences</td>")
         [void]$sb.Append('</tr>')
     }
 }
 
 [void]$sb.Append('</tbody></table>')
+
 [void]$sb.Append("<footer>heliosDashboard.ps1 &mdash; generated $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')</footer>")
 [void]$sb.Append('</div></body></html>')
 
