@@ -219,9 +219,10 @@ foreach ($grp in ($openAlerts | Group-Object ResolvedClusterId)) {
     $latestAlertMap[$grp.Name] = $candidates | Sort-Object latestTimestampUsecs -Descending | Select-Object -First 1
 }
 
-# group alerts by cluster, cap at 3 per cluster, clusters listed alphabetically. Critical alerts
-# fill the 3 slots first (newest first); only if criticals don't fill all 3 slots do the newest
-# warnings fill the remainder.
+# group alerts by cluster (alphabetical), cap at 3 per cluster. Which 3 alerts get chosen still
+# prefers criticals over warnings (criticals fill the slots first, newest first; warnings only
+# fill any slots criticals don't use) - but the chosen rows are then re-sorted newest-to-oldest
+# for display, so the secondary sort within each cluster is strictly by time, not severity.
 $sortedAlertDetails = @()
 $alertsByCluster = $openAlerts | Group-Object ResolvedClusterName | Sort-Object Name
 $zebraIndex = 0
@@ -229,7 +230,7 @@ foreach ($grp in $alertsByCluster) {
     $criticalRows = @($grp.Group | Where-Object { $_.severity -eq 'kCritical' } | Sort-Object latestTimestampUsecs -Descending | Select-Object -First 3)
     $remainingSlots = 3 - @($criticalRows).Count
     $warningRows = if ($remainingSlots -gt 0) { @($grp.Group | Where-Object { $_.severity -eq 'kWarning' } | Sort-Object latestTimestampUsecs -Descending | Select-Object -First $remainingSlots) } else { @() }
-    $groupRows = @($criticalRows) + @($warningRows)
+    $groupRows = @($criticalRows + $warningRows) | Sort-Object latestTimestampUsecs -Descending
     $thisZebraIndex = $zebraIndex
     $sortedAlertDetails += @($groupRows | Select-Object *, @{Name = 'ZebraGroup'; Expression = { $thisZebraIndex } })
     $zebraIndex++
@@ -316,6 +317,8 @@ $sb = [System.Text.StringBuilder]::new()
     --ok: #3fa66a;
     --warning: #f39c12;
     --critical: #e74c3c;
+    --warning-badge: #c68a26;
+    --critical-badge: #bd5045;
     --info: #4a80b0;
     --muted: #95a5a6;
     --bg: #f4f6f8;
@@ -411,8 +414,8 @@ $sb = [System.Text.StringBuilder]::new()
     white-space: nowrap;
   }
   .badge-ok { background: var(--ok); }
-  .badge-warning { background: var(--warning); }
-  .badge-critical { background: var(--critical); }
+  .badge-warning { background: var(--warning-badge); }
+  .badge-critical { background: var(--critical-badge); }
   .badge-info { background: var(--info); }
   .badge-muted { background: var(--muted); }
   .pie-wrap { position: relative; width: 48px; height: 48px; flex: none; }
