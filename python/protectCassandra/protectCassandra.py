@@ -152,7 +152,7 @@ if job is None or len(job) == 0:
             policy = policy[0]
 
     # get storageDomain
-    viewBoxes = api('get', 'viewBoxes')
+    viewBoxes = [v for v in api('get', 'viewBoxes') if 'COHESITY_CAD_VIEWBOX' not in v['name']]
     viewBox = [v for v in viewBoxes if v['name'].lower() == storagedomain.lower()]
     if viewBox is None or len(viewBox) == 0:
         if usefirststoragedomain is True:
@@ -160,8 +160,7 @@ if job is None or len(job) == 0:
         else:
             print('Storage Domain %s not found. Valid Storage Domains are:\n' % storagedomain)
             for vb in sorted(viewBoxes, key=lambda vb: vb['name'].lower()):
-                if 'COHESITY_CAD_VIEWBOX' not in vb['name']:
-                    print('    %s' % vb['name'])
+                print('    %s' % vb['name'])
             print('')
             exit(1)
     else:
