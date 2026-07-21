@@ -14,7 +14,8 @@ param (
     [Parameter()][array]$clusterName,
     [Parameter()][array]$jobName,
     [Parameter()][string]$jobList,
-    [Parameter()][switch]$transportErrorsOnly
+    [Parameter()][switch]$transportErrorsOnly,
+    [Parameter()][switch]$restart
 )
 
 # gather list from command line params and file
@@ -108,7 +109,7 @@ foreach($v in $vip){
                 }
             }
 
-            "Getting protection run status"
+            # "Getting protection run status"
             foreach($job in $jobs | Sort-Object -Property name){
                 $refreshSourceIds = @()
                 $endUsecs = dateToUsecs (Get-Date)
@@ -160,46 +161,51 @@ foreach($v in $vip){
                     if($needsRun){
                         "        Refreshing sources..."
                         foreach($sourceId in $refreshSourceIds){
-                            $result = api post "protectionSources/refresh/$sourceId"
-                            $returnId = waitForRefresh($sourceId)
+                            if($restart){
+                                $result = api post "protectionSources/refresh/$sourceId"
+                                $returnId = waitForRefresh($sourceId)
+                            }
                         }
                         $jobId = $job.id
                         $policy = api get protectionPolicies | Where-Object {$_.id -eq $job.policyId}
                         # local retention from policy
-                        $copyRunTargets = @()
-                        # replicas from policy
-                        if($policy.PSObject.Properties['snapshotReplicationCopyPolicies']){
-                            foreach($replica in $policy.snapshotReplicationCopyPolicies){
-                                if(!($copyRunTargets | Where-Object {$_.replicationTarget.clusterName -eq $replica.target.clusterName})){
-                                    $copyRunTargets = @($copyRunTargets + @{
-                                        "daysToKeep"        = $replica.daysToKeep;
-                                        "replicationTarget" = $replica.target;
-                                        "type"              = "kRemote"
-                                    })
-                                }
-                            }
-                        }
-                        # archives from policy
-                        if($policy.PSObject.Properties['snapshotArchivalCopyPolicies']){
-                            foreach($archive in $policy.snapshotArchivalCopyPolicies){
-                                if(!($copyRunTargets | Where-Object {$_.archivalTarget.vaultName -eq $archive.target.vaultName})){
-                                    $copyRunTargets = @($copyRunTargets + @{
-                                        "archivalTarget" = $archive.target;
-                                        "daysToKeep"     = $archive.daysToKeep;
-                                        "type"           = "kArchival"
-                                    })
-                                }
-                            }
-                        }
+                        # $copyRunTargets = @()
+                        # # replicas from policy
+                        # if($policy.PSObject.Properties['snapshotReplicationCopyPolicies']){
+                        #     foreach($replica in $policy.snapshotReplicationCopyPolicies){
+                        #         if(!($copyRunTargets | Where-Object {$_.replicationTarget.clusterName -eq $replica.target.clusterName})){
+                        #             $copyRunTargets = @($copyRunTargets + @{
+                        #                 "daysToKeep"        = $replica.daysToKeep;
+                        #                 "replicationTarget" = $replica.target;
+                        #                 "type"              = "kRemote"
+                        #             })
+                        #         }
+                        #     }
+                        # }
+                        # # archives from policy
+                        # if($policy.PSObject.Properties['snapshotArchivalCopyPolicies']){
+                        #     foreach($archive in $policy.snapshotArchivalCopyPolicies){
+                        #         if(!($copyRunTargets | Where-Object {$_.archivalTarget.vaultName -eq $archive.target.vaultName})){
+                        #             $copyRunTargets = @($copyRunTargets + @{
+                        #                 "archivalTarget" = $archive.target;
+                        #                 "daysToKeep"     = $archive.daysToKeep;
+                        #                 "type"           = "kArchival"
+                        #             })
+                        #         }
+                        #     }
+                        # }
                         $runParams = @{
                             "runType" = $runType;
                             "usePolicyDefaults" = $True;
-                            "copyRunTargets" = @($copyRunTargets);
                             "runNowParameters" = $runNowParameters;
                         }
-
-                        $newRun = api post "protectionJobs/run/$jobId" $runParams
-                        Write-Host "        Running job $($job.name) again..."
+                        #                             "copyRunTargets" = @($copyRunTargets);
+                        if($restart){
+                            $newRun = api post "protectionJobs/run/$jobId" $runParams
+                            Write-Host "        Running job $($job.name) again..."
+                        }else{
+                            Write-Host "        Would run job $($job.name) again..."
+                        }
                     }
                 }
             }

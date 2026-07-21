@@ -28,7 +28,8 @@ Place all files in a folder together. And run the script like so:
 # example
 ./restartFailedJobs.ps1 -vip mycluster `
                         -username myuser `
-                        -domain mydomain.net
+                        -domain mydomain.net `
+                        -restart
 # end example
 ```
 
@@ -38,7 +39,8 @@ To run the script against multiple clusters:
 # example
 ./restartFailedJobs.ps1 -vip mycluster1, mycluster2 `
                         -username myuser `
-                        -domain mydomain.net
+                        -domain mydomain.net `
+                        -restart
 # end example
 ```
 
@@ -46,7 +48,7 @@ To run the script against all helios-connected clusters:
 
 ```powershell
 # example
-./restartFailedJobs.ps1 -username myuser@mydomain.net
+./restartFailedJobs.ps1 -username myuser@mydomain.net -restart
 # end example
 ```
 
@@ -74,6 +76,7 @@ To run the script against select helios clusters:
 
 ## Other Parameters
 
+* -restart: (optional) report only mode if omitted
 * -jobName: (optional) names of protection jobs to include (comma separated)
 * -jobList: (optional) text file of job names to include (one per line)
 * -transportErrorsOnly: (optional) restart backup only for sources that failed with a transport error
