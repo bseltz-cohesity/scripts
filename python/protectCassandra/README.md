@@ -100,6 +100,7 @@ You can exclude keyspaces and tables:
 ## New Job Parameters
 
 * -sd, --storagedomain: (optional) name of storage domain to create job in (default is DefaultStorageDomain)
+* -uf, --usefirststoragedomain: (optional) if specified storage domain is not found, use the first storage domain
 * -p, --policyname: (optional) name of protection policy to use for new job (only required for new job)
 * -tz, --timezone: (optional) time zone for new job (default is US/Eastern)
 * -st, --starttime: (optional) start time for new job (default is 21:00)

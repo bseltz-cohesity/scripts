@@ -26,6 +26,7 @@ parser.add_argument('-j', '--jobname', type=str, required=True)
 parser.add_argument('-e', '--exclude', action='append', type=str)
 parser.add_argument('-x', '--excludelist', type=str)
 parser.add_argument('-sd', '--storagedomain', type=str, default='DefaultStorageDomain')
+parser.add_argument('-uf', '--usefirststoragedomain', action='store_true')
 parser.add_argument('-p', '--policyname', type=str, default=None)
 parser.add_argument('-tz', '--timezone', type=str, default='US/Eastern')
 parser.add_argument('-st', '--starttime', type=str, default='21:00')
@@ -78,6 +79,7 @@ alertrecipients = args.alertrecipient
 alertslaviolation = args.alertslaviolation
 alertsuccess = args.alertsuccess
 qospolicy = args.qospolicy
+usefirststoragedomain = args.usefirststoragedomain
 
 def gatherList(param=None, filename=None, name='items', required=True):
     items = []
@@ -150,10 +152,14 @@ if job is None or len(job) == 0:
             policy = policy[0]
 
     # get storageDomain
-    viewBox = [v for v in api('get', 'viewBoxes') if v['name'].lower() == storagedomain.lower()]
+    viewBoxes = api('get', 'viewBoxes')
+    viewBox = [v for v in viewBoxes if v['name'].lower() == storagedomain.lower()]
     if viewBox is None or len(viewBox) == 0:
-        print('Storage Domain %s not found' % storagedomain)
-        exit(1)
+        if usefirststoragedomain is True:
+            viewBox = viewBoxes[0]
+        else:
+            print('Storage Domain %s not found' % storagedomain)
+            exit(1)
     else:
         viewBox = viewBox[0]
 
