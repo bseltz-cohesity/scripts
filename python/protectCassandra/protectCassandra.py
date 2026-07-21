@@ -158,7 +158,11 @@ if job is None or len(job) == 0:
         if usefirststoragedomain is True:
             viewBox = viewBoxes[0]
         else:
-            print('Storage Domain %s not found' % storagedomain)
+            print('Storage Domain %s not found. Valid Storage Domains are:\n' % storagedomain)
+            for vb in sorted(viewBoxes, key=lambda vb: vb['name'].lower()):
+                if 'COHESITY_CAD_VIEWBOX' not in vb['name']:
+                    print('    %s' % vb['name'])
+            print('')
             exit(1)
     else:
         viewBox = viewBox[0]
