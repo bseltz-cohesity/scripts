@@ -651,8 +651,18 @@ IGNORE_PATHS = frozenset(ignore_paths)
 RE_MATCH_PATHS = re.compile('|'.join(re.escape(p) for p in match_paths))
 RE_TAGS = re.compile(r'(<.*?[\w:|\.|-|"|=]+>)')
 RE_SPLIT_LINE = re.compile(r'[="\[><]')
-RE_WIN_PATH = re.compile(r'(\\.+[\w:.|\\-]+)')
-RE_LINUX_PATH = re.compile(r'(\/.+[\w:.|\\-]+)')
+# Same false-positive risk as RE_LINUX_PATH below (e.g. a literal "\" used as
+# a label separator rather than a path), so it gets the same (?<!\w) guard.
+RE_WIN_PATH = re.compile(r'(?<!\w)(\\.+[\w:.|\\-]+)')
+# Leading (?<!\w) requires the '/' to NOT be immediately preceded by a word
+# character. Without it, a plain-English "word/word" label like
+# "Jobs/Client: 99" or "Read/Write ratio" gets mistaken for a Linux path
+# (matching "/Client: 99" or "/Write ratio") and redacted as a false
+# positive. Real paths are essentially always preceded by whitespace, the
+# start of the string, or punctuation (=, ", :, etc.) — never by a letter or
+# digit — so this excludes the false-positive case without affecting real
+# path detection.
+RE_LINUX_PATH = re.compile(r'(?<!\w)(\/.+[\w:.|\\-]+)')
 # Full slash-separated date pattern (MM/DD/YYYY or MM/DD/YY).  Used to mask
 # date slashes before RE_LINUX_PATH runs so that the '/' inside a date is not
 # mistaken for a path separator.
