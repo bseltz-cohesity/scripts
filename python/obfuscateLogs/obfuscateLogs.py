@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """obfuscate logs"""
 
-VERSION = '2026-06-26'
+VERSION = '2026-07-29'
 
 import os
 import gzip
@@ -482,36 +482,52 @@ def _worker_initializer(safepaths_file) -> None:
 # ---------------------------------------------------------------------------
 # NetBackup version-number exclusion
 # ---------------------------------------------------------------------------
-# NetBackup version strings (e.g. 10.3.0.1, 9.1.0.1) look exactly like IPv4
-# addresses and would be incorrectly redacted by the IPv4 custom rule.
+# NetBackup version strings (e.g. 10.3.0.1, 9.1.0.1, 11.1.0.2) look exactly
+# like IPv4 addresses and would be incorrectly redacted by the IPv4-shaped
+# custom rules (including the '/etc/hosts'-style rule, which matches a
+# dotted-quad followed by trailing hostname-like tokens — e.g. the common
+# binary version stamp "NetBackup_11.1.0.2 3748366424").
 #
 # Detection strategy (two-tier):
 #   1. Keyword context: if an NBU-related keyword (NetBackup, nbu, version,
 #      etc.) appears on the same line, any structurally valid NBU version is
 #      preserved regardless of its numeric value.
 #   2. No-keyword structural check: the value must match the narrow pattern
-#      MAJOR.MINOR.0.BUILD where MAJOR is 7-10 and MINOR >= 1.  This covers
+#      MAJOR.MINOR.0.BUILD where MAJOR is 7-29 and MINOR >= 1.  This covers
 #      the common annotation-free case (e.g. a bare "10.3.0.1" in a path)
 #      while still redacting genuinely ambiguous values like 10.0.0.1 that
 #      are indistinguishable from a private gateway IP without context.
+#
+# Major-version range: NetBackup majors observed in the wild run 7-11 as of
+# 2026 (roughly one major release per year), so the upper bound is set to 29
+# to leave headroom for a couple of decades of future releases without
+# widening the match so far that it starts swallowing arbitrary two-digit
+# IPv4 first-octets (30-99).
 
-# Structural pattern: major 7-10, minor 0-9, patch 0-9, build 0-99
+# Structural pattern: major 7-29, minor 0-9, patch 0-9, build 0-99
 RE_NBU_STRUCTURAL = re.compile(
-    r'^(?:[7-9]|10)\.[0-9]\.[0-9]\.(?:[0-9]|[1-9][0-9])$'
+    r'^(?:[7-9]|1[0-9]|2[0-9])\.[0-9]\.[0-9]\.(?:[0-9]|[1-9][0-9])$'
 )
 
-# Keywords that indicate a dotted-quad is a product version, not an IP
+# Keywords that indicate a dotted-quad is a product version, not an IP.
+# Uses alnum-only lookaround (instead of \b) so a keyword glued to the
+# version by an underscore — e.g. the binary stamp "NetBackup_11.1.0.2" — is
+# still recognized. \b would fail here because '_' counts as a word
+# character, so there is no boundary between "NetBackup" and "_11.1.0.2".
 RE_NBU_KEYWORDS = re.compile(
-    r'(?i)\b(?:netbackup|veritas|openv|nbu|bpcd|bprd|nbpem|nbjm|nbim'
-    r'|version|release|ver|build|installed|upgrade|patch)\b'
+    r'(?i)(?<![A-Za-z0-9])(?:netbackup|veritas|openv|nbu|bpcd|bprd|nbpem|nbjm|nbim'
+    r'|version|release|ver|build|installed|upgrade|patch)(?![A-Za-z0-9])'
 )
 
 # Types of custom-rule matches that could incorrectly consume version numbers.
 # Add more type prefixes here if new IP-like rules are introduced.
+# 'redacted_etc_' (the '/etc/hosts'-style rule) is included because it also
+# matches a leading dotted-quad, just with trailing hostname tokens appended.
 _IP_LIKE_RULE_TYPES = frozenset([
     'redacted_ipv4_',
     'redacted_ip_',
     'redacted_ipv4',
+    'redacted_etc_',
 ])
 
 
@@ -531,6 +547,29 @@ def is_nbu_version(value: str, context: str = '') -> bool:
         return True
     parts = value.split('.')
     return int(parts[2]) == 0 and int(parts[1]) >= 1
+
+
+def _nbu_candidate(match: str, prefix: str) -> str:
+    """Extract the portion of a custom-rule match to test against
+    is_nbu_version().
+
+    Plain IPv4-shaped rules match a clean dotted-quad, so the match itself is
+    the candidate. The '/etc/hosts'-style rule additionally captures trailing
+    hostname-like tokens after the dotted-quad (e.g. "11.1.0.2 3748366424"),
+    so only the leading whitespace-delimited token is relevant.
+    """
+    if prefix == 'redacted_etc_':
+        head = match.split(None, 1)
+        return head[0] if head else match
+    return match
+
+
+def _should_preserve_as_nbu(match: str, prefix: str, context: str) -> bool:
+    """Return True if an IP-shaped custom-rule match should be left
+    unredacted because it is actually a NetBackup version number."""
+    if prefix not in _IP_LIKE_RULE_TYPES:
+        return False
+    return is_nbu_version(_nbu_candidate(match, prefix), context)
 
 
 def is_safe_linux_path(path: str) -> bool:
@@ -715,32 +754,75 @@ class LockedRedactionRegistry:
 
 
 # ---------------------------------------------------------------------------
+# Standard (built-in) redaction rules
+# ---------------------------------------------------------------------------
+# These rules are always applied, independent of any user-supplied
+# --customrules file, because they identify categories of sensitive data
+# (hardware identifiers, certificate/key fingerprints) that should never be
+# left in an obfuscated log regardless of site-specific configuration.
+#
+# Order matters: rules below are applied in list order, and each rule's
+# matches are tokenized before the next rule scans the (already-partially-
+# redacted) text. A SHA-1/SHA-256 fingerprint is structurally a longer run of
+# colon-separated hex octets than a MAC address, so the fingerprint rule MUST
+# run first — otherwise a 20- or 32-octet fingerprint gets fragmented into
+# several bogus 6-octet MAC matches instead of being tokenized as a whole.
+
+RE_FINGERPRINT = re.compile(
+    r'(?i)\b(?:(?:[0-9A-Fa-f]{2}:){31}[0-9A-Fa-f]{2}'  # SHA-256: 32 octets
+    r'|(?:[0-9A-Fa-f]{2}:){19}[0-9A-Fa-f]{2})\b'        # SHA-1: 20 octets
+)
+
+RE_MAC = re.compile(
+    r'(?i)\b(?:[0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5}'    # colon-separated
+    r'|(?:[0-9A-Fa-f]{2}-){5}[0-9A-Fa-f]{2}'            # hyphen-separated
+    r'|[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4})\b'  # Cisco dotted-quad
+)
+
+STANDARD_RULES = [
+    {
+        'type': 'redacted_fingerprint_',
+        'description': 'SHA-256 (32 octets) / SHA-1 (20 octets) certificate or key fingerprints',
+        'regex': RE_FINGERPRINT,
+    },
+    {
+        'type': 'redacted_mac_',
+        'description': 'MAC address (colon, hyphen, or Cisco dotted-quad hex format)',
+        'regex': RE_MAC,
+    },
+]
+
+
+def _effective_rules(crlist):
+    """Return the full ordered rule list to apply: built-in standard rules
+    first, followed by any user-supplied custom rules (if provided)."""
+    return STANDARD_RULES + (crlist if crlist else [])
+
+
+# ---------------------------------------------------------------------------
 # Filename redaction
 # ---------------------------------------------------------------------------
 
 def redact_filename(filename: str, crlist, registry: 'RedactionRegistry') -> str:
-    """Apply custom redaction rules to a filename (base name only).
+    """Apply standard + custom redaction rules to a filename (base name only).
 
     Returns the (possibly modified) filename. If no rules match, the original
     filename is returned unchanged.
     """
-    if crlist is None:
-        return filename
-
     new_name = filename
-    for rule in crlist:
+    for rule in _effective_rules(crlist):
         matches = re.findall(rule['regex'], new_name)
         prefix = rule.get('type', 'redacted_rule')
         for match in matches:
             if isinstance(match, tuple):
                 for submatch in match:
                     if submatch:
-                        if prefix in _IP_LIKE_RULE_TYPES and is_nbu_version(submatch, new_name):
+                        if _should_preserve_as_nbu(submatch, prefix, new_name):
                             continue
                         token = registry.redact(submatch, prefix)
                         new_name = new_name.replace(submatch, token)
             else:
-                if prefix in _IP_LIKE_RULE_TYPES and is_nbu_version(match, new_name):
+                if _should_preserve_as_nbu(match, prefix, new_name):
                     continue
                 token = registry.redact(match, prefix)
                 new_name = new_name.replace(match, token)
@@ -752,28 +834,30 @@ def redact_filename(filename: str, crlist, registry: 'RedactionRegistry') -> str
 # ---------------------------------------------------------------------------
 
 def apply_custom_rules_to_substring(value: str, crlist, registry: 'RedactionRegistry') -> str:
-    """Apply custom redaction rules to an arbitrary substring (e.g. a path or
-    filename component).  This ensures that sensitive patterns embedded inside
-    a larger token — such as an IP address inside a folder name — are redacted
-    before the surrounding string is stored or written.
+    """Apply standard (built-in) + custom redaction rules to an arbitrary
+    substring (e.g. a path or filename component).  This ensures that
+    sensitive patterns embedded inside a larger token — such as an IP address
+    or MAC address inside a folder name — are redacted before the surrounding
+    string is stored or written.  *crlist* may be None; standard rules still
+    apply.
 
     Returns the value with any matching substrings replaced by their tokens.
     """
-    if crlist is None or not value:
+    if not value:
         return value
-    for rule in crlist:
+    for rule in _effective_rules(crlist):
         matches = re.findall(rule['regex'], value)
         prefix = rule.get('type', 'redacted_rule')
         for match in matches:
             if isinstance(match, tuple):
                 for submatch in match:
                     if submatch:
-                        if prefix in _IP_LIKE_RULE_TYPES and is_nbu_version(submatch, value):
+                        if _should_preserve_as_nbu(submatch, prefix, value):
                             continue
                         token = registry.redact(submatch, prefix)
                         value = value.replace(submatch, token)
             else:
-                if prefix in _IP_LIKE_RULE_TYPES and is_nbu_version(match, value):
+                if _should_preserve_as_nbu(match, prefix, value):
                     continue
                 token = registry.redact(match, prefix)
                 value = value.replace(match, token)
@@ -781,31 +865,32 @@ def apply_custom_rules_to_substring(value: str, crlist, registry: 'RedactionRegi
 
 
 def apply_custom_rules_multiline(lines: list, crlist, registry: 'RedactionRegistry') -> list:
-    """Apply custom rules to a sliding window of lines so that patterns
-    spanning newlines are matched and redacted.
+    """Apply standard (built-in) + custom rules to a sliding window of lines
+    so that patterns spanning newlines are matched and redacted.
 
     *lines* is a list of raw line strings (including newline characters).
+    *crlist* may be None; standard rules (fingerprint, MAC) still apply.
     Returns a new list of lines with redactions applied.
     """
-    if crlist is None or not lines:
+    if not lines:
         return lines
 
     # Join the buffer into a single string, apply each rule, then re-split
     # back to individual lines — preserving the original line boundaries.
     joined = ''.join(lines)
-    for rule in crlist:
+    for rule in _effective_rules(crlist):
         matches = re.findall(rule['regex'], joined)  # flags already compiled into pattern
         prefix = rule.get('type', 'redacted_rule')
         for match in matches:
             if isinstance(match, tuple):
                 for submatch in match:
                     if submatch:
-                        if prefix in _IP_LIKE_RULE_TYPES and is_nbu_version(submatch, joined):
+                        if _should_preserve_as_nbu(submatch, prefix, joined):
                             continue
                         token = registry.redact(submatch, prefix)
                         joined = joined.replace(submatch, token)
             else:
-                if prefix in _IP_LIKE_RULE_TYPES and is_nbu_version(match, joined):
+                if _should_preserve_as_nbu(match, prefix, joined):
                     continue
                 token = registry.redact(match, prefix)
                 joined = joined.replace(match, token)
@@ -1072,8 +1157,6 @@ def redact_archive_name(root, filename, crlist, registry=None):
     If the name is unchanged the original filepath is returned without any
     filesystem operation.
     """
-    if not crlist:
-        return os.path.join(root, filename)
     if registry is None:
         registry = RedactionRegistry()
     new_filename = redact_filename(filename, crlist, registry)
@@ -1215,7 +1298,7 @@ def walkdir(thispath, crlist, parallel=False, max_workers=None, registry=None, s
     # Rename directories bottom-up so child renames do not invalidate parent paths.
     # Uses the shared registry so directory-name tokens are consistent with the
     # tokens assigned inside file content.
-    if crlist and registry is not None:
+    if registry is not None:
         # Reverse so deepest directories come first
         for root, dirnames in reversed(all_dirs):
             for dirname in dirnames:
