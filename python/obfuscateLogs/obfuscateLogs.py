@@ -589,23 +589,45 @@ def is_safe_linux_path(path: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
-# Safe-path protection for custom (and standard) rule application
+# Protection from custom (and standard) rule application
 # ---------------------------------------------------------------------------
 # Custom rules (from --customrules) and the built-in STANDARD_RULES are
 # regex-matched directly against raw line/buffer text with no awareness of
-# path context. That means a rule aimed at, say, service IDs matching
-# "nb[a-z0-9]{5,6}" will just as happily match "nblogadm" inside the path
+# path context or of known NetBackup command-line utility names. That means
+# a rule aimed at, say, service IDs matching "nb[a-z0-9]{5,6}" will just as
+# happily match "nblogadm" inside the path
 # "/usr/openv/netbackup/bin/support/nblogadm" — even though that whole path
-# is on the SAFE_LINUX_PATHS allowlist — because the rule never sees "this
-# text is part of a known-safe path," only the raw substring "nblogadm".
+# is on the SAFE_LINUX_PATHS allowlist — or match a bare "nbatd" appearing
+# on its own with no path around it at all, because the rule never sees
+# "this text is a known-safe path" or "this token is a known NBU utility
+# name," only the raw substring.
 #
 # To fix this without having to special-case every possible colliding rule,
-# we scan the text up front for whitespace-delimited tokens that start with
-# '/' and are recognized as safe paths, and swap each one out for an inert
+# we scan the text up front for (a) known NetBackup utility names, anywhere
+# they appear, and (b) whitespace-delimited tokens that start with '/' and
+# are recognized as safe paths — and swap each one out for an inert
 # placeholder before any rule runs. Rules then simply can't see (or match
-# against) text inside a safe path. The placeholders are swapped back for
-# the real path text once all rules have been applied.
-#
+# against) that text. The placeholders are swapped back for the real text
+# once all rules have been applied.
+
+# Known NetBackup command-line utility/daemon names that must never be
+# redacted, regardless of whether they appear inside a recognized safe path,
+# an arbitrary/unlisted path, or standalone in log text with no path at all.
+KNOWN_NBU_UTILITIES = frozenset([
+    'nbemmcmd', 'nb_monitor_util', 'nbatd', 'nbdisco', 'nbevtmgr', 'nbjm',
+    'nbpxyhelper', 'nbrb', 'nbsl', 'nbsvcmon', 'ncfnbcs', 'nbars', 'nbaudit',
+    'nbemm', 'nbim', 'nbpem', 'nbpxytnl', 'nbrmms', 'nbstserv', 'nbvault',
+    'ndmp', 'nbcplogs', 'nbsu', 'nblogadm', 'nbproxy', 'nbsqladm',
+])
+
+# Case-insensitive, whole-token match (longest names first so alternation
+# doesn't need to rely purely on backtracking).
+RE_KNOWN_NBU_UTIL = re.compile(
+    r'(?i)\b(?:' +
+    '|'.join(re.escape(n) for n in sorted(KNOWN_NBU_UTILITIES, key=len, reverse=True)) +
+    r')\b'
+)
+
 # RE_PATH_TOKEN intentionally matches only a single contiguous, whitespace-
 # free token (unlike the greedier RE_LINUX_PATH used for actual path
 # redaction) so that protection doesn't accidentally swallow unrelated
@@ -624,33 +646,55 @@ _SAFE_PATH_PLACEHOLDER_START = '\x01'
 _SAFE_PATH_PLACEHOLDER_END = '\x02'
 
 
-def _protect_safe_paths(text: str):
-    """Temporarily replace known-safe path tokens in *text* with inert
-    placeholders so redaction rules cannot match substrings inside them.
+def _protect_from_rules(text: str):
+    """Temporarily replace (a) known NetBackup utility names and (b)
+    known-safe path tokens in *text* with inert placeholders so redaction
+    rules cannot match substrings inside them.
 
     Returns (protected_text, restore_map) where restore_map maps each
-    placeholder back to the original path text it replaced.
+    placeholder back to the original text it replaced.
     """
     restore_map: dict = {}
 
-    def _sub(m: 're.Match') -> str:
-        token = m.group(0)
-        if is_safe_linux_path(token):
-            placeholder = (f'{_SAFE_PATH_PLACEHOLDER_START}SAFEPATH'
-                            f'{len(restore_map)}{_SAFE_PATH_PLACEHOLDER_END}')
-            restore_map[placeholder] = token
-            return placeholder
+    def _placeholder(original: str) -> str:
+        token = (f'{_SAFE_PATH_PLACEHOLDER_START}PROT{len(restore_map)}'
+                 f'{_SAFE_PATH_PLACEHOLDER_END}')
+        restore_map[token] = original
         return token
 
-    protected_text = RE_PATH_TOKEN.sub(_sub, text)
+    # (a) Known utility names — protected unconditionally, path or no path.
+    protected_text = RE_KNOWN_NBU_UTIL.sub(lambda m: _placeholder(m.group(0)), text)
+
+    # (b) Safe-path tokens — protected only when recognized as safe.
+    def _path_sub(m: 're.Match') -> str:
+        token = m.group(0)
+        if is_safe_linux_path(token):
+            return _placeholder(token)
+        return token
+
+    protected_text = RE_PATH_TOKEN.sub(_path_sub, protected_text)
     return protected_text, restore_map
 
 
-def _restore_safe_paths(text: str, restore_map: dict) -> str:
-    """Undo _protect_safe_paths(): swap placeholders back for the original
-    path text once all redaction rules have been applied."""
-    for placeholder, original in restore_map.items():
-        text = text.replace(placeholder, original)
+def _restore_protected_text(text: str, restore_map: dict) -> str:
+    """Undo _protect_from_rules(): swap placeholders back for the original
+    text once all redaction rules have been applied.
+
+    Placeholders can nest — e.g. a safe-path token containing an
+    already-protected utility-name placeholder gets wrapped in its own outer
+    placeholder — so a single replacement pass isn't always enough to fully
+    unwind them. Keep re-applying the replacement map until no protected
+    markers remain, bounded by the number of placeholders so a bug here
+    can't spin forever.
+    """
+    if not restore_map:
+        return text
+    for _ in range(len(restore_map) + 1):
+        if _SAFE_PATH_PLACEHOLDER_START not in text:
+            break
+        for placeholder, original in restore_map.items():
+            if placeholder in text:
+                text = text.replace(placeholder, original)
     return text
 
 
@@ -885,7 +929,7 @@ def redact_filename(filename: str, crlist, registry: 'RedactionRegistry') -> str
     Returns the (possibly modified) filename. If no rules match, the original
     filename is returned unchanged.
     """
-    new_name = filename
+    new_name, _protect_restore = _protect_from_rules(filename)
     for rule in _effective_rules(crlist):
         matches = re.findall(rule['regex'], new_name)
         prefix = rule.get('type', 'redacted_rule')
@@ -902,6 +946,7 @@ def redact_filename(filename: str, crlist, registry: 'RedactionRegistry') -> str
                     continue
                 token = registry.redact(match, prefix)
                 new_name = new_name.replace(match, token)
+    new_name = _restore_protected_text(new_name, _protect_restore)
     return new_name
 
 
@@ -921,7 +966,7 @@ def apply_custom_rules_to_substring(value: str, crlist, registry: 'RedactionRegi
     """
     if not value:
         return value
-    value, _safe_restore = _protect_safe_paths(value)
+    value, _safe_restore = _protect_from_rules(value)
     for rule in _effective_rules(crlist):
         matches = re.findall(rule['regex'], value)
         prefix = rule.get('type', 'redacted_rule')
@@ -938,7 +983,7 @@ def apply_custom_rules_to_substring(value: str, crlist, registry: 'RedactionRegi
                     continue
                 token = registry.redact(match, prefix)
                 value = value.replace(match, token)
-    value = _restore_safe_paths(value, _safe_restore)
+    value = _restore_protected_text(value, _safe_restore)
     return value
 
 
@@ -956,7 +1001,7 @@ def apply_custom_rules_multiline(lines: list, crlist, registry: 'RedactionRegist
     # Join the buffer into a single string, apply each rule, then re-split
     # back to individual lines — preserving the original line boundaries.
     joined = ''.join(lines)
-    joined, _safe_restore = _protect_safe_paths(joined)
+    joined, _safe_restore = _protect_from_rules(joined)
     for rule in _effective_rules(crlist):
         matches = re.findall(rule['regex'], joined)  # flags already compiled into pattern
         prefix = rule.get('type', 'redacted_rule')
@@ -974,7 +1019,7 @@ def apply_custom_rules_multiline(lines: list, crlist, registry: 'RedactionRegist
                 token = registry.redact(match, prefix)
                 joined = joined.replace(match, token)
 
-    joined = _restore_safe_paths(joined, _safe_restore)
+    joined = _restore_protected_text(joined, _safe_restore)
 
     # Re-split on newlines after redaction.
     #
