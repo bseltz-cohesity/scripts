@@ -588,6 +588,72 @@ def is_safe_linux_path(path: str) -> bool:
     return False
 
 
+# ---------------------------------------------------------------------------
+# Safe-path protection for custom (and standard) rule application
+# ---------------------------------------------------------------------------
+# Custom rules (from --customrules) and the built-in STANDARD_RULES are
+# regex-matched directly against raw line/buffer text with no awareness of
+# path context. That means a rule aimed at, say, service IDs matching
+# "nb[a-z0-9]{5,6}" will just as happily match "nblogadm" inside the path
+# "/usr/openv/netbackup/bin/support/nblogadm" — even though that whole path
+# is on the SAFE_LINUX_PATHS allowlist — because the rule never sees "this
+# text is part of a known-safe path," only the raw substring "nblogadm".
+#
+# To fix this without having to special-case every possible colliding rule,
+# we scan the text up front for whitespace-delimited tokens that start with
+# '/' and are recognized as safe paths, and swap each one out for an inert
+# placeholder before any rule runs. Rules then simply can't see (or match
+# against) text inside a safe path. The placeholders are swapped back for
+# the real path text once all rules have been applied.
+#
+# RE_PATH_TOKEN intentionally matches only a single contiguous, whitespace-
+# free token (unlike the greedier RE_LINUX_PATH used for actual path
+# redaction) so that protection doesn't accidentally swallow unrelated
+# trailing content on the same line, e.g. "found /opt/foo/bar and 10.0.0.5"
+# must not protect "10.0.0.5" just because it trails a safe path token.
+RE_PATH_TOKEN = re.compile(r'(?<!\w)/[^\s,;"\'\[\]<>]+')
+
+# Control-byte sentinels: the file is read/written as latin-1, so any
+# placeholder must be representable in a single byte per char. Files with a
+# null byte in their first 8KB are already treated as binary and skipped
+# entirely (see obfuscatefile()), and true text/log content essentially
+# never contains raw control bytes like \x01/\x02, making them safe,
+# distinctive sentinels that no real rule pattern or log text will collide
+# with.
+_SAFE_PATH_PLACEHOLDER_START = '\x01'
+_SAFE_PATH_PLACEHOLDER_END = '\x02'
+
+
+def _protect_safe_paths(text: str):
+    """Temporarily replace known-safe path tokens in *text* with inert
+    placeholders so redaction rules cannot match substrings inside them.
+
+    Returns (protected_text, restore_map) where restore_map maps each
+    placeholder back to the original path text it replaced.
+    """
+    restore_map: dict = {}
+
+    def _sub(m: 're.Match') -> str:
+        token = m.group(0)
+        if is_safe_linux_path(token):
+            placeholder = (f'{_SAFE_PATH_PLACEHOLDER_START}SAFEPATH'
+                            f'{len(restore_map)}{_SAFE_PATH_PLACEHOLDER_END}')
+            restore_map[placeholder] = token
+            return placeholder
+        return token
+
+    protected_text = RE_PATH_TOKEN.sub(_sub, text)
+    return protected_text, restore_map
+
+
+def _restore_safe_paths(text: str, restore_map: dict) -> str:
+    """Undo _protect_safe_paths(): swap placeholders back for the original
+    path text once all redaction rules have been applied."""
+    for placeholder, original in restore_map.items():
+        text = text.replace(placeholder, original)
+    return text
+
+
 def mask_dates(text: str) -> str:
     """Replace '/' inside slash-separated dates with '_' so that RE_LINUX_PATH
     does not start a path match inside a date like 01/30/2026 or 01/30/26.
@@ -855,6 +921,7 @@ def apply_custom_rules_to_substring(value: str, crlist, registry: 'RedactionRegi
     """
     if not value:
         return value
+    value, _safe_restore = _protect_safe_paths(value)
     for rule in _effective_rules(crlist):
         matches = re.findall(rule['regex'], value)
         prefix = rule.get('type', 'redacted_rule')
@@ -871,6 +938,7 @@ def apply_custom_rules_to_substring(value: str, crlist, registry: 'RedactionRegi
                     continue
                 token = registry.redact(match, prefix)
                 value = value.replace(match, token)
+    value = _restore_safe_paths(value, _safe_restore)
     return value
 
 
@@ -888,6 +956,7 @@ def apply_custom_rules_multiline(lines: list, crlist, registry: 'RedactionRegist
     # Join the buffer into a single string, apply each rule, then re-split
     # back to individual lines — preserving the original line boundaries.
     joined = ''.join(lines)
+    joined, _safe_restore = _protect_safe_paths(joined)
     for rule in _effective_rules(crlist):
         matches = re.findall(rule['regex'], joined)  # flags already compiled into pattern
         prefix = rule.get('type', 'redacted_rule')
@@ -904,6 +973,8 @@ def apply_custom_rules_multiline(lines: list, crlist, registry: 'RedactionRegist
                     continue
                 token = registry.redact(match, prefix)
                 joined = joined.replace(match, token)
+
+    joined = _restore_safe_paths(joined, _safe_restore)
 
     # Re-split on newlines after redaction.
     #
