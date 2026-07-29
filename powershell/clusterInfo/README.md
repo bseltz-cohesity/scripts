@@ -24,15 +24,38 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 
 Place both files in a folder together and run the main script like so:
 
+To connect to a single cluster directly:
+
 ```powershell
 ./clusterInfo.ps1 -vip mycluster `
                   -username myusername `
                   -domain mydomain.net
 ```
 
+To connect to multiple clusters directly:
+
+```powershell
+./clusterInfo.ps1 -vip mycluster, mycluster2 `
+                  -username myusername `
+                  -domain mydomain.net
+```
+
+To connect to all helios clusters:
+
+```powershell
+./clusterInfo.ps1 -username myusername
+```
+
+To connect to specific helios clusters:
+
+```powershell
+./clusterInfo.ps1 -clusterName mycluster, mycluster2 `
+                  -username myusername
+```
+
 ## Authentication Parameters
 
-* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -vip: (optional) name or IP of one or more Cohesity clusters (defaults to helios.cohesity.com)
 * -username: (optional) name of user to connect to Cohesity (defaults to helios)
 * -domain: (optional) your AD domain (defaults to local)
 * -useApiKey: (optional) use API key for authentication
