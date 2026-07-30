@@ -41,6 +41,7 @@ parser.add_argument('-ar', '--alertrecipient', action='append', type=str)
 parser.add_argument('-av', '--alertslaviolation', action='store_true')
 parser.add_argument('-as', '--alertsuccess', action='store_true')
 parser.add_argument('-q', '--qospolicy', type=str, choices=['kBackupHDD', 'kBackupSSD', 'kBackupAll', None], default=None)
+parser.add_argument('-cad', '--cad', action='store_true')
 
 args = parser.parse_args()
 
@@ -80,6 +81,7 @@ alertslaviolation = args.alertslaviolation
 alertsuccess = args.alertsuccess
 qospolicy = args.qospolicy
 usefirststoragedomain = args.usefirststoragedomain
+cad = args.cad
 
 def gatherList(param=None, filename=None, name='items', required=True):
     items = []
@@ -152,19 +154,23 @@ if job is None or len(job) == 0:
             policy = policy[0]
 
     # get storageDomain
-    viewBoxes = [v for v in api('get', 'viewBoxes') if 'COHESITY_CAD_VIEWBOX' not in v['name']]
-    viewBox = [v for v in viewBoxes if v['name'].lower() == storagedomain.lower()]
-    if viewBox is None or len(viewBox) == 0:
-        if usefirststoragedomain is True:
-            viewBox = viewBoxes[0]
+    viewBoxId = None
+    if cad is not True:
+        viewBoxes = [v for v in api('get', 'viewBoxes') if 'COHESITY_CAD_VIEWBOX' not in v['name']]
+        viewBox = [v for v in viewBoxes if v['name'].lower() == storagedomain.lower()]
+        if viewBox is None or len(viewBox) == 0:
+            if usefirststoragedomain is True:
+                viewBox = viewBoxes[0]
+                viewBoxId = viewBox['id']
+            else:
+                print('Storage Domain %s not found. Valid Storage Domains are:\n' % storagedomain)
+                for vb in sorted(viewBoxes, key=lambda vb: vb['name'].lower()):
+                    print('    %s' % vb['name'])
+                print('')
+                exit(1)
         else:
-            print('Storage Domain %s not found. Valid Storage Domains are:\n' % storagedomain)
-            for vb in sorted(viewBoxes, key=lambda vb: vb['name'].lower()):
-                print('    %s' % vb['name'])
-            print('')
-            exit(1)
-    else:
-        viewBox = viewBox[0]
+            viewBox = viewBox[0]
+            viewBoxId = viewBox['id']
 
     # parse starttime
     try:
@@ -199,7 +205,7 @@ if job is None or len(job) == 0:
         "qosPolicy": qospolicy,
         "abortInBlackouts": False,
         "pauseInBlackouts": False,
-        "storageDomainId": viewBox['id'],
+        "storageDomainId": viewBoxId,
         "name": jobname,
         "environment": "kCassandra",
         "isPaused": False,
