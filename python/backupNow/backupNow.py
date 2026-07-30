@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2026.07.29
+# version 2026.07.30
 
 # version history
 # ===============
@@ -40,6 +40,7 @@
 # 2026.05.05 - bug fixes
 # 2026.05.20 - fixed new object search
 # 2026.07.29 - fixed string match for direct archival run
+# 2026.07.30 - fixed progress monitor for direct archival run and fixed exit code for job already running
 #
 # extended error codes
 # ====================
@@ -684,7 +685,10 @@ while runNow != "" and runNow is not None:
         if reportWaiting is True:
             if abortIfRunning:
                 out('job is already running')
-                bail(0)
+                if extendederrorcodes is True:
+                    bail(4)
+                else:
+                    bail(1)
             out('Waiting for existing run to finish')
             reportWaiting = False
     now = datetime.now()
@@ -817,19 +821,31 @@ if wait is True:
                 if x < len(run['objects']):
                     print('*** TIMED OUT WAITING FOR STRING MATCH')
                     bail(1)
-            if status in finishedStates:
-                break
             if progress:
                 try:
-                    progressPath = backupInfo['progressTaskId']
-                    progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&excludeSubTasks=false&includeFinishedTasks=false&useCachedData=%s' % (progressPath, cacheSetting), timeout=timeoutsec)
-                    progressTotal = progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']
-                    percentComplete = int(round(progressTotal))
-                    if percentComplete > lastProgress:
-                        out('%s%% completed' % percentComplete)
-                    lastProgress = percentComplete
-                except Exception:
+                    if 'progressTaskId' in backupInfo:
+                        progressPath = backupInfo['progressTaskId']
+                        progressMonitor = api('get', '/progressMonitors?taskPathVec=%s&excludeSubTasks=false&includeFinishedTasks=false&useCachedData=%s' % (progressPath, cacheSetting), timeout=timeoutsec)
+                        progressTotal = progressMonitor['resultGroupVec'][0]['taskVec'][0]['progress']['percentFinished']
+                        percentComplete = int(round(progressTotal))
+                        if percentComplete > lastProgress:
+                            out('%s%% completed' % percentComplete)
+                        lastProgress = percentComplete
+                    else:
+                        taskMon = api('get','data-protect/runs/%s/progress?includeEventLogs=true' % v2RunId, v=2, timeout=timeoutsec)
+                        if 'localRun' in taskMon:
+                            taskInfo = taskMon['localRun']
+                        else:
+                            taskInfo = taskMon['archivalRun'][0]
+                            percentComplete = int(round(taskInfo['percentageCompleted']))
+                            if percentComplete > lastProgress:
+                                out('%s%% completed' % percentComplete)
+                            lastProgress = percentComplete
+                except Exception as e2:
+                    # print(f"{type(e2).__name__}: {e2}")
                     pass
+            if status in finishedStates:
+                break
             statusRetryCount = 0
         except Exception as e:
             print(f"{type(e).__name__}: {e}")
