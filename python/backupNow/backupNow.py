@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2026.05.20
+# version 2026.07.29
 
 # version history
 # ===============
@@ -39,6 +39,7 @@
 # 2025.12.29 - replaced protectionSources API with v2 data-protect objects API
 # 2026.05.05 - bug fixes
 # 2026.05.20 - fixed new object search
+# 2026.07.29 - fixed string match for direct archival run
 #
 # extended error codes
 # ====================
@@ -761,6 +762,7 @@ if wait is True:
         x = 0
         s = 0
         try:
+            run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=false&useCachedData=%s' % (v2JobId, v2RunId, cacheSetting), v=2, timeout=timeoutsec)
             backupInfo = None
             if 'localBackupInfo' in run:
                 backupInfo = run['localBackupInfo']
@@ -771,7 +773,7 @@ if wait is True:
             if debugger:
                 print(':DEBUG: status = %s (%s)' % (status, statusRetryCount))
             if exitstring:
-                run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=true&useCachedData=%s' % (v2JobId, v2RunId, cacheSetting), v=2, timeout=timeoutsec)
+                run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=true' % (v2JobId, v2RunId), v=2, timeout=timeoutsec)
                 while x < len(run['objects']) and s < exitstringtimeoutsecs:
                     sleep(15)
                     s += 15
@@ -779,24 +781,35 @@ if wait is True:
                         break
                     x = 0
                     try:
-                        progressPath = backupInfo['progressTaskId']
-                        taskMon = api('get', '/progressMonitors?taskPathVec=%s&useCachedData=%s' % (progressPath, cacheSetting), timeout=timeoutsec)
-                        sources = taskMon['resultGroupVec'][0]['taskVec'][0]['subTaskVec']
-                        for source in sources:
-                            if source['taskPath'] != 'post_processing':
-                                # get pulse log messages
-                                eventmsgs = source['progress']['eventVec']
-                                foundkeystring = False
-                                # check for key string in event messages
-                                for eventmsg in eventmsgs:
-                                    if exitstring in eventmsg['eventMsg']:
-                                        foundkeystring = True
-                                if foundkeystring is True:
+                        if 'progressTaskId' in backupInfo:
+                            progressPath = backupInfo['progressTaskId']
+                            taskMon = api('get', '/progressMonitors?taskPathVec=%s&useCachedData=%s' % (progressPath, cacheSetting), timeout=timeoutsec)
+                            sources = taskMon['resultGroupVec'][0]['taskVec'][0]['subTaskVec']
+                            for source in sources:
+                                if source['taskPath'] != 'post_processing':
+                                    # get pulse log messages
+                                    eventmsgs = source['progress']['eventVec']
+                                    foundkeystring = False
+                                    # check for key string in event messages
+                                    for eventmsg in eventmsgs:
+                                        if exitstring in eventmsg['eventMsg']:
+                                            foundkeystring = True
+                                    if foundkeystring is True:
+                                        x += 1
+                                    else:
+                                        pass
+                                        # preprocessFinished = False
+                        else:
+                            taskMon = api('get','data-protect/runs/%s/progress?includeEventLogs=true' % v2RunId, v=2, timeout=timeoutsec)
+                            if 'localRun' in taskMon:
+                                taskInfo = taskMon['localRun']
+                            else:
+                                taskInfo = taskMon['archivalRun'][0]
+                            for object in taskInfo['objects']:
+                                if exitstring in [e['message'] for e in object['events']]:
                                     x += 1
-                                else:
-                                    pass
-                                    # preprocessFinished = False
-                    except Exception:
+                    except Exception as e2:
+                        print(f"{type(e2).__name__}: {e2}")
                         pass
                     if x >= len(run['objects']):
                         print('*** SUCCESSFUL STRING MATCH')
@@ -817,9 +830,9 @@ if wait is True:
                     lastProgress = percentComplete
                 except Exception:
                     pass
-            run = api('get', 'data-protect/protection-groups/%s/runs/%s?includeObjectDetails=false&useCachedData=%s' % (v2JobId, v2RunId, cacheSetting), v=2, timeout=timeoutsec)
             statusRetryCount = 0
         except Exception as e:
+            print(f"{type(e).__name__}: {e}")
             statusRetryCount += 1
             if debugger:
                 print(e)
