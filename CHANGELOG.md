@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-07-29`] [backupNow.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backupNow) [`Update`] fixed string match for direct archival run
 * [`2026-07-29`] [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`Update`] fixes
 * [`2026-07-29`] [clusterInfo.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/clusterInfo) [`Update`] added multi-cluster support
 * [`2026-07-18`] [downloadCCSM365Files.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/downloadCCSM365Files) [`New`] Download M365 OneDrive and Sharepoint files from CCS
