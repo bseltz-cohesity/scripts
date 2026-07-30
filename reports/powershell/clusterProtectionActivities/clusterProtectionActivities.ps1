@@ -37,7 +37,7 @@ $dateString = $now.ToString('yyyy-MM-dd')
 $outfileName = $(Join-Path -Path $outputPath -ChildPath "protectionActivityReport-$dateString.csv")
 
 # headings
-$headings = "Cluster Name,Activity Type,Target,Start Time,End Time,Duration,status,slaStatus,snapshotStatus,objectName,sourceName,groupName,policyName,Object Type,backupType,Logical Size $unit,Organization Name"
+$headings = "Cluster Name,Activity Type,Target,Start Time,End Time,Duration,status,slaStatus,snapshotStatus,objectName,sourceName,groupName,policyName,Object Type,backupType,Logical Size $unit,Data Read $unit,Data Written $unit,Logical Bytes Transferred $unit,Physical Bytes Transferred $unit,Organization Name"
 
 $headings | Out-File -FilePath $outfileName
 
@@ -70,8 +70,8 @@ if($localOnly){
 }
 
 function dateToString($dt, $format='yyyy-MM-dd HH:mm:ss'){
-    if($dt -eq $null){
-        return ''
+    if($dt -eq $null -or $dt -eq '-'){
+        return '-'
     }else{
         if($amPmFormat){
             $format = 'yyyy-MM-dd hh:mm:ss tt'
@@ -97,7 +97,13 @@ function reportReplications(){
         if($replicationStatus -eq 'Succeeded' -and $normalizeStatus[$objectStatus] -ne $replicationStatus){
             $replicationStatus = $normalizeStatus[$objectStatus]
         }
-        $cluster.name, 'Replication', $result.clusterName, $(dateToString $objectStartTime), $(dateToString $replicationEndTime), $replicationDurationSeconds, $replicationStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $objectLogicalSizeBytes, $tenant -join "," | Out-File -FilePath $outfileName -Append
+        $replicationActivityType = 'Replication'
+        if($result.PSObject.Properties['ownershipContext'] -and $result.ownershipContext -eq 'FortKnox'){
+            $replicationActivityType = 'ReplicaVault'
+        }
+        $replicationLogicalBytesTransferred = toUnits $result.stats.logicalBytesTransferred
+        $replicationPhysicalBytesTransferred = toUnits $result.stats.physicalBytesTransferred
+        $cluster.name, $replicationActivityType, $result.clusterName, $(dateToString $objectStartTime), $(dateToString $replicationEndTime), $replicationDurationSeconds, $replicationStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $objectLogicalSizeBytes, '-', '-', $replicationLogicalBytesTransferred, $replicationPhysicalBytesTransferred, $tenant -join "," | Out-File -FilePath $outfileName -Append
     }
 }
 
@@ -115,7 +121,15 @@ function reportArchives(){
         if($archiveStatus -eq 'Succeeded' -and $normalizeStatus[$objectStatus] -ne $archiveStatus){
             $archiveStatus = $normalizeStatus[$objectStatus]
         }
-        $cluster.name, 'Archival', $result.targetName, $(dateToString $objectStartTime), $(dateToString $archivalEndTime), $archivalDurationSeconds, $archiveStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $objectLogicalSizeBytes, $tenant -join "," | Out-File -FilePath $outfileName -Append
+        $archivalActivityType = 'Archival'
+        if($result.PSObject.Properties['ownershipContext'] -and $result.ownershipContext -eq 'FortKnox'){
+            $archivalActivityType = 'CloudVault'
+        }
+        # archivalInfo here is run-level (across all objects), so allocate this target's transfer
+        # stats to the current object based on its share of the run's total local backup data read
+        $archivalLogicalBytesTransferred = toUnits ($result.stats.logicalBytesTransferred * $objectShareOfRun)
+        $archivalPhysicalBytesTransferred = toUnits ($result.stats.physicalBytesTransferred * $objectShareOfRun)
+        $cluster.name, $archivalActivityType, $result.targetName, $(dateToString $objectStartTime), $(dateToString $archivalEndTime), $archivalDurationSeconds, $archiveStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $objectLogicalSizeBytes, '-', '-', $archivalLogicalBytesTransferred, $archivalPhysicalBytesTransferred, $tenant -join "," | Out-File -FilePath $outfileName -Append
     }
 }
 
@@ -145,17 +159,28 @@ function reportBackup(){
             $objectDurationSeconds = ("{0:n0}" -f ($objectEndTime - $objectStartTime).totalSeconds).replace(',','')
         }
         $objectLogicalSizeBytes = toUnits $snapshotInfo.stats.logicalSizeBytes
-        $objectBytesWritten = toUnits $snapshotInfo.stats.bytesWritten
         $objectBytesRead = toUnits $snapshotInfo.stats.bytesRead
+        if($snapshotInfo.stats.PSObject.Properties['bytesWritten']){
+            # true local snapshot -> local read/write stats apply, no archival transfer stats here
+            $objectBytesWritten = toUnits $snapshotInfo.stats.bytesWritten
+            $objectLogicalBytesTransferred = '-'
+            $objectPhysicalBytesTransferred = '-'
+        }else{
+            # archive-direct backup (no local snapshot) -> archival transfer stats live on this object's own stats
+            $objectBytesWritten = '-'
+            $objectLogicalBytesTransferred = toUnits $snapshotInfo.stats.logicalBytesTransferred
+            $objectPhysicalBytesTransferred = toUnits $snapshotInfo.stats.physicalBytesTransferred
+        }
         if(!$onHoldOnly -or $onLegalHold -eq $True){
-            $cluster.name, $activityType, $target, $(dateToString $objectStartTime), $(dateToString $objectEndTime), $objectDurationSeconds, $objectStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $objectLogicalSizeBytes, $tenant -join "," | Out-File -FilePath $outfileName -Append
-        }                                    
+            $cluster.name, $activityType, $target, $(dateToString $objectStartTime), $(dateToString $objectEndTime), $objectDurationSeconds, $objectStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $objectLogicalSizeBytes, $objectBytesRead, $objectBytesWritten, $objectLogicalBytesTransferred, $objectPhysicalBytesTransferred, $tenant -join "," | Out-File -FilePath $outfileName -Append
+        }
     }
 }
 
 function reportRuns(){
-
+    ""
     $cluster = api get cluster
+    $thisCluster = $($cluster.name).ToUpper()
     $jobs = api get -v2 "data-protect/protection-groups?includeTenants=true$query"
     $sources = api get "protectionSources/registrationInfo?includeApplicationsTreeInfo=false"
     $policies = api get -v2 data-protect/policies
@@ -165,7 +190,7 @@ function reportRuns(){
         $environment = $job.environment
         $tenant = $job.permissions.name
         if(!$objectType -or $objectType -eq $environment){
-            "{0} ({1})" -f $job.name, $environment
+            "{0}: {1}" -f $thisCluster, $job.name
             $policyName = ($policies.policies | Where-Object id -eq $job.policyId).name
             if(!$policyName){
                 $policyName = '-'
@@ -186,17 +211,17 @@ function reportRuns(){
                 $lastRunId = $runs.runs[-1].id
                 foreach($run in $runs.runs){
                     $localSources = @{}
-                    $target = 'Local'
+                    $runTarget = 'Local'
                     if($run.PSObject.Properties['localBackupInfo']){
                         $backupInfo = $run.localBackupInfo
-                        $activityType = 'Backup'
+                        $runActivityType = 'Backup'
                     }elseif($run.PSObject.Properties['originalBackupInfo']){
                         $backupInfo = $run.originalBackupInfo
-                        $activityType = 'Inbound Replication'
+                        $runActivityType = 'Inbound Replication'
                     }else{
                         $backupInfo = $run.archivalInfo.archivalTargetResults[0]
-                        $activityType = 'Archival'
-                        $target = $run.archivalInfo.archivalTargetResults[0].targetName
+                        $runActivityType = 'Archival'
+                        $runTarget = $run.archivalInfo.archivalTargetResults[0].targetName
                     }
                     $runLevelArchives = $null
                     if($run.PSObject.Properties['archivalInfo'] -and $run.archivalInfo.PSObject.Properties['archivalTargetResults']){
@@ -213,10 +238,16 @@ function reportRuns(){
                         }else{
                             $slaStatus = 'Met'
                         }
-                        "    {0} ({1})" -f $runStartTime, $runType
+                        # "    {0}" -f $runStartTime
+                        # total local backup data read across all objects in this run, used to allocate
+                        # run-level archival transfer stats proportionally to each object
+                        $totalRunBytesRead = 0
                         foreach($object in $run.objects){
                             if($environment -in @('kOracle', 'kSQL') -and $object.object.objectType -eq 'kHost'){
                                 $localSources["$($object.object.id)"] = $object.object.name
+                            }
+                            if($object.PSObject.Properties['localSnapshotInfo'] -and $object.localSnapshotInfo.snapshotInfo.stats.bytesRead){
+                                $totalRunBytesRead += $object.localSnapshotInfo.snapshotInfo.stats.bytesRead
                             }
                         }
                         $lockUntil = ''
@@ -244,12 +275,25 @@ function reportRuns(){
                                 }else{
                                     $registeredSourceName = $objectName
                                 }
+                                # reset to the run's default activity type/target before deciding how
+                                # this particular object was protected
+                                $target = $runTarget
+                                $activityType = $runActivityType
                                 if($object.PSObject.Properties['localSnapshotInfo']){
                                     $snapshotInfo = $object.localSnapshotInfo.snapshotInfo
                                     reportBackup
-                                }elseif($object.PSObject.Properties['archivalInfo']){
-                                    $snapshotInfo = $object.archivalInfo.archivalTargetResults[0]
-                                    reportBackup
+                                }elseif($object.PSObject.Properties['archivalInfo'] -and $object.archivalInfo.PSObject.Properties['archivalTargetResults']){
+                                    # archive-direct object (no local snapshot) - it may have been sent to
+                                    # more than one archival target, so report every one of them
+                                    foreach($archiveDirectResult in $object.archivalInfo.archivalTargetResults){
+                                        $snapshotInfo = $archiveDirectResult
+                                        $target = $archiveDirectResult.targetName
+                                        $activityType = 'Archival'
+                                        if($archiveDirectResult.PSObject.Properties['ownershipContext'] -and $archiveDirectResult.ownershipContext -eq 'FortKnox'){
+                                            $activityType = 'CloudVault'
+                                        }
+                                        reportBackup
+                                    }
                                 }
                                 $objectStatus = $snapshotInfo.status
                                 $objectLogicalSizeBytes = toUnits $snapshotInfo.stats.logicalSizeBytes
@@ -258,10 +302,18 @@ function reportRuns(){
                                 }else{
                                     $objectStartTime = $runStartTime
                                 }
+                                # this object's share of the run's total local backup data read, used to
+                                # allocate run-level archival transfer stats (logical/physical bytes transferred)
+                                # proportionally across objects since those stats are only reported at the run level
+                                if($totalRunBytesRead -gt 0 -and $snapshotInfo.stats.bytesRead){
+                                    $objectShareOfRun = $snapshotInfo.stats.bytesRead / $totalRunBytesRead
+                                }else{
+                                    $objectShareOfRun = 0
+                                }
                                 if($object.PSObject.Properties['replicationInfo'] -and $object.replicationInfo.PSObject.Properties['replicationTargetResults']){
                                     reportReplications
                                 }
-                                if($runLevelArchives -ne $null -and $activityType -ne 'Archival'){
+                                if($runLevelArchives -ne $null -and $activityType -ne 'Archival' -and $activityType -ne 'CloudVault'){
                                     reportArchives
                                 }
                             }
