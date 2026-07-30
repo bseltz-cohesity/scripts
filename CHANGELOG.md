@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-07-30`] [protectCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectCassandra) [`Update`] added -cad, --cad option
+* [`2026-07-30`] [clusterProtectionActivities.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterProtectionActivities) [`Update`] added data read/written columns
 * [`2026-07-30`] [heliosAuditLogs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/heliosAuditLogs) [`New`] download audit logs from Helios
 * [`2026-07-29`] [backupNow.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backupNow) [`Update`] fixed string match for direct archival run
 * [`2026-07-29`] [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`Update`] fixes
