@@ -75,9 +75,12 @@ function reportCluster(){
                         if($run.PSObject.Properties['localBackupInfo']){
                             $backupInfo = $run.localBackupInfo
                             $snapshotInfo = 'localSnapshotInfo'
-                        }else{
+                        }elseif($run.PSObject.Properties['originalBackupInfo']){
                             $backupInfo = $run.originalBackupInfo
                             $snapshotInfo = 'originalBackupInfo'
+                        }else{
+                            $backupInfo = $run.archivalInfo.archivalTargetResults[0]
+                            $snapshotInfo = 'archivalInfo'
                         }
                         $runType = $backupInfo.runType
                         if($includeLogs -or $runType -ne 'kLog'){
@@ -117,11 +120,19 @@ function reportCluster(){
                                     }else{
                                         $registeredSourceName = $objectName
                                     }
-                                    $objectStatus = $object.$snapshotInfo.snapshotInfo.status
+                                    if($snapshotInfo -eq 'archivalInfo'){
+                                        $objectStatus = $object.archivalInfo.archivalTargetResults[0].status
+                                    }else{
+                                        $objectStatus = $object.$snapshotInfo.snapshotInfo.status
+                                    }
                                     if($objectStatus -eq 'kSuccessful'){
                                         $objectStatus = 'kSuccess'
                                     }
-                                    $objectLogicalSizeBytes = $object.$snapshotInfo.snapshotInfo.stats.logicalSizeBytes
+                                    if($snapshotInfo -eq 'archivalInfo'){
+                                        $objectLogicalSizeBytes = $object.archivalInfo.archivalTargetResults[0].stats.logicalSizeBytes
+                                    }else{
+                                        $objectLogicalSizeBytes = $object.$snapshotInfo.snapshotInfo.stats.logicalSizeBytes
+                                    }
                                     if($job.environment -in @('kVMware', 'kAD') -or ($job.environment -eq 'kPhysical' -and $job.physicalParams.protectionType -eq 'kVolume')){
                                         $vms = $vmsearch.vms | Where-Object {$_.vmDocument.objectName -eq $object.object.name}
                                         if($vms){
