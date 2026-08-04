@@ -4,10 +4,23 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This PowerShell script inventories every local snapshot, archive copy, and replicated-in copy that is currently available for recovery across one or more Cohesity clusters (directly, or Helios/MCM-managed). Each recovery point is reported at the object level, along with where it lives (local, archive target, or source cluster) and when it expires.
 
+## Download the script
+
+Run these commands from PowerShell to download the script(s) into your current directory
+
+```powershell
+# Download Commands
+$scriptName = 'snapshotArchiveInventory'
+$repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main'
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/reports/powershell/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
+# End Download Commands
+```
+
 ## Components
 
-* `snapshotArchiveInventory.ps1`: the main PowerShell script
-* `cohesity-api.ps1`: the Cohesity REST API helper module
+* [snapshotArchiveInventory.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/powershell/snapshotArchiveInventory/snapshotArchiveInventory.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 
