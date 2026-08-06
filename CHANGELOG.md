@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-08-06`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added culture fix for mangled dates
 * [`2026-08-04`] [snapshotArchiveInventory.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/snapshotArchiveInventory) [`New`] Snapshot and Archive inventory report
 * [`2026-08-03`] [chargebackReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/chargebackReport) [`Update`] added support for CAD
 * [`2026-07-30`] [protectCassandra.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectCassandra) [`Update`] added -cad, --cad option
