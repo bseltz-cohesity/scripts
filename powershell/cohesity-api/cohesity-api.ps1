@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2026.07.10 - Brian Seltzer
+#  Version 2026.08.06 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2025-01-10 - added Get-Runs function
@@ -28,10 +28,16 @@
 # 2026-05-05 - updated api error logging
 # 2026-05-13 - reordered auth attempts
 # 2026-07-10 - added fixCsv and displayCsv functions
+# 2026-08-06 - added culture fix for mangled dates
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2026.07.10'
+$culture = [System.Globalization.CultureInfo]::CurrentCulture.Clone()
+$culture.DateTimeFormat.LongTimePattern  = $culture.DateTimeFormat.LongTimePattern  -replace "`u{202F}", ' '
+$culture.DateTimeFormat.ShortTimePattern = $culture.DateTimeFormat.ShortTimePattern -replace "`u{202F}", ' '
+[System.Threading.Thread]::CurrentThread.CurrentCulture = $culture
+
+$versionCohesityAPI = '2026.08.06'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -1165,10 +1171,11 @@ function usecsToDate($usecs, $format=$null){
     try{
         $unixTime=$usecs/1000000
         $origin = ([datetime]'1970-01-01 00:00:00')
+        $dt = $origin.AddSeconds($unixTime).ToLocalTime()
         if($format){
-            return ($origin.AddSeconds($unixTime).ToLocalTime().ToString($format) -replace [char]8239, ' ')
+            return $dt.ToString($format)
         }else{
-            return ($origin.AddSeconds($unixTime).ToLocalTime()) # .ToString() -replace [char]8239, ' ')
+            return $dt
         }
     }catch{
         Write-Host "usecsToDate: incorrect input type ($($usecs.GetType().name)) must be Int64" -ForegroundColor Yellow
