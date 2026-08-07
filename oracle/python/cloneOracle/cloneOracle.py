@@ -211,7 +211,7 @@ if logtime is not None or latest is True:
                                     "fraSizeMb": 2048
                                 }
                             },
-                            "captureTailLogs": False,
+                            "captureTailLogs": True,
                             "secondaryDataFileDestinationVec": [
                                 {}
                             ]
@@ -236,21 +236,26 @@ if logtime is not None or latest is True:
 
         if latest is True:
             if 'timeRangeVec' not in logTimeRange['ownerObjectTimeRangeInfoVec'][0]:
-                logTime = None
+                logtime = None
                 latest = None
                 break
 
         if 'timeRangeVec' in logTimeRange['ownerObjectTimeRangeInfoVec'][0]:
-            logStart = logTimeRange['ownerObjectTimeRangeInfoVec'][0]['timeRangeVec'][0]['startTimeUsecs']
-            logEnd = logTimeRange['ownerObjectTimeRangeInfoVec'][0]['timeRangeVec'][0]['endTimeUsecs']
+            timeRangeVec = logTimeRange['ownerObjectTimeRangeInfoVec'][0]['timeRangeVec']
 
             if latest is True:
+                logEnd = max(timeRange['endTimeUsecs'] for timeRange in timeRangeVec)
                 logusecs = logEnd - 1000000
                 validLogTime = True
                 break
 
-            if logStart <= logusecs and logusecs <= logEnd:
-                validLogTime = True
+            for timeRange in timeRangeVec:
+                logStart = timeRange['startTimeUsecs']
+                logEnd = timeRange['endTimeUsecs']
+                if logStart <= logusecs and logusecs <= logEnd:
+                    validLogTime = True
+                    break
+            if validLogTime is True:
                 break
         if logtime is not None and version['instanceId']['jobStartTimeUsecs'] < logusecs:
             if nologs is True:
