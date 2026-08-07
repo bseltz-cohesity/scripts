@@ -40,6 +40,10 @@ Place both files in a folder together and run the main script like so:
 ## Other Parameters
 
 * -outFolder: (optional) location for output file (default is '.')
+* -startDate: (optional) specify start of date range (e.g. '2026-08-01 22:30:00')
+* -endDate: (optional) specify end of date range (e.g. '2026-08-07 22:30:00')
+* -thisCalendarMonth: (optional) set date range to this month
+* -lastCalendarMonth: (optional) set date range to last month
 * -days: (optional) number of days back to query for logs (default is 7)
 * -pageSize: (optional) number of logs to get per API query (default is 1000) valid range 100 - 10000
 

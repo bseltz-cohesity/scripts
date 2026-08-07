@@ -8,6 +8,10 @@ param (
     [Parameter()][switch]$noPrompt,
     [Parameter()][switch]$mcm,
     [Parameter()][string]$outFolder = '.',
+    [Parameter()][string]$startDate = '',
+    [Parameter()][string]$endDate = '',
+    [Parameter()][switch]$thisCalendarMonth,
+    [Parameter()][switch]$lastCalendarMonth,
     [Parameter()][int]$days = 7,
     [Parameter()][ValidateRange(100, 10000)][int]$pageSize = 1000
 )
@@ -23,14 +27,40 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
-$dateString = (get-date).ToString('yyyy-MM-dd')
+# Date ranges
+$today = Get-Date
+if($startDate -ne '' -and $endDate -ne ''){ $uStart = dateToUsecs $startDate; $uEnd = dateToUsecs $endDate }
+elseif($thisCalendarMonth){ $uStart = dateToUsecs ($today.Date.AddDays(-($today.Day - 1))); $uEnd = dateToUsecs $today }
+elseif($lastCalendarMonth){
+    $uStart = dateToUsecs ($today.Date.AddDays(-($today.Day - 1)).AddMonths(-1))
+    $uEnd = dateToUsecs ($today.Date.AddDays(-($today.Day - 1)).AddSeconds(-1))
+} else {
+    $uStart = timeAgo $days 'days'; $uEnd = dateToUsecs $today
+}
+
+# Properly escape a value for a CSV cell (RFC 4180): wrap it in double
+# quotes and double up any embedded double quotes. This keeps values that
+# contain commas, quotes, or newlines (e.g. JSON blobs) inside a single
+# cell instead of spilling into neighboring columns when opened in Excel.
+function ConvertTo-CsvField {
+    param($Value)
+    if($null -eq $Value){ return '""' }
+    $s = [string]$Value
+    $s = $s -replace '"', '""'
+    return '"' + $s + '"'
+}
+
+$dateString = ($today).ToString('yyyy-MM-dd')
 $outfile = $(Join-Path -Path $outFolder -ChildPath "heliosAuditLogs-$dateString.csv")
-"""timestamp"",""ip"",""sourceType"",""originalTenantName"",""isImpersonation"",""tenantName"",""action"",""username"",""domain"",""tenantId"",""clusterName"",""entityName"",""clusterIdentifier"",""entityType"",""originalTenantId"",""serviceContext"",""details"",""previousRecord"",""newRecord""" | Out-File -FilePath $outfile
+$csvHeaders = 'timestamp','ip','sourceType','originalTenantName','isImpersonation','tenantName','action','username','domain','tenantId','clusterName','entityName','clusterIdentifier','entityType','originalTenantId','serviceContext','details','previousRecord','newRecord'
+(($csvHeaders | ForEach-Object { ConvertTo-CsvField $_ }) -join ',') | Out-File -FilePath $outfile -Encoding utf8
 $startIndex = 0
 $count = 0
 $foundLogs = 0
+$thisStart = $uStart
+$thisEnd = $uEnd
 while($True){
-    $logs = api get -mcmv2 "audit-logs?startTimeUsecs=$(timeAgo $days days)&count=$pageSize&startIndex=$startIndex"
+    $logs = api get -mcmv2 "audit-logs?startTimeUsecs=$uStart&endTimeUsecs=$thisEnd&count=$pageSize&startIndex=$startIndex"
     if($count -eq 0 -and $logs.count -gt 0){
         $count = $logs.count
     }
@@ -39,20 +69,20 @@ while($True){
         Write-Host $foundLogs
         foreach($log in $logs.auditLogs){
             $timeStamp = usecsToDate $log.timestampUsecs
-            if($log.PSObject.Properties['previousRecord']){
-                $log.previousRecord = $log.previousRecord -replace '\"', "'" -replace ",", ';' -replace "`n", " "
-            }
-            if($log.PSObject.Properties['newRecord']){
-                $log.newRecord = $log.newRecord -replace '\"', "'" -replace ",", ';' -replace "`n", " "
-            }
-            $log.details = $log.details -replace '\"', "'" -replace ",", ';' -replace "`n", " " -replace "\n", " "
-            """$timeStamp"",""$($log.ip)"",""$($log.sourceType)"",""$($log.originalTenantName)"",""$($log.isImpersonation)"",""$($log.tenantName)"",""$($log.action)"",""$($log.username)"",""$($log.domain)"",""$($log.tenantId)"",""$($log.clusterName)"",""$($log.entityName)"",""$($log.clusterIdentifier)"",""$($log.entityType)"",""$($log.originalTenantId)"",""$($log.serviceContext)"",""$($log.details)"",""$($log.previousRecord)"",""$($log.newRecord)""" | Out-File -FilePath $outfile -append
+            $csvValues = $timeStamp, $log.ip, $log.sourceType, $log.originalTenantName, $log.isImpersonation, $log.tenantName, $log.action, $log.username, $log.domain, $log.tenantId, $log.clusterName, $log.entityName, $log.clusterIdentifier, $log.entityType, $log.originalTenantId, $log.serviceContext, $log.details, $log.previousRecord, $log.newRecord
+            (($csvValues | ForEach-Object { ConvertTo-CsvField $_ }) -join ',') | Out-File -FilePath $outfile -Append -Encoding utf8
+            $lastTimeStamp = $log.timestampUsecs
         }
     }
     if($foundLogs -ge $count){
         break
     }else{
         $startIndex += $pageSize
+        if($startIndex -ge 10000){
+            $thisEnd = $lastTimeStamp
+            $startIndex = 0
+            $count = 0
+        }
     }
 }
 
