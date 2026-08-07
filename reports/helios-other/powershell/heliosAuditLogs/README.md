@@ -45,7 +45,6 @@ Place both files in a folder together and run the main script like so:
 * -thisCalendarMonth: (optional) set date range to this month
 * -lastCalendarMonth: (optional) set date range to last month
 * -days: (optional) number of days back to query for logs (default is 7)
-* -pageSize: (optional) number of logs to get per API query (default is 1000) valid range 100 - 10000
 
 ## Authenticating to Helios
 

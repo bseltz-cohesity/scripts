@@ -12,8 +12,7 @@ param (
     [Parameter()][string]$endDate = '',
     [Parameter()][switch]$thisCalendarMonth,
     [Parameter()][switch]$lastCalendarMonth,
-    [Parameter()][int]$days = 7,
-    [Parameter()][ValidateRange(100, 10000)][int]$pageSize = 1000
+    [Parameter()][int]$days = 7
 )
 
 # source the cohesity-api helper code
@@ -38,10 +37,6 @@ elseif($lastCalendarMonth){
     $uStart = timeAgo $days 'days'; $uEnd = dateToUsecs $today
 }
 
-# Properly escape a value for a CSV cell (RFC 4180): wrap it in double
-# quotes and double up any embedded double quotes. This keeps values that
-# contain commas, quotes, or newlines (e.g. JSON blobs) inside a single
-# cell instead of spilling into neighboring columns when opened in Excel.
 function ConvertTo-CsvField {
     param($Value)
     if($null -eq $Value){ return '""' }
@@ -54,13 +49,12 @@ $dateString = ($today).ToString('yyyy-MM-dd')
 $outfile = $(Join-Path -Path $outFolder -ChildPath "heliosAuditLogs-$dateString.csv")
 $csvHeaders = 'timestamp','ip','sourceType','originalTenantName','isImpersonation','tenantName','action','username','domain','tenantId','clusterName','entityName','clusterIdentifier','entityType','originalTenantId','serviceContext','details','previousRecord','newRecord'
 (($csvHeaders | ForEach-Object { ConvertTo-CsvField $_ }) -join ',') | Out-File -FilePath $outfile -Encoding utf8
-$startIndex = 0
 $count = 0
 $foundLogs = 0
 $thisStart = $uStart
 $thisEnd = $uEnd
 while($True){
-    $logs = api get -mcmv2 "audit-logs?startTimeUsecs=$uStart&endTimeUsecs=$thisEnd&count=$pageSize&startIndex=$startIndex"
+    $logs = api get -mcmv2 "audit-logs?startTimeUsecs=$uStart&endTimeUsecs=$thisEnd&count=10000"
     if($count -eq 0 -and $logs.count -gt 0){
         $count = $logs.count
     }
@@ -77,12 +71,8 @@ while($True){
     if($foundLogs -ge $count){
         break
     }else{
-        $startIndex += $pageSize
-        if($startIndex -ge 10000){
-            $thisEnd = $lastTimeStamp
-            $startIndex = 0
-            $count = 0
-        }
+        $thisEnd = $lastTimeStamp
+        $count = 0
     }
 }
 
