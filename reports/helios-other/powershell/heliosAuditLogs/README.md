@@ -45,6 +45,7 @@ Place both files in a folder together and run the main script like so:
 * -thisCalendarMonth: (optional) set date range to this month
 * -lastCalendarMonth: (optional) set date range to last month
 * -days: (optional) number of days back to query for logs (default is 7)
+* -maxRowsPerFile: (optional) default is 1000000 (will create new CSV files as needed)
 
 ## Authenticating to Helios
 
