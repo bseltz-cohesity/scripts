@@ -76,9 +76,9 @@ if($sorted){
     }
 }else{
     foreach($jobName in $report.Keys | sort){
-        write-host $jobName
+        $jobName
         foreach($version in $report[$jobName].versions){
-            write-host "`t$version"
+            "`t$version"
         }
     }
 }
