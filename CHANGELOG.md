@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-08-09`] [recoveryPoints.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/recoveryPoints) [`Update`] fix for 7.4 search changes
+* [`2026-08-09`] [recoveryPoints.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/recoveryPoints) [`Update`] fix for 7.4 search changes
 * [`2026-08-09`] [cloneSQLDBs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/cloneSQLDBs) [`Update`] fix for 7.4 search changes
 * [`2026-08-09`] [cloneSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/cloneSQL) [`Update`] fix for 7.4 search changes
 * [`2026-08-09`] [cloneOracle.ps1](https://github.com/cohesity/community-automation-samples/tree/main/oracle/powershell/cloneOracle) [`Update`] fix for 7.4 search changes
