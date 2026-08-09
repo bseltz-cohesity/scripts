@@ -1,6 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
-* [`2026-08-07`] [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Update`] log search improvements
+* [`2026-08-09`] [cloneSQLDBs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/cloneSQLDBs) [`Update`] fix for 7.4 search changes
+* [`2026-08-09`] [cloneSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/cloneSQL) [`Update`] fix for 7.4 search changes
+* [`2026-08-09`] [cloneOracle.ps1](https://github.com/cohesity/community-automation-samples/tree/main/oracle/powershell/cloneOracle) [`Update`] fix for 7.4 search changes
+* [`2026-08-09`] [cloneOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/cloneOracle) [`Update`] fix for 7.4 search changes
 * [`2026-08-06`] [clusterProtectionRuns.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterProtectionRuns) [`Update`] fixed auth failure trap
 * [`2026-08-06`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added culture fix for mangled dates
 * [`2026-08-04`] [snapshotArchiveInventory.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/snapshotArchiveInventory) [`New`] Snapshot and Archive inventory report
