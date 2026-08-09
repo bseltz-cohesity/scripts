@@ -90,7 +90,7 @@ for job in jobs:
 
     ### find recoverable objects
     startfrom = 0
-    ro = api('get', '/searchvms?jobIds=%s&size=%s&from=%s' % (job['id'], pagesize, startfrom))
+    ro = api('get', '/searchvms?jobIds=%s&size=%s&from=%s&runTypes=kRegular,kFull' % (job['id'], pagesize, startfrom))
 
     if len(ro) > 0:
         while True:
@@ -134,7 +134,7 @@ for job in jobs:
                         f.write("%s,%s,%s,%s,%s,%s,%s,%s\n" % (jobName, objType, objSource, objName, startTime, localExpiry, archiveTarget, archiveExpiry))
             if ro['count'] > (pagesize + startfrom):
                 startfrom += pagesize
-                ro = api('get', '/searchvms?jobIds=%s&size=%s&from=%s' % (job['id'], pagesize, startfrom))
+                ro = api('get', '/searchvms?jobIds=%s&size=%s&from=%s&runTypes=kRegular,kFull' % (job['id'], pagesize, startfrom))
             else:
                 break
 f.close()

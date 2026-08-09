@@ -76,7 +76,7 @@ $environments = @('kUnknown', 'kVMware', 'kHyperV', 'kSQL', 'kView', 'kPuppeteer
 ### find recoverable objects
 foreach($job in $jobs){
     $from = 0
-    $ro = api get "/searchvms?jobIds=$($job.id)&size=$pageSize&from=$from$etail"
+    $ro = api get "/searchvms?jobIds=$($job.id)&size=$pageSize&runTypes=kRegular,kFull&from=$from$etail"
 
     $environments = @('kUnknown', 'kVMware', 'kHyperV', 'kSQL', 'kView', 'kPuppeteer',
                     'kPhysical', 'kPure', 'kAzure', 'kNetapp', 'kAgent', 'kGenericNas',
@@ -146,7 +146,7 @@ foreach($job in $jobs){
             }
             if($ro.count -gt ($pageSize + $from)){
                 $from += $pageSize
-                $ro = api get "/searchvms?jobIds=$($job.id)&size=$pageSize&from=$from$etail"
+                $ro = api get "/searchvms?jobIds=$($job.id)&size=$pageSize&runTypes=kRegular,kFull&from=$from$etail"
             }else{
                 break
             }
