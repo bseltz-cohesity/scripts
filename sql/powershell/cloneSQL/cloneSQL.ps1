@@ -51,7 +51,7 @@ if(!$cohesity_api.authorized){
 }
 
 ### search for database to clone
-$searchresults = api get /searchvms?environment=SQL`&entityTypes=kSQL`&entityTypes=kVMware`&vmName=$sourceDB
+$searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&entityTypes=kVMware&vmName=$sourceDB&runTypes=kRegular,kFull"
 
 ### handle source instance name e.g. instance/dbname
 if($sourceDB.Contains('/')){

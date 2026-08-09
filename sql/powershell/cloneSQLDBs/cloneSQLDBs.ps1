@@ -76,7 +76,7 @@ $dbNames = @(gatherList -Param $sourceDB -FilePath $sourceDBList -Name 'jobs' -R
 foreach($dbName in $dbNames){
 
     ### search for database to clone
-    $searchresults = api get /searchvms?environment=SQL`&entityTypes=kSQL`&entityTypes=kVMware`&vmName=$dbName
+    $searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&entityTypes=kVMware&vmName=$dbName&runTypes=kRegular,kFull"
 
     ### handle source instance name e.g. instance/dbname
     if($dbName.Contains('/')){
@@ -296,7 +296,7 @@ foreach($dbName in $dbNames){
 
     if($response){
         $taskId = $response.restoreTask.performRestoreTaskState.base.taskId
-        "Cloning $dbName to $targetServer as $targetDB (task name: $taskName)"
+        "Cloning $dbName to $targetServer as $("{0}{1}{2}" -f $prefix, $dbName, $suffix) (task name: $taskName)"
     }else{
         Write-Warning "No Response"
         continue
