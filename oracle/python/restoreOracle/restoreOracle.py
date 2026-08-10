@@ -146,7 +146,7 @@ if mcm or vip.lower() == 'helios.cohesity.com':
         exit()
 
 # search for view to clone
-searchResults = api('get', '/searchvms?entityTypes=kOracle&vmName=%s' % sourcedb)
+searchResults = api('get', '/searchvms?entityTypes=kOracle&vmName=%s&runTypes=kRegular,kFull' % sourcedb)
 if len(searchResults) == 0:
     print("SourceDB %s not found" % sourcedb)
     exit()

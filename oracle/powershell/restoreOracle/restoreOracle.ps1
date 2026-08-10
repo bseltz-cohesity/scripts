@@ -92,7 +92,7 @@ if($USING_HELIOS){
 # end authentication =========================================
 
 ### search for database to clone
-$searchresults = api get "/searchvms?entityTypes=kOracle&vmName=$sourceDB"
+$searchresults = api get "/searchvms?entityTypes=kOracle&vmName=$sourceDB&runTypes=kRegular,kFull"
 
 ### narrow the search results to the correct source server
 $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer }

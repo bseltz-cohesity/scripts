@@ -120,7 +120,7 @@ foreach($si in $sourceInstance){
 }
 
 # search for database to clone
-$searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&entityTypes=kVMware&vmName=$sourceDB"
+$searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&entityTypes=kVMware&vmName=$sourceDB&runTypes=kRegular,kFull"
 
 # narrow the search results to the correct source server
 $dbresults = $searchresults.vms | Where-Object {$_.vmDocument.objectAliases -eq $sourceServer } | `

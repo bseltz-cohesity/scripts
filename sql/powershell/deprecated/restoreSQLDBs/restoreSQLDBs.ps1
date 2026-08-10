@@ -152,14 +152,14 @@ if($importFileInfo){
 
 # search for databases on sourceServer
 $from = 0
-$searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&vmName=$sourceServer&size=$pageSize&from=$from"
+$searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&vmName=$sourceServer&size=$pageSize&from=$from&runTypes=kRegular,kFull"
 $dbresults = @{'vms' = @()}
 if($searchresults.count -gt 0){
     while($True){
         $dbresults.vms = @($dbresults.vms + $searchresults.vms)
         if($searchresults.count -gt ($pageSize + $from)){
             $from += $pageSize
-            $searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&vmName=$sourceServer&size=$pageSize&from=$from"
+            $searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&vmName=$sourceServer&size=$pageSize&from=$from&runTypes=kRegular,kFull"
         }else{
             break
         }
