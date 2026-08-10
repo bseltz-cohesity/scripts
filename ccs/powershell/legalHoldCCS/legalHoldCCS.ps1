@@ -5,7 +5,7 @@ param (
     [Parameter(Mandatory = $True)][string]$sourceName,  # name of registered O365 source
     [Parameter(Mandatory = $True)][string]$region,
     [Parameter()][int]$pageSize = 1000,
-    [Parameter()][ValidateSet('mailbox','onedrive')][string]$objectType = 'mailbox',
+    [Parameter()][ValidateSet('mailbox','onedrive','sites')][string]$objectType = 'mailbox',
     [Parameter()][string]$date,
     [Parameter()][switch]$addHold,
     [Parameter()][switch]$removeHold,
@@ -20,7 +20,7 @@ param (
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
 if(!$startDate){
-    $startDate = dateToUsecs $date
+    $startDate = dateToUsecs (Get-Date)
 }else{
     $startDate = dateToUsecs $startDate
 }
@@ -35,14 +35,32 @@ if(!$endDate){
     $endDate = dateToUsecs $endDate
 }
 
+# maps -objectType to the O365 protection environment(s) reported for that object
 $objEnvironment = @{
     'mailbox' = @('kO365Exchange', 'kO365ExchangeCSM');
-    'onedrive' = @('kO365OneDrive', 'kO365OneDriveCSM')
+    'onedrive' = @('kO365OneDrive', 'kO365OneDriveCSM');
+    'sites' = @('kO365Sharepoint', 'kO365SharepointCSM')
 }
 
+# maps -objectType to the protectionSources boolean filter used to narrow down candidate nodes
+# (SharePoint sites have no equivalent "hasValid..." filter, so 'sites' is intentionally omitted)
 $objTest = @{
     'mailbox' = 'hasValidMailbox';
     'onedrive' = 'hasValidOnedrive'
+}
+
+# maps -objectType to the top level protectionSources node under which its objects live
+$objNode = @{
+    'mailbox' = 'Users';
+    'onedrive' = 'Users';
+    'sites' = 'Sites'
+}
+
+# friendly name used in status/error messages
+$objDisplayName = @{
+    'mailbox' = 'Mailboxes';
+    'onedrive' = 'OneDrives';
+    'sites' = 'SharePoint Sites'
 }
 
 # authenticate
@@ -61,9 +79,9 @@ if(!$rootSource){
 $rootSourceId = $rootSource[0].sourceInfoList[0].sourceId
 
 $source = api get "protectionSources?id=$($rootSourceId)&excludeOffice365Types=kMailbox,kUser,kGroup,kSite,kPublicFolder,kTeam,kO365Exchange,kO365OneDrive,kO365Sharepoint&allUnderHierarchy=false&regionId=$region"
-$usersNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'Users'}
-if(!$usersNode){
-    Write-Host "Source $sourceName is not configured for O365 Mailboxes" -ForegroundColor Yellow
+$topNode = $source.nodes | Where-Object {$_.protectionSource.name -eq $objNode[$objectType]}
+if(!$topNode){
+    Write-Host "Source $sourceName is not configured for O365 $($objDisplayName[$objectType])" -ForegroundColor Yellow
     exit
 }
 
@@ -127,7 +145,7 @@ function query(){
     }
 
     foreach($objectId in $script:objectIds){
-        $queryParams.objectIdentifiers = @($queryParams.objectIdentifiers + @{ 
+        $queryParams.objectIdentifiers = @($queryParams.objectIdentifiers + @{
             "objectId" = $objectId;
             "clusterId" = $null;
             "regionId" = $region
@@ -175,7 +193,7 @@ function query(){
                     }
                     if($showMe -eq $True){
                         "$($activity.object.name) ($(usecsToDate $startTimeUsecs)) on hold = $($activity.archivalRunParams.onLegalHold)" | Tee-Object -FilePath legalHoldLog.txt -Append
-                    }       
+                    }
                 }
             }
             if(@($script:addHolds).Count -gt 0){
@@ -193,7 +211,7 @@ function query(){
             }
             if($activities.activity -ne $null){
                 $queryParams.toTimeUsecs = $activities.activity[-1].timeStampUsecs
-            } 
+            }
         }else{
             if(@($activities.activity).Count -lt 1000){
                 break
@@ -204,10 +222,16 @@ function query(){
     }
 }
 
-$users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&$($objTest[$objectType])=true&allUnderHierarchy=false&regionId=$region"
+# build the optional "hasValid..." filter (not applicable to sites, since there is no such filter for SharePoint sites)
+$objTestFilter = ''
+if($objTest.ContainsKey($objectType)){
+    $objTestFilter = "&$($objTest[$objectType])=true"
+}
+
+$objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($topNode.protectionSource.id)&id=$($topNode.protectionSource.id)$($objTestFilter)&allUnderHierarchy=false&regionId=$region"
 
 while(1){
-    foreach($node in $users.nodes | Sort-Object -Property {$_.protectionSource.name}){
+    foreach($node in $objects.nodes | Sort-Object -Property {$_.protectionSource.name}){
         $objId = $node.protectionSource.id
         # $smtp = $node.protectionSource.office365ProtectionSource.primarySMTPAddress
         if(($node.protectedSourcesSummary | Where-Object {$_.environment -in $objEnvironment[$objectType]}).leavesCount -eq 1){
@@ -218,12 +242,12 @@ while(1){
             $script:objectIds = @()
         }
     }
-    $cursor = $users.nodes[-1].protectionSource.id
-    $users = api get "protectionSources?pageSize=$pageSize&nodeId=$($usersNode.protectionSource.id)&id=$($usersNode.protectionSource.id)&$($objTest[$objectType])=true&allUnderHierarchy=false&afterCursorEntityId=$cursor&regionId=$region"
-    if(!$users.PSObject.Properties['nodes'] -or $users.nodes.Count -eq 1){
+    $cursor = $objects.nodes[-1].protectionSource.id
+    $objects = api get "protectionSources?pageSize=$pageSize&nodeId=$($topNode.protectionSource.id)&id=$($topNode.protectionSource.id)$($objTestFilter)&allUnderHierarchy=false&afterCursorEntityId=$cursor&regionId=$region"
+    if(!$objects.PSObject.Properties['nodes'] -or $objects.nodes.Count -eq 1){
         if(@($script:objectIds).Count -gt 0){
             query
         }
         break
     }
-}  
+}
