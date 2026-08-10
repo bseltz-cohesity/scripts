@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-08-10`] [latestSQLRecoveryPoint.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/latestSQLRecoveryPoint) [`Update`] fix for 7.4 search changes
+* [`2026-08-10`] [latestSQLRecoveryPoint.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/latestSQLRecoveryPoint) [`Update`] fix for 7.4 search changes
+* [`2026-08-10`] [sqlRecoveryPoints.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/sqlRecoveryPoints) [`Update`] fix for 7.4 search changes
 * [`2026-08-10`] [restoreSQLDBs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/deprecated/restoreSQLDBs) [`Update`] fix for 7.4 search changes
 * [`2026-08-10`] [restoreSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/deprecated/restoreSQL) [`Update`] fix for 7.4 search changes
 * [`2026-08-10`] [restoreOracle.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/restoreOracle) [`Update`] fix for 7.4 search changes
