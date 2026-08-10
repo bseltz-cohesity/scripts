@@ -25,7 +25,7 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./heliosAuditLogs.ps1 -username myuser@mydomain.net -days 7 -pageSize 1000
+./heliosAuditLogs.ps1 -username myuser@mydomain.net -days 7
 ```
 
 ## Authentication Parameters
