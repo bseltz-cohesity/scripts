@@ -50,7 +50,7 @@ if($USING_HELIOS){
 }
 # end authentication =========================================
 
-$searchresults = api get /searchvms?environment=SQL`&entityTypes=kSQL`&entityTypes=kVMware`&vmName=$dbName
+$searchresults = api get "/searchvms?environment=SQL&entityTypes=kSQL&entityTypes=kVMware&vmName=$dbName&runTypes=kRegular,kFull"
 
 $dbresults = $searchresults.vms | Where-Object {$serverName -in $_.vmDocument.objectAliases } |
                                   Where-Object { $_.vmDocument.objectId.entity.sqlEntity.databaseName -eq $dbName }
