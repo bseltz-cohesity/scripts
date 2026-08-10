@@ -4,7 +4,7 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This powershell script adds or removes legal hold from CCS backups.
 
-Note: this script is a work in progress. As of now, it will add/remove legal hold on M365 mailboxes and onedrive objects only.
+Note: this script is a work in progress. As of now, it will add/remove legal hold on M365 mailboxes, onedrive, and site objects only.
 
 ## Download the script
 
@@ -57,7 +57,7 @@ Show onedrives with legal hold enabled:
 * -removeHold: (optional) remove legal hold
 * -showTrue: (optional) show objects that are on legal hold
 * -showFalse: (optional) show objects that are not on legal hold
-* -objectType: (optional) mailbox, onedrive (default is mailbox)
+* -objectType: (optional) mailbox, onedrive, sites (default is mailbox)
 * -pageSize: (optional) API query page size (default is 1000)
 * -objectsPerQuery: (optional) number of objects to operate on (default is 20)
 
