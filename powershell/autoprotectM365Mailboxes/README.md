@@ -70,3 +70,10 @@ Place all files in a folder together, then run the main script like so:
 * -maxToProtect: (optional) default is 1000
 * -updateExistingJobs: (optional) set excluded folders and remove missing mailboxes from existing protection groups
 * -excludeFolders: (optional) one or more email folders to exclude from backup, comma separated (e.g. 'In-Place archive', 'Junk Email')
+
+## SMTP Parameters
+
+* -smtpServer: (optional) IP or name of SMTP server to forward email
+* -smtpPort: (optional) SMTP port (default is 25)
+* -sendTo: (optional) one or more email addresses to send to (comma separated)
+* -sendFrom: (optional) email address email sent from

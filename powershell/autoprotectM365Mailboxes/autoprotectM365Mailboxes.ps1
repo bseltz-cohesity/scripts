@@ -25,7 +25,11 @@ param (
     [Parameter(Mandatory = $True)][string]$sourceName,
     [Parameter()][int]$maxToProtect = 1000,
     [Parameter()][switch]$updateExistingJobs,
-    [Parameter()][array]$excludeFolders
+    [Parameter()][array]$excludeFolders,
+    [Parameter()][string]$smtpServer, # outbound smtp server
+    [Parameter()][string]$smtpPort = 25, # outbound smtp port
+    [Parameter()][array]$sendTo, # send to addresses
+    [Parameter()][string]$sendFrom # send from address
 )
 
 # source the cohesity-api helper code
@@ -188,7 +192,7 @@ if(!$jobGroup){
 "`nFinding mailboxes to protect"
 $foundObjects = 0
 while($foundObjects -lt $maxToProtect){
-    $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kUser&sourceIds=$rootSourceId&count=500&searchString=*"
+    $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kUser&isProtected=false&sourceIds=$rootSourceId&count=500&searchString=*"
     foreach($obj in $search.objects | Sort-Object -Property name){
         foreach($objectProtectionInfo in $obj.objectProtectionInfos | Where-Object {$_.sourceId -eq $rootSourceId}){
             $objId = $objectProtectionInfo.objectId
@@ -212,6 +216,7 @@ while($foundObjects -lt $maxToProtect){
     }
 }
 "`nFound $foundObjects mailboxes to protect`n" | Tee-Object -FilePath $logFile -Append
+$message = "Found $foundObjects mailboxes to protect`n" 
 
 # add unprotected mailboxes to protection groups
 foreach($obj in $objectsToAdd){
@@ -228,6 +233,7 @@ foreach($obj in $objectsToAdd){
         }else{
             $job.office365Params.objects = @($job.office365Params.objects + @{'id' = $objId})
             "$($job.name) <- $objName" | Tee-Object -FilePath $logFile -Append
+            $message += "$($job.name) <- $objName`n"
             if($job.name -notin $newJobs.Keys){
                 $updateJobs[$job.name] = $job
             }
@@ -246,6 +252,7 @@ foreach($obj in $objectsToAdd){
         $thisNewJob.office365Params.objects
         $thisNewJob.office365Params.objects = @($thisNewJob.office365Params.objects + @{'id' = $objId})
         "$($thisNewJob.name) <- $objName" | Tee-Object -FilePath $logFile -Append
+        $message += "$($thisNewJob.name) <- $objName`n"
     }
 }
 
@@ -307,4 +314,11 @@ foreach($job in $newJobs.Values){
         }
     }
     $null = api post -v2 data-protect/protection-groups/ $job
+}
+
+if($smtpServer -and $sendTo -and $sendFrom){
+    write-host "`nsending report to $([string]::Join(", ", $sendTo))"
+    foreach($toaddr in $sendTo){
+        Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject "Autoprotect M365 Mailboxes (script)" -Body $message -WarningAction SilentlyContinue
+    }
 }
