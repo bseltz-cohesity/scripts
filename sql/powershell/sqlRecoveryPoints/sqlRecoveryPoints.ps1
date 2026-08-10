@@ -51,7 +51,7 @@ $outfileName = "$($cluster.name)-SQLRecoveryPoints-$dateString.csv"
 
 ### find recoverable objects
 $from = 0
-$ro = api get "/searchvms?vmName=$searchString&environment=SQL&size=$pageSize&from=$from"
+$ro = api get "/searchvms?vmName=$searchString&environment=SQL&size=$pageSize&from=$from&runTypes=kRegular,kFull"
 
 if($ro.count -gt 0){
 
@@ -144,7 +144,7 @@ if($ro.count -gt 0){
         }
         if($ro.count -gt ($pageSize + $from)){
             $from += $pageSize
-            $ro = api get "/searchvms?vmName=$searchString&environment=SQL&size=$pageSize&from=$from"
+            $ro = api get "/searchvms?vmName=$searchString&environment=SQL&size=$pageSize&from=$from&runTypes=kRegular,kFull"
         }else{
             break
         }
