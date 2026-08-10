@@ -617,7 +617,9 @@ KNOWN_NBU_UTILITIES = frozenset([
     'nbemmcmd', 'nb_monitor_util', 'nbatd', 'nbdisco', 'nbevtmgr', 'nbjm',
     'nbpxyhelper', 'nbrb', 'nbsl', 'nbsvcmon', 'ncfnbcs', 'nbars', 'nbaudit',
     'nbemm', 'nbim', 'nbpem', 'nbpxytnl', 'nbrmms', 'nbstserv', 'nbvault',
-    'ndmp', 'nbcplogs', 'nbsu', 'nblogadm', 'nbproxy', 'nbsqladm',
+    'ndmp', 'nbcplogs', 'nbsu', 'nblogadm', 'nbproxy', 'nbsqladm', 'nbftsrvr',
+    'nbftclnt', 'nbecmsg', 'nbutils', 'nbostpxy', 'nbwebapi', 'nbspring',
+    'nbapache', 'nboraadm'
 ])
 
 # Case-insensitive, whole-token match (longest names first so alternation
