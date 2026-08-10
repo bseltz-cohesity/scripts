@@ -113,10 +113,9 @@ $foundLogs = 0
 $thisStart = $uStart
 $thisEnd = $uEnd
 while($True){
-    $logs = api get -mcmv2 "audit-logs?startTimeUsecs=$uStart&endTimeUsecs=$thisEnd&count=10000"
-    if($count -eq 0 -and $logs.count -gt 0){
-        $count = $logs.count
-    }
+    $logs = api get -mcmv2 "audit-logs?startTimeUsecs=$uStart&endTimeUsecs=$thisEnd&count=10000&actions=%2Caccept%2Cactivate%2Cadd%2Capply%2Cassign%2Ccancel%2Cclone%2Cclose%2Ccloudspin%2Cclusterexpand%2Ccreate%2Cdeactivate%2Cdelete%2Cdisjoin%2Cdownload%2Cimport%2Cinstall%2Cjoin%2Clogin%2Clogout%2Cmark%2Cmodify%2Cnotificationrule%2Coverwrite%2Cpause%2Crecover%2Crefresh%2Cregister%2Cmarkremoval%2Cremove%2Crename%2Crestart%2Cresume%2Crevert%2Crundiagnostics%2Crunnow%2Cschedule%2Cschedulereport%2Csearch%2Cstart%2Cstop%2Cunassign%2Cuninstall%2Cunregister%2Cupdate%2Cupgrade%2Cupload%2Cvalidate"
+    $count = $logs.count
+    # Write-Host "    $count"
     if($logs -and $logs.PSObject.Properties['auditLogs'] -and $logs.auditLogs -ne $null){
         $foundLogs += @($logs.auditLogs).Count
         Write-Host $foundLogs
@@ -138,10 +137,10 @@ while($True){
             $lastTimeStamp = $log.timestampUsecs
         }
     }
-    if($foundLogs -ge $count){
+    if(1 -gt $count){
         break
     }else{
-        $thisEnd = $lastTimeStamp
+        $thisEnd = $lastTimeStamp - 1000
         $count = 0
     }
 }
