@@ -15,7 +15,8 @@ param (
     [Parameter()][switch]$emailMfaCode,
     [Parameter()][string]$clusterName,
     [Parameter()][int]$olderThan = 0,
-    [Parameter()][switch]$sorted
+    [Parameter()][switch]$sorted,
+    [Parameter()][int64]$pageSize = 100
 )
 
 ### source the cohesity-api helper code
@@ -49,24 +50,33 @@ if($USING_HELIOS){
 $report = @{}
 $sortableList = @()
 
-$objects = api get /searchvms
+$from = 0
+$objects = api get "/searchvms?size=$pageSize&runTypes=kRegular,kFull&from=$from"
 
-foreach($object in $objects.vms){
-    $jobName = $object.vmDocument.jobName
-    if($jobName -notin $report.Keys){
-        $report[$jobName] = @{
-            'versions' = @()
-        }
-        foreach($version in $object.vmDocument.versions){
-            if($version.replicaInfo.replicaVec.target.type -eq 1){
-                if($version.snapshotTimestampUsecs -lt (timeAgo $olderThan days)){
-                    if($version.snapshotTimestampUsecs -notin $report[$jobName].versions){
-                        $report[$jobName].versions += usecsToDate $version.snapshotTimestampUsecs
-                        $sortableList += "$(usecsToDate $version.snapshotTimestampUsecs) ($jobName)"
+while($True){
+    foreach($object in $objects.vms){
+        $jobName = $object.vmDocument.jobName
+        if($jobName -notin $report.Keys){
+            $report[$jobName] = @{
+                'versions' = @()
+            }
+            foreach($version in $object.vmDocument.versions){
+                if($version.replicaInfo.replicaVec.target.type -eq 1){
+                    if($version.snapshotTimestampUsecs -lt (timeAgo $olderThan days)){
+                        if($version.snapshotTimestampUsecs -notin $report[$jobName].versions){
+                            $report[$jobName].versions += usecsToDate $version.snapshotTimestampUsecs
+                            $sortableList += "$(usecsToDate $version.snapshotTimestampUsecs) ($jobName)"
+                        }
                     }
                 }
             }
         }
+    }
+    if($objects.count -gt ($pageSize + $from)){
+        $from += $pageSize
+        $objects = api get "/searchvms?size=$pageSize&runTypes=kRegular,kFull&from=$from"
+    }else{
+        break
     }
 }
 
