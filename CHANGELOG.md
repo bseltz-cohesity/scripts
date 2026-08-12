@@ -1,5 +1,9 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-08-12`] [restoreDB2.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restoreDB2) [`New`] restore DB2 databases
+* [`2026-08-11`] [jobList.py](https://github.com/cohesity/community-automation-samples/tree/main/python/jobList) [`Update`] modernized authentication
+* [`2026-08-10`] [autoprotectM365Mailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/autoprotectM365Mailboxes) [`Update`] added email functionality
+* [`2026-08-10`] [legalHoldCCS.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/legalHoldCCS) [`Update`] added support for sharepoint sites
 * [`2026-08-10`] [latestSQLRecoveryPoint.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/latestSQLRecoveryPoint) [`Update`] fix for 7.4 search changes
 * [`2026-08-10`] [latestSQLRecoveryPoint.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/latestSQLRecoveryPoint) [`Update`] fix for 7.4 search changes
 * [`2026-08-10`] [sqlRecoveryPoints.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/sqlRecoveryPoints) [`Update`] fix for 7.4 search changes
