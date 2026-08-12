@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-08-12`] [maintenance.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/maintenance) [`Update`] added support for SQL objects
 * [`2026-08-12`] [restoreDB2.py](https://github.com/cohesity/community-automation-samples/tree/main/python/restoreDB2) [`New`] restore DB2 databases
 * [`2026-08-11`] [jobList.py](https://github.com/cohesity/community-automation-samples/tree/main/python/jobList) [`Update`] modernized authentication
 * [`2026-08-10`] [autoprotectM365Mailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/autoprotectM365Mailboxes) [`Update`] added email functionality
