@@ -21,6 +21,7 @@ parser.add_argument('-st', '--starttime', type=str, default=None)
 parser.add_argument('-et', '--endtime', type=str, default=None)
 parser.add_argument('-end', '--endnow', action='store_true')
 parser.add_argument('-start', '--startnow', action='store_true')
+parser.add_argument('-msg', '--message', type=str, default="")
 
 args = parser.parse_args()
 
@@ -41,6 +42,7 @@ startnow = args.startnow
 endnow = args.endnow
 starttime = args.starttime
 endtime = args.endtime
+message = args.message
 
 # gather server list
 def gatherList(param=None, filename=None, name='items', required=True):
@@ -102,52 +104,79 @@ if mcm or vip.lower() == 'helios.cohesity.com':
         exit(1)
 # end authentication =====================================================
 
+def updatemeta(objname, objid):
+    metaupdate = False
+    if startmaintenance is True:
+        print('Scheduling maintenance on %s' % objname)
+        maintenanceparams = {
+            "sourceId": objid,
+            "entityList": [
+                {
+                    "entityId": objid,
+                    "maintenanceModeConfig": {
+                        "userMessage": message,
+                        "workflowInterventionSpecList": [
+                            {
+                                "workflowType": "BackupRun",
+                                "intervention": "Cancel"
+                            }
+                        ],
+                        "activationTimeIntervals": [
+                            {
+                                "startTimeUsecs": starttimeusecs,
+                                "endTimeUsecs": endtimeusecs
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+        metaupdate = True
+    elif endmaintenance is True:
+        print('Ending maintenance on %s' % objname)
+        maintenanceparams = {
+            "sourceId": objid,
+            "entityList": [
+                {
+                    "entityId": objid,
+                    "maintenanceModeConfig": {}
+                }
+            ]
+        }
+        metaupdate = True
+    if metaupdate is True:
+        api('put', 'data-protect/objects/metadata', maintenanceparams, v=2)
+
+
 sources = api('get', 'protectionSources/registrationInfo?useCachedData=false&includeExternalMetadata=true&includeEntityPermissionInfo=true&includeApplicationsTreeInfo=false')
 for sourcename in sourcenames:
-    source = [s for s in sources['rootNodes'] if s['rootNode']['name'].lower() == sourcename.lower()]
+    parts = sourcename.split('/', 1)
+    thissourcename = parts[0]
+    thisobjectname = parts[1] if len(parts) > 1 else None
+
+    source = [s for s in sources['rootNodes'] if s['rootNode']['name'].lower() == thissourcename.lower()]
     if len(source) == 0:
         print('Source %s not found' % sourcename)
         exit(1)
     else:
         for thissource in source:
-            metaupdate = False
-            if startmaintenance is True:
-                print('Scheduling maintenance on %s' % thissource['rootNode']['name'])
-                maintenanceparams = {
-                    "sourceId": thissource['rootNode']['id'],
-                    "entityList": [
-                        {
-                            "entityId": thissource['rootNode']['id'],
-                            "maintenanceModeConfig": {
-                                "userMessage": "test",
-                                "workflowInterventionSpecList": [
-                                    {
-                                        "workflowType": "BackupRun",
-                                        "intervention": "Cancel"
-                                    }
-                                ],
-                                "activationTimeIntervals": [
-                                    {
-                                        "startTimeUsecs": starttimeusecs,
-                                        "endTimeUsecs": endtimeusecs
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                }
-                metaupdate = True
-            elif endmaintenance is True:
-                print('Ending maintenance on %s' % thissource['rootNode']['name'])
-                maintenanceparams = {
-                    "sourceId": thissource['rootNode']['id'],
-                    "entityList": [
-                        {
-                            "entityId": thissource['rootNode']['id'],
-                            "maintenanceModeConfig": {}
-                        }
-                    ]
-                }
-                metaupdate = True
-            if metaupdate is True:
-                result = api('put', 'data-protect/objects/metadata', maintenanceparams, v=2)
+            if thisobjectname is not None and 'kSQL' not in thissource['registrationInfo']['environments']:
+                print('Object-level maintenance only supported for MSSQL sources')
+                print('Skipping %s' % sourcename)
+                continue
+            if thisobjectname is not None and 'kSQL' in thissource['registrationInfo']['environments']:
+                foundobject = False
+                thissourceobj = api('get', 'protectionSources?id=%s' % thissource['rootNode']['id'])
+                for instance in thissourceobj[0].get('applicationNodes', []) + thissourceobj[0].get('nodes', []):
+                    if instance['protectionSource']['name'].lower() == thisobjectname.lower():
+                        updatemeta(sourcename, instance['protectionSource']['id'])
+                        foundobject = True
+                    else:
+                        for db in instance.get('nodes', []):
+                            if db['protectionSource']['name'].lower() == thisobjectname.lower():
+                                updatemeta(sourcename, db['protectionSource']['id'])
+                                foundobject = True
+                if foundobject is False:
+                    print('%s not found' % sourcename)
+            else:
+                updatemeta(sourcename, thissource['rootNode']['id'])

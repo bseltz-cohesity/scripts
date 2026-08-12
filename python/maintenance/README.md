@@ -79,3 +79,35 @@ To end maintenance mode now on a source:
 * -et, --endtime: (optional) time to end maintenance (e.g. '2025-01-11 05:00:00')
 * -start, --startnow: (optional) start maintenance now
 * -end, --endnow: (optional) end maintenance now
+
+## SQL Objects
+
+For MSSQL, you can place servers, instances, or databases on maintennce. To place and instance on maintenance:
+
+```bash
+./maintenance.py -v mycluster \
+                 -u myuser \
+                 -d mydomain.net \
+                 -n mysqlserver.mydomain.net/MYINSTANCE \
+                 -start
+```
+
+To place a database on maintenance:
+
+```bash
+./maintenance.py -v mycluster \
+                 -u myuser \
+                 -d mydomain.net \
+                 -n mysqlserver.mydomain.net/MYINSTANCE/mydb \
+                 -start
+```
+
+To place an AAG database on maintenance:
+
+```bash
+./maintenance.py -v mycluster \
+                 -u myuser \
+                 -d mydomain.net \
+                 -n myaag/mydb \
+                 -start
+```
