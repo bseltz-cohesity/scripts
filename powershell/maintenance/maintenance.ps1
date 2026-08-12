@@ -95,57 +95,89 @@ if($USING_HELIOS){
 }
 # end authentication =========================================
 
+function updateMeta($thisObjName, $thisObjId){
+    $metaUpdate = $False
+    if($startMaintenance -eq $True){
+        Write-Host "Scheduling maintenance on $thisObjName"
+        $maintenanceParams = @{
+            "sourceId" = $thisObjId;
+            "entityList" = @(
+                @{
+                    "entityId" = $thisObjId;
+                    "maintenanceModeConfig" = @{
+                        "userMessage" = "test";
+                        "workflowInterventionSpecList" = @(
+                            @{
+                                "workflowType" = "BackupRun";
+                                "intervention" = "Cancel"
+                            }
+                        );
+                        "activationTimeIntervals" = @(
+                            @{
+                                "startTimeUsecs" = $startTimeUsecs;
+                                "endTimeUsecs" = $endTimeUsecs
+                            }
+                        )
+                    }
+                }
+            )
+        }
+        $metaUpdate = $True
+    }elseif($endMaintenance -eq $True){
+        Write-Host "Ending maintenance on $thisObjName"
+        $maintenanceParams = @{
+            "sourceId" = $thisObjId;
+            "entityList" = @(
+                @{
+                    "entityId" = $thisObjId;
+                    "maintenanceModeConfig" = @{}
+                }
+            )
+        }
+        $metaUpdate = $True
+    }
+    if($metaUpdate -eq $True){
+        $null = api put -v2 data-protect/objects/metadata $maintenanceParams
+    }
+}
+
 $sources = api get "protectionSources/registrationInfo?useCachedData=false&includeExternalMetadata=true&includeEntityPermissionInfo=true&includeApplicationsTreeInfo=false"
 
 foreach($sourceName in $sourceNames){
-    $source = $sources.rootNodes | Where-Object {$_.rootNode.name -eq $sourceName}
+    $thisSourceName, $thisObjectName = $sourceName -split '/',2
+    
+    $source = $sources.rootNodes | Where-Object {$_.rootNode.name -eq $thisSourceName}
     if(!$source){
         Write-Host "Source $sourceName not found" -ForegroundColor Yellow
         exit 1
     }else{
         foreach($thisSource in $source){
-            $metaUpdate = $False
-            if($startMaintenance -eq $True){
-                Write-Host "Scheduling maintenance on $($thisSource.rootNode.name)"
-                $maintenanceParams = @{
-                    "sourceId" = $thisSource.rootNode.id;
-                    "entityList" = @(
-                        @{
-                            "entityId" = $thisSource.rootNode.id;
-                            "maintenanceModeConfig" = @{
-                                "userMessage" = "test";
-                                "workflowInterventionSpecList" = @(
-                                    @{
-                                        "workflowType" = "BackupRun";
-                                        "intervention" = "Cancel"
-                                    }
-                                );
-                                "activationTimeIntervals" = @(
-                                    @{
-                                        "startTimeUsecs" = $startTimeUsecs;
-                                        "endTimeUsecs" = $endTimeUsecs
-                                    }
-                                )
+            if($thisObjectName -and 'kSQL' -notin @($thisSource.registrationInfo.environments)){
+                Write-Host "Object-level maintenance only supported for MSSQL sources" -ForegroundColor Yellow
+                Write-Host "Skipping $sourceName" -ForegroundColor Yellow
+                continue
+            }
+            if($thisObjectName -and 'kSQL' -in @($thisSource.registrationInfo.environments)){
+                $foundObject = $false
+                $thisSourceObj = api get protectionSources?id=$($thisSource.rootNode.id)
+                foreach($instance in @($thisSourceObj.applicationNodes + $thisSourceObj.nodes)){
+                    if($instance.protectionSource.name -eq $thisObjectName){
+                        updateMeta $sourceName $instance.protectionSource.id
+                        $foundObject = $True
+                    }else{
+                        foreach($db in $instance.nodes){
+                            if($db.protectionSource.name -eq $thisObjectName){
+                                updateMeta $sourceName $db.protectionSource.id
+                                $foundObject = $True
                             }
                         }
-                    )
+                    }
                 }
-                $metaUpdate = $True
-            }elseif($endMaintenance -eq $True){
-                Write-Host "Ending maintenance on $($thisSource.rootNode.name)"
-                $maintenanceParams = @{
-                    "sourceId" = $thisSource.rootNode.id;
-                    "entityList" = @(
-                        @{
-                            "entityId" = $thisSource.rootNode.id;
-                            "maintenanceModeConfig" = @{}
-                        }
-                    )
+                if($foundObject -eq $False){
+                    Write-Host "$sourceName not found" -ForegroundColor Yellow
                 }
-                $metaUpdate = $True
-            }
-            if($metaUpdate -eq $True){
-                $null = api put -v2 data-protect/objects/metadata $maintenanceParams
+            }else{
+                updateMeta $sourceName $thisSource.rootNode.id
             }
         }
     }

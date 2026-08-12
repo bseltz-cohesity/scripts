@@ -76,3 +76,35 @@ End maintenance now:
 * -endTime: (optional) time to end maintenance (e.g. '2025-01-11 05:00:00')
 * -startNow: (optional) start maintenance now
 * -endNow: (optional) end maintenance now
+
+## SQL Objects
+
+For MSSQL, you can place servers, instances, or databases on maintennce. To place and instance on maintenance:
+
+```powershell
+./maintenance.ps1 -vip mycluster `
+                  -username myusername `
+                  -domain mydomain.net `
+                  -sourceName mysqlserver.mydomain.net/MYINSTANCE ` 
+                  -endNow
+```
+
+To place a database on maintenance:
+
+```powershell
+./maintenance.ps1 -vip mycluster `
+                  -username myusername `
+                  -domain mydomain.net `
+                  -sourceName mysqlserver.mydomain.net/MYINSTANCE/mydb ` 
+                  -endNow
+```
+
+To place an AAG database on maintenance:
+
+```powershell
+./maintenance.ps1 -vip mycluster `
+                  -username myusername `
+                  -domain mydomain.net `
+                  -sourceName myaag/mydb ` 
+                  -endNow
+```
