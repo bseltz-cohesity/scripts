@@ -35,6 +35,7 @@ parser.add_argument('-s', '--sourceserver', type=str, required=True)
 parser.add_argument('-ts', '--targetserver', type=str, default=None)
 parser.add_argument('-n', '--objectname', action='append', type=str)
 parser.add_argument('-p', '--prefix', type=str, default=None)
+parser.add_argument('-tdb', '--targetdbname', type=str, default=None, help="Exact name for the restored database (e.g. restore SAMPLE as a new database named PROD). Overrides --prefix, and can only be used with a single -n/--objectname")
 parser.add_argument('-o', '--overwrite', action='store_true')
 parser.add_argument('-lt', '--logtime', type=str, default=None)
 parser.add_argument('-l', '--latest', action='store_true')
@@ -79,6 +80,7 @@ sourceserver = args.sourceserver
 targetserver = args.targetserver
 objectnames = args.objectname
 prefix = args.prefix
+targetdbname = args.targetdbname
 overwrite = args.overwrite
 logtime = args.logtime
 latest = args.latest
@@ -128,8 +130,14 @@ if recoveryargs is None:
 if targetserver is None:
     targetserver = sourceserver
 
+# -tdb/--targetdbname renames a single restored object to an exact name; it doesn't make
+# sense (and would collide) when restoring more than one object at a time
+if targetdbname is not None and len(objectnames) > 1:
+    print('-tdb, --targetdbname can only be used when restoring a single object (one -n, --objectname)')
+    exit(1)
+
 # verify overwrite
-if targetserver == sourceserver and (len(objectnames) == 0 and prefix is None):
+if targetserver == sourceserver and (len(objectnames) == 0 and prefix is None and targetdbname is None):
     if overwrite is not True:
         print('-overWrite required if restoring to original location')
         exit()
@@ -235,9 +243,6 @@ if logtime is not None or latest:
                             pit = desiredPIT
                             break
 
-    # DEBUG: remove once verified
-    # print('DEBUG latestSnapshotTimeStamp=%s latestLogPIT=%s latestFullSnapshotTime=%s pit=%s' % (latestSnapshotTimeStamp, latestLogPIT, latestFullSnapshotTime, pit))
-
     # if a full snapshot exists that is newer than both the snapshot already selected and
     # the best point in time reachable via logs, recover from that full snapshot directly
     # instead of rolling forward via (now stale) logs. Build its snapshotId directly from
@@ -300,24 +305,26 @@ restoreParams = {
 }
 
 if len(objectnames) == 0:
-    if prefix is not None:
-        renameTo = "%s-%s" % (prefix, latestSnapshot['objectName'])
-    else:
-        renameTo = None
     objectnames.append(latestSnapshot['objectName'])
 
+anyRename = False
 for o in objectnames:
-    if prefix is not None:
+    if targetdbname is not None:
+        renameTo = targetdbname
+    elif prefix is not None:
         renameTo = "%s-%s" % (prefix, o)
     else:
         renameTo = None
+    if renameTo is not None:
+        anyRename = True
     restoreParams['udaParams']['recoverUdaParams']['snapshots'][0]['objects'].append({"objectName": o,
                                                                                        "objectId": None,
-                                                                                       "overwrite": True,
+                                                                                       "overwrite": overwrite,
                                                                                        "renameTo": renameTo})
 
-# specify target host ID (Recover To: New Location)
-if targetserver != sourceserver:
+# specify target host ID: required for a "New Location" restore (different target host), and
+# also required when restoring into a renamed/new object even on the same host
+if targetserver != sourceserver or anyRename:
     restoreParams['udaParams']['recoverUdaParams']['recoverTo'] = targetEntity['protectionSource']['id']
 
 # specify point in time

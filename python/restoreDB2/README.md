@@ -54,6 +54,7 @@ Place both files in a folder together and run the main script like so:
 * -ts, --targetserver: (optional) registered DB2 target host to restore to (defaults to same as sourceserver)
 * -n, --objectname: (optional) name of database to restore (repeat for multiple)
 * -p, --prefix: (optional) apply prefix to restored database (only valid when using -n, --objectname)
+* -tdb, --targetdbname: (optional) exact name for the restored database, e.g. restore SAMPLE as a new database named PROD (overrides -p, --prefix; can only be used with a single -n, --objectname)
 * -lt, --logtime: (optional) point in time to replay the logs to during the restore (e.g. '2026-08-10 09:00:00')
 * -l, --latest: (optional) replay the logs to the latest log backup date
 * -w, --wait: (optional) wait for the restore to complete and report end status (e.g. kSuccess)
@@ -126,6 +127,13 @@ Restore and rename the database using a prefix instead of overwriting in place:
 ```bash
 ./restoreDB2.py -v mycluster -u myusername -d mydomain.net \
                 -s DB2SOURCE -n SAMPLE -p RESTORED -w
+```
+
+Restore as a new database with an exact name, leaving the original untouched:
+
+```bash
+./restoreDB2.py -v mycluster -u myusername -d mydomain.net \
+                -s DB2SOURCE -n SAMPLE -tdb PROD -w
 ```
 
 Redirected restore with new data/log paths and a local database directory:
