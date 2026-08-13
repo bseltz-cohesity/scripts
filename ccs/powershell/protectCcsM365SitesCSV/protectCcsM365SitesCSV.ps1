@@ -12,7 +12,8 @@ param (
     [Parameter()][int]$fullSlaMinutes = 1440,  # full SLA minutes
     [Parameter()][switch]$useMBS,
     [Parameter()][switch]$dbg,
-    [Parameter()][int]$autoprotectCount = 0
+    [Parameter()][int]$autoprotectCount = 0,
+    [Parameter()][int]$batchSize = 50  # number of sites to include per protection API call
 )
 
 $objectsToAdd = @()
@@ -73,6 +74,7 @@ $script:unprotectedIndex = @()
 $script:notClassic = @()
 $script:protectedCount = 0
 $script:autoprotectedCount = 0
+$script:batch = @()
 
 function protectNodes($source){
     if($source -ne $null -and $source.PSObject.Properties['nodes']){
@@ -87,7 +89,7 @@ function protectNodes($source){
             }
             if($node.unprotectedSourcesSummary[0].leavesCount -gt 0){
                 $script:unprotectedIndex = @($script:unprotectedIndex + $node.protectionSource.id)
-                protectObject $node.protectionSource.office365ProtectionSource.webUrl $node.protectionSource.id
+                queueObject $node.protectionSource.office365ProtectionSource.webUrl $node.protectionSource.id
             }else{
                 $script:protectedCount += 1
                 Write-Host "Site $($node.protectionSource.office365ProtectionSource.webUrl) already protected" -ForegroundColor Magenta
@@ -117,7 +119,10 @@ function indexObject($obj){
     }
 }
 
-function protectObject($objWebUrl, $objId){
+function flushBatch(){
+    if($script:batch.Count -eq 0){
+        return
+    }
     $protectionParams = @{
         "policyId"         = "";
         "startTime"        = @{
@@ -145,9 +150,11 @@ function protectObject($objWebUrl, $objId){
                     "objectProtectionType"              = "kSharePoint";
                     "sharepointSiteObjectProtectionParams" = @{
                         "objects"        = @(
-                            @{
-                                "id" = $objId;
-                                "shouldAutoProtectObject" = $false
+                            $script:batch | ForEach-Object {
+                                @{
+                                    "id" = $_.id;
+                                    "shouldAutoProtectObject" = $false
+                                }
                             }
                         );
                         "indexingPolicy" = @{
@@ -167,12 +174,21 @@ function protectObject($objWebUrl, $objId){
     }else{
         $protectionParams.policyId = $policy.id
     }
+    Write-Host "Protecting batch of $($script:batch.Count) site(s)"
+    $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
+    $script:batch = @()
+}
+
+function queueObject($objWebUrl, $objId){
     if($objId -in $script:notClassic){
         Write-Host "Skipping $objWebUrl (Team/Group Site)" -ForegroundColor Magenta
     }else{
         $script:autoprotectedCount += 1
-        Write-Host "Protecting $objWebUrl"
-        $null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
+        Write-Host "Queuing $objWebUrl"
+        $script:batch = @($script:batch + @{"id" = $objId; "webUrl" = $objWebUrl})
+        if($script:batch.Count -ge $batchSize){
+            flushBatch
+        }
     }
 }
 
@@ -230,10 +246,13 @@ foreach($obj in $objectsToAdd){
         if($autoprotectCount -gt 0 -and $script:autoprotectedCount -ge $autoprotectCount){
             break
         }
-        protectObject $objWebUrl $objId
+        queueObject $objWebUrl $objId
     }elseif($objId -and $objId -notin $script:unprotectedIndex){
         Write-Host "Site $objWebUrl already protected" -ForegroundColor Magenta
     }else{
         Write-Host "Site $objWebUrl not found" -ForegroundColor Yellow
     }
 }
+
+# post any remaining objects that didn't fill a complete batch
+flushBatch

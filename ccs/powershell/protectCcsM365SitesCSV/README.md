@@ -50,6 +50,7 @@ Place both files in a folder together and run the main script like so:
 * -timeZone: (optional) e.g. 'America/New_York' (default is 'America/New_York')
 * -incrementalSlaMinutes: (optional) default 60
 * -fullSlaMinutes: (optional) default is 120
+* -batchSize: (optional) number of sites to protect per batch (default is 50)
 * -pageSize: (optional) limit number of objects returned pr page (default is 50000)
 * -useMBS: (optional) use Microsoft 365 Backup Storage
 
