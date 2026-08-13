@@ -191,30 +191,24 @@ if(!$jobGroup){
 # find unprotected mailboxes
 "`nFinding mailboxes to protect"
 $foundObjects = 0
-while($foundObjects -lt $maxToProtect){
-    $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kUser&isProtected=false&sourceIds=$rootSourceId&count=500&searchString=*"
-    foreach($obj in $search.objects | Sort-Object -Property name){
-        foreach($objectProtectionInfo in $obj.objectProtectionInfos | Where-Object {$_.sourceId -eq $rootSourceId}){
-            $objId = $objectProtectionInfo.objectId
-            if($objId -and $objId -notin $script:protectedIndex){
-                $foundObjects += 1
-                $objectsToAdd = @($objectsToAdd + @{'name' = $obj.name; 'id' = $objectProtectionInfo.objectId})
-                if($foundObjects -ge $maxToProtect){
-                    break
-                }
+
+$search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kO365Exchange&isProtected=false&sourceIds=$rootSourceId&count=$maxToProtect&searchString=*"
+foreach($obj in $search.objects | Sort-Object -Property name){
+    foreach($objectProtectionInfo in $obj.objectProtectionInfos | Where-Object {$_.sourceId -eq $rootSourceId}){
+        $objId = $objectProtectionInfo.objectId
+        if($objId -and $objId -notin $script:protectedIndex){
+            $foundObjects += 1
+            $objectsToAdd = @($objectsToAdd + @{'name' = $obj.name; 'id' = $objectProtectionInfo.objectId})
+            if($foundObjects -ge $maxToProtect){
+                break
             }
-        }
-        if($foundObjects -ge $maxToProtect){
-            break
         }
     }
     if($foundObjects -ge $maxToProtect){
         break
     }
-    if(@($search.objects).Count -lt 500){
-        break
-    }
 }
+
 "`nFound $foundObjects mailboxes to protect`n" | Tee-Object -FilePath $logFile -Append
 $message = "Found $foundObjects mailboxes to protect`n" 
 
