@@ -11,6 +11,7 @@ param (
     [Parameter()][int]$incrementalSlaMinutes = 1440,  # incremental SLA minutes
     [Parameter()][int]$fullSlaMinutes = 1440,  # full SLA minutes
     [Parameter()][switch]$useMBS,
+    [Parameter()][switch]$skipIfProtectedInOtherRegion,
     [Parameter()][switch]$dbg,
     [Parameter()][int]$autoprotectCount = 0,
     [Parameter()][int]$batchSize = 50  # number of sites to include per protection API call
@@ -100,6 +101,14 @@ function protectNodes($source){
 }
 
 function indexObject($obj){
+    if($skipIfProtectedInOtherRegion){
+        foreach($existingProtectionInfo in $obj.objectProtectionInfos){
+            if($existingProtectionInfo.objectBackupConfiguration -ne $null -and @($existingProtectionInfo.objectBackupConfiguration).Count -gt 0){
+                Write-Host "Site $($obj.sharepointParams.siteWebUrl) already protected in region $($existingProtectionInfo.regionId)" -ForegroundColor Magenta
+                return
+            }
+        }
+    }
     foreach($objectProtectionInfo in $obj.objectProtectionInfos | Where-Object {$_.regionId -eq $region -and $_.sourceId -eq $rootSourceId}){
         $script:nameIndex[$obj.name] = $objectProtectionInfo.objectId
         $script:idIndex["$($objectProtectionInfo.objectId)"] = $obj.name

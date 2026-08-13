@@ -53,6 +53,7 @@ Place both files in a folder together and run the main script like so:
 * -batchSize: (optional) number of sites to protect per batch (default is 50)
 * -pageSize: (optional) limit number of objects returned pr page (default is 50000)
 * -useMBS: (optional) use Microsoft 365 Backup Storage
+* -skipIfProtectedInOtherRegion: (optional) skip sites that are protected in another region
 
 ## Authenticating to Ccs
 
