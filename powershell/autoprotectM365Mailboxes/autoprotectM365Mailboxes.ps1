@@ -192,19 +192,73 @@ if(!$jobGroup){
 "`nFinding mailboxes to protect"
 $foundObjects = 0
 
-$search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kO365Exchange&isProtected=false&sourceIds=$rootSourceId&count=$maxToProtect&searchString=*"
-foreach($obj in $search.objects | Sort-Object -Property name){
-    foreach($objectProtectionInfo in $obj.objectProtectionInfos | Where-Object {$_.sourceId -eq $rootSourceId}){
-        $objId = $objectProtectionInfo.objectId
-        if($objId -and $objId -notin $script:protectedIndex){
-            $foundObjects += 1
-            $objectsToAdd = @($objectsToAdd + @{'name' = $obj.name; 'id' = $objectProtectionInfo.objectId})
-            if($foundObjects -ge $maxToProtect){
-                break
+if($cluster.clusterSoftwareVersion -lt '6.6'){
+    $entityTypes = 'kMailbox,kUser,kGroup,kSite,kPublicFolder'
+}else{
+    $entityTypes = 'kMailbox,kUser,kGroup,kSite,kPublicFolder,kO365Exchange,kO365OneDrive,kO365Sharepoint'
+}
+
+$source = api get "protectionSources?id=$rootSourceId&excludeOffice365Types=$entityTypes&allUnderHierarchy=false"
+$mailboxesNode = $source.nodes | Where-Object {$_.protectionSource.name -eq 'users'}
+if(!$mailboxesNode){
+    Write-Host "Source $sourceName is not configured for O365 mailboxes" -ForegroundColor Yellow
+    exit
+}
+
+$mailboxes = api get "protectionSources?pageSize=50000&nodeId=$($mailboxesNode.protectionSource.id)&id=$($mailboxesNode.protectionSource.id)&allUnderHierarchy=false&hasValidMailbox=true&useCachedData=false"
+$cursor = $mailboxes.entityPaginationParameters.beforeCursorEntityId
+if($mailboxesNode.protectionSource.id -in $script:protectedIndex){
+    $autoProtected = $True
+}
+
+$nameIndex = @{}
+$smtpIndex = @{}
+$unprotectedIndex = @()
+$nodeIdIndex = @()
+$lastCursor = 0
+
+# enumerate mailboxes
+while(1){
+    foreach($node in $mailboxes.nodes){
+        $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
+        $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
+        $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
+        if($autoProtected -ne $True -and $node.protectionSource.id -notin $script:protectedIndex){
+            if($includeDomain.Count -eq 0 -or $(($node.protectionSource.office365ProtectionSource.primarySMTPAddress -split '@')[-1]) -in $includeDomain){
+                $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
+                $objectsToAdd = @($objectsToAdd + @{'name' = $node.protectionSource.name; 'id' = $node.protectionSource.id})
+                $foundObjects += 1
             }
         }
+        $lastCursor = $node.protectionSource.id
+        if($foundObjects -ge $maxToProtect){
+            break
+        }
     }
-    if($foundObjects -ge $maxToProtect){
+    if($cursor){
+        $mailboxes = api get "protectionSources?pageSize=50000&nodeId=$($mailboxesNode.protectionSource.id)&id=$($mailboxesNode.protectionSource.id)&allUnderHierarchy=false&hasValidMailbox=true&useCachedData=false&afterCursorEntityId=$cursor"
+        $cursor = $mailboxes.entityPaginationParameters.beforeCursorEntityId
+    }else{
+        break
+    }
+    # patch for 6.8.1
+    if($mailboxes.nodes -eq $null){
+        if($cursor -gt $lastCursor){
+            $node = api get protectionSources?id=$cursor
+            $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
+            $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
+            $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
+            if($autoProtected -ne $True -and $node.protectionSource.id -notin $script:protectedIndex){
+                if($includeDomain.Count -eq 0 -or $(($node.protectionSource.office365ProtectionSource.primarySMTPAddress -split '@')[-1]) -in $includeDomain){
+                    $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
+                    $objectsToAdd = @($objectsToAdd + @{'name' = $node.protectionSource.name; 'id' = $node.protectionSource.id})
+                    $foundObjects += 1
+                }
+            }
+            $lastCursor = $node.protectionSource.id
+        }
+    }
+    if($cursor -eq $lastCursor){
         break
     }
 }
@@ -213,6 +267,7 @@ foreach($obj in $search.objects | Sort-Object -Property name){
 $message = "Found $foundObjects mailboxes to protect`n" 
 
 # add unprotected mailboxes to protection groups
+
 foreach($obj in $objectsToAdd){
     $objName = $obj.name
     $objId = $obj.id
@@ -307,7 +362,7 @@ foreach($job in $newJobs.Values){
             "includeFolders" = $null
         }
     }
-    $null = api post -v2 data-protect/protection-groups/ $job
+    $null = api post -v2 data-protect/protection-groups $job
 }
 
 if($smtpServer -and $sendTo -and $sendFrom){
