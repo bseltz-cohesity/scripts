@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-08-13`] [autoprotectM365Mailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/autoprotectM365Mailboxes) [`Update`] fixes
 * [`2026-08-13`] [protectCcsM365SitesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365SitesCSV) [`Update`] added -batchSite and -SkipIfProtectedInOtherRegion
 * [`2026-08-12`] [maintenance.py](https://github.com/cohesity/community-automation-samples/tree/main/python/maintenance) [`Update`] added support for SQL objects
 * [`2026-08-12`] [maintenance.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/maintenance) [`Update`] added support for SQL objects
