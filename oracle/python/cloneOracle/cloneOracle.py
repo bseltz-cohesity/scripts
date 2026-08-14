@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 """Clone an Oracle DB Using python"""
 
+## version 2026-08-14a
+
 ### usage: ./cloneOracle.py -v mycluster \
 #                           -u myuser \
 #                           -d mydomain.net \
