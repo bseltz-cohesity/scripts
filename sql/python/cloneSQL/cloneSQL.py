@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 """Clone a SQL DB Using python"""
 
-## version 2026-08-17
-
-### usage: ./cloneSQL.py -v mycluster \
-#                         -u myuser \
-#                         -d mydomain.net \
-#                         -c myheliosclustername \
-#                         -ss SQL2012 \
-#                         -sd CohesityDB \
-#                         -ts SQLDEV01 \
-#                         -td CohesityDB-Dev \
-#                         -ti MSSQLSERVER \
-#                         -w
+## version 2026-08-18
 
 ### import pyhesity wrapper module
 from pyhesity import *
@@ -195,6 +184,8 @@ if logtime is not None or latest is True:
                 logtime = None
                 latest = None
                 break
+        if 'timeRangeVec' not in logTimeRange['ownerObjectTimeRangeInfoVec'][0]:
+            continue
         logStart = logTimeRange['ownerObjectTimeRangeInfoVec'][0]['timeRangeVec'][0]['startTimeUsecs']
         logEnd = logTimeRange['ownerObjectTimeRangeInfoVec'][0]['timeRangeVec'][0]['endTimeUsecs']
         if latest is True:
