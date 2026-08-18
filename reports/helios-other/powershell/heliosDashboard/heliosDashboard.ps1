@@ -59,6 +59,11 @@ function HtmlEncode($text) {
     return [System.Net.WebUtility]::HtmlEncode("$text")
 }
 
+function Format-Environment($env) {
+    if (-not $env) { return '&ndash;' }
+    return HtmlEncode ($env -replace '^k', '')
+}
+
 function Get-HealthBadge($cluster) {
     if ($cluster.isConnectedToHelios -ne $true) {
         return '<span class="badge badge-muted">Disconnected</span>'
@@ -303,6 +308,9 @@ if ($showProtectionGroups) {
     "$(@($sortedProtectionGroups).Count) protection groups found across all clusters`n"
 }
 
+$sessionUser = api get sessionUser
+$tenantName = $sessionUser.profiles[0].tenantName
+
 # 5) build the HTML ------------------------------------------------------------------------------
 $sb = [System.Text.StringBuilder]::new()
 
@@ -444,6 +452,8 @@ $sb = [System.Text.StringBuilder]::new()
   .no-alert, .no-data { color: var(--subtext); font-size: 12px; }
   .alert-summary { max-width: 320px; }
   .alert-summary .desc { font-size: 12px; color: var(--subtext); display: block; margin-top: 2px; }
+  table.pg-table { table-layout: fixed; }
+  table.pg-table .alert-summary { max-width: none; overflow-wrap: break-word; }
   footer { margin-top: 20px; font-size: 11px; color: var(--subtext); }
 </style>
 </head>
@@ -453,7 +463,7 @@ $bodyClass = if ($theme -eq 'Dark') { ' class="dark"' } else { '' }
 [void]$sb.Append("<body$bodyClass>")
 [void]$sb.Append('<div class="container">')
 
-[void]$sb.Append("<h1>Helios Cluster Health Dashboard</h1>")
+[void]$sb.Append("<h1>Helios Cluster Health Dashboard - $tenantName</h1>")
 [void]$sb.Append("<div class=`"subtitle`">Source: $(HtmlEncode $vip) &nbsp;|&nbsp; Generated $(Get-Date -Format 'yyyy-MM-dd HH:mm') &nbsp;|&nbsp; Active alert stats window: last $alertDays day(s)</div>")
 
 # summary cards
@@ -547,11 +557,21 @@ foreach ($cluster in $clusters) {
 if ($showProtectionGroups) {
     [void]$sb.Append("<h2 class=`"section-title`">Protection Groups ($(@($sortedProtectionGroups).Count) total, grouped by cluster)</h2>")
     [void]$sb.Append(@'
-<table class="dashboard-table alerts-table">
+<table class="dashboard-table alerts-table pg-table">
+<colgroup>
+  <col style="width:13%">
+  <col style="width:19%">
+  <col style="width:10%">
+  <col style="width:12%">
+  <col style="width:11%">
+  <col style="width:8%">
+  <col style="width:27%">
+</colgroup>
 <thead>
 <tr>
   <th>Cluster</th>
   <th>Protection Group</th>
+  <th>Environment</th>
   <th>Last Run</th>
   <th>Last Status</th>
   <th>Paused</th>
@@ -562,12 +582,13 @@ if ($showProtectionGroups) {
 '@)
 
     if (@($sortedProtectionGroups).Count -eq 0) {
-        [void]$sb.Append('<tr><td colspan="6"><span class="no-data">No protection groups found.</span></td></tr>')
+        [void]$sb.Append('<tr><td colspan="7"><span class="no-data">No protection groups found.</span></td></tr>')
     }
     else {
         foreach ($pg in $sortedProtectionGroups) {
             $pgClusterName = HtmlEncode $pg.ResolvedClusterName
             $pgName = HtmlEncode $pg.name
+            $pgEnvironment = Format-Environment $pg.environment
 
             $runSummary = Get-LastRunSummary $pg
             $lastRunHtml = if ($runSummary -and $runSummary.startTimeUsecs) { HtmlEncode (Format-Timestamp $runSummary.startTimeUsecs) } else { '<span class="no-data">&ndash;</span>' }
@@ -583,6 +604,7 @@ if ($showProtectionGroups) {
             [void]$sb.Append("<tr class=`"$zebraClass`">")
             [void]$sb.Append("<td class=`"cluster-name`">$pgClusterName</td>")
             [void]$sb.Append("<td>$pgName</td>")
+            [void]$sb.Append("<td>$pgEnvironment</td>")
             [void]$sb.Append("<td>$lastRunHtml</td>")
             [void]$sb.Append("<td>$lastStatusHtml</td>")
             [void]$sb.Append("<td>$pausedHtml</td>")
