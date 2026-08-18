@@ -257,7 +257,7 @@ else:
 if dbg:
     with open('clone-sql.json', 'w') as f:
         json.dump(cloneTask, f, indent=4)
-    exit(0)
+    # exit(0)
 
 ### execute the clone task (post /cloneApplication api call)
 response = api('post', '/cloneApplication', cloneTask)
