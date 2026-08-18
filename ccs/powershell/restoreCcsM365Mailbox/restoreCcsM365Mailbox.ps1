@@ -48,6 +48,15 @@ if(!$cohesity_api.authorized){
     exit 1
 }
 
+# validate region
+$sessionUser = api get sessionUser
+$tenantId = $sessionUser.profiles[0].tenantId
+$regions = api get -mcmv2 dms/tenants/regions?tenantId=$tenantId
+if($region -notin @($regions.tenantRegionInfoList.regionId)){
+    Write-Host "Invalid region specified. Valid regions are $(($regions.tenantRegionInfoList.regionId | Sort-Object) -join ', ')" -ForegroundColor Yellow
+    exit 1
+}
+
 $targetMailboxName = $null
 $targetMailboxId = $null
 $targetParentId = $null
