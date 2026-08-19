@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-08-19`] [jsonExporter.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/grafana/JSON-API/ClusterStats) [`Update`] added more performance stats
+* [`2026-08-19`] [Cluster-Stats-JSON-API.json](https://github.com/cohesity/community-automation-samples/tree/main/reports/grafana/JSON-API/ClusterStats) [`Update`] added more performance stats
 * [`2026-08-18`] [restoreCcsM365Mailbox.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365Mailbox) [`Update`] validate specified region
 * [`2026-08-18`] [cloneSQL.py](https://github.com/cohesity/community-automation-samples/tree/main/sql/python/cloneSQL) [`New`] clone a SQL database using Python
 * [`2026-08-14`] [unprotectCCSAzureVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/unprotectCCSAzureVMs) [`New`] unprotect CCS Azure VMs
