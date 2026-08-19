@@ -101,4 +101,4 @@ To connect through Helios or MCM:
 * -l, --latest: (optional) replay logs to the very latest available point in time
 * -w, --wait: (optional) wait for the clone task to complete
 * -st, --sleeptime: (optional) seconds to wait between status checks while waiting (default is 15)
-* -dbg, --dbg: (optional) write the clone task JSON to clone-sql.json and exit without executing
+* -dbg, --dbg: (optional) write the clone task JSON to clone-sql.json for debugging
