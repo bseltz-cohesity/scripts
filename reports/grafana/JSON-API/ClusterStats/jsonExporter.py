@@ -26,10 +26,42 @@ def getstats():
     endmsecs = startmsecs + (86400000 * 8)
     apiauth(vip=vip, username='helios', domain='local', password=apiKey, useApiKey=True, noretry=True)
     cluster = api('get', 'cluster')
-    cpustats = api('get', 'statistics/timeSeriesStats?metricName=kCpuUsagePct&metricUnitType=9&rollupFunction=average&rollupIntervalSecs=180&schemaName=kSentryClusterStats&startTimeMsecs=%s&entityId=%s&endTimeMsecs=%s' % (startmsecs, cluster['id'], endmsecs))
-    backupstats = api('get', 'statistics/timeSeriesStats?metricName=kNumBytesRead&metricUnitType=0&rollupFunction=max&rollupIntervalSecs=120&schemaName=kMagnetoClusterStats&startTimeMsecs=%s&entityId=%s&endTimeMsecs=%s' % (startmsecs, cluster['id'], endmsecs))
-    throughputstats = api('get', 'statistics/timeSeriesStats?metricName=kNumBytesWritten&metricUnitType=5&rollupFunction=max&rollupIntervalSecs=180&schemaName=kBridgeClusterStats&startTimeMsecs=%s&entityId=%s&endTimeMsecs=%s' % (startmsecs, cluster['id'], endmsecs))
-    return {'stats': {'cpustats': cpustats, 'backupstats': backupstats, 'throughputstats': throughputstats}}
+    clusterId = cluster['id']
+
+    # CPU utilization (%)
+    cpustats = api('get', 'statistics/timeSeriesStats?metricName=kCpuUsagePct&metricUnitType=9&rollupFunction=average&rollupIntervalSecs=180&schemaName=kSentryClusterStats&startTimeMsecs=%s&entityId=%s&endTimeMsecs=%s' % (startmsecs, clusterId, endmsecs))
+
+    # Memory utilization (%)
+    memorystats = api('get', 'statistics/timeSeriesStats?metricName=kMemoryUsagePct&metricUnitType=9&rollupFunction=average&rollupIntervalSecs=180&schemaName=kSentryClusterStats&startTimeMsecs=%s&entityId=%s&endTimeMsecs=%s' % (startmsecs, clusterId, endmsecs))
+
+    # Bytes read from backup source (kept for backward compatibility)
+    backupstats = api('get', 'statistics/timeSeriesStats?metricName=kNumBytesRead&metricUnitType=0&rollupFunction=max&rollupIntervalSecs=120&schemaName=kMagnetoClusterStats&startTimeMsecs=%s&entityId=%s&endTimeMsecs=%s' % (startmsecs, clusterId, endmsecs))
+
+    # Write throughput (kept for backward compatibility)
+    throughputstats = api('get', 'statistics/timeSeriesStats?metricName=kNumBytesWritten&metricUnitType=5&rollupFunction=max&rollupIntervalSecs=180&schemaName=kBridgeClusterStats&startTimeMsecs=%s&entityId=%s&endTimeMsecs=%s' % (startmsecs, clusterId, endmsecs))
+
+    # Read/Write IOPS (cluster-wide, from Cluster Logical Stats)
+    readiopsstats = api('get', 'statistics/timeSeriesStats?metricName=kReadIos&rollupFunction=average&rollupIntervalSecs=180&schemaName=kBridgeClusterLogicalStats&startTimeMsecs=%s&entityId=%s&endTimeMsecs=%s' % (startmsecs, clusterId, endmsecs))
+    writeiopsstats = api('get', 'statistics/timeSeriesStats?metricName=kWriteIos&rollupFunction=average&rollupIntervalSecs=180&schemaName=kBridgeClusterLogicalStats&startTimeMsecs=%s&entityId=%s&endTimeMsecs=%s' % (startmsecs, clusterId, endmsecs))
+
+    # Read/Write latency (microseconds, cluster-wide)
+    readlatencystats = api('get', 'statistics/timeSeriesStats?metricName=kReadLatencyUsecs&rollupFunction=average&rollupIntervalSecs=180&schemaName=kBridgeClusterLogicalStats&startTimeMsecs=%s&entityId=%s&endTimeMsecs=%s' % (startmsecs, clusterId, endmsecs))
+    writelatencystats = api('get', 'statistics/timeSeriesStats?metricName=kWriteLatencyUsecs&rollupFunction=average&rollupIntervalSecs=180&schemaName=kBridgeClusterLogicalStats&startTimeMsecs=%s&entityId=%s&endTimeMsecs=%s' % (startmsecs, clusterId, endmsecs))
+
+    # Morphed garbage (bytes, cluster-wide)
+    morphedgarbagestats = api('get', 'statistics/timeSeriesStats?metricName=kMorphedGarbageBytes&metricUnitType=0&range=week&rollupFunction=average&rollupIntervalSecs=720&schemaName=kBridgeClusterStats&startTimeMsecs=%s&entityId=%s&endTimeMsecs=%s' % (startmsecs, clusterId, endmsecs))
+
+    return {'stats': {
+        'cpustats': cpustats,
+        'memorystats': memorystats,
+        'backupstats': backupstats,
+        'throughputstats': throughputstats,
+        'readiopsstats': readiopsstats,
+        'writeiopsstats': writeiopsstats,
+        'readlatencystats': readlatencystats,
+        'writelatencystats': writelatencystats,
+        'morphedgarbagestats': morphedgarbagestats,
+    }}
 
 
 if __name__ == "__main__":
