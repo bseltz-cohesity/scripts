@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-08-20`] [autoprotectCcsM365SitesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/autoprotectCcsM365SitesCSV) [`New`] autoprotect CCS M365 sites
 * [`2026-08-20`] [Find-GitHubFile.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/Find-GitHubFile) [`New`] find scripts in the GitHub repo
 * [`2026-08-19`] [jsonExporter.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/grafana/JSON-API/ClusterStats) [`Update`] added more performance stats
 * [`2026-08-19`] [Cluster-Stats-JSON-API.json](https://github.com/cohesity/community-automation-samples/tree/main/reports/grafana/JSON-API/ClusterStats) [`Update`] added more performance stats
