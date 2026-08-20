@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-08-20`] [unprotectSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/unprotectSQL) [`New`] unprotect SQL servers, instances and databases
+* [`2026-08-20`] [unprotectSQLServer.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/unprotectSQLServer) [`Removed`] deprecated and removed (see new script above)
+* [`2026-08-20`] [unprotectSQLDB.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/unprotectSQLDB) [`Removed`] deprecated and removed (see new script above)
 * [`2026-08-20`] [autoprotectCcsM365SitesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/autoprotectCcsM365SitesCSV) [`New`] autoprotect CCS M365 sites
 * [`2026-08-20`] [Find-GitHubFile.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/Find-GitHubFile) [`New`] find scripts in the GitHub repo
 * [`2026-08-19`] [jsonExporter.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/grafana/JSON-API/ClusterStats) [`Update`] added more performance stats
