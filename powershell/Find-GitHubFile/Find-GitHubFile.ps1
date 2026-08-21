@@ -21,6 +21,11 @@
     Repo in "owner/name" form, e.g. "cohesity/community-automation-samples".
     Default: "cohesity/community-automation-samples".
 
+.PARAMETER Exclude
+    One or more strings to filter out of the results. Any path containing
+    ANY of these terms (case-insensitive substring match) is dropped, even
+    if it matched -Query.
+
 .PARAMETER Branch
     Branch or ref to search. Default: repo's default branch.
 
@@ -30,7 +35,7 @@
     the $env:GITHUB_TOKEN environment variable if not supplied.
 
 .PARAMETER Top
-    Max number of results to show. Default: 15.
+    Max number of results to show. Default: 50.
 
 .PARAMETER NoCache
     Skip the local tree cache and force a fresh fetch.
@@ -69,12 +74,17 @@
 .EXAMPLE
     .\Find-GitHubFile.ps1 -Query "backup", "now"
     # Only matches paths containing BOTH "backup" and "now".
+
+.EXAMPLE
+    .\Find-GitHubFile.ps1 -Query "backup" -Exclude "test", "archive"
+    # Matches "backup" but drops any path containing "test" or "archive".
 #>
 
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)][string[]]$Query,
     [Parameter(Position = 1)][ValidatePattern('^[\w.-]+/[\w.-]+$')][string]$Repo = 'cohesity/community-automation-samples',
+    [Parameter()][string[]]$Exclude,
     [Parameter()][string]$Branch,
     [Parameter()][string]$Token = $env:GITHUB_TOKEN,
     [Parameter()][int]$Top = 50,
@@ -243,6 +253,16 @@ if ($selectedLanguages.Count -gt 0) {
         $allowedExtensions -contains $ext
     }
     Write-Verbose "Filtered to $($paths.Count) file(s) matching language(s): $($selectedLanguages -join ', ') (was $before)."
+}
+
+if ($Exclude -and $Exclude.Count -gt 0) {
+    $excludeLower = $Exclude | ForEach-Object { $_.ToLowerInvariant() }
+    $before = $paths.Count
+    $paths = $paths | Where-Object {
+        $pLower = $_.ToLowerInvariant()
+        -not ($excludeLower | Where-Object { $pLower.Contains($_) })
+    }
+    Write-Verbose "Excluded $($before - $paths.Count) file(s) matching: $($Exclude -join ', ')."
 }
 
 $queryLabel = $Query -join "' + '"
