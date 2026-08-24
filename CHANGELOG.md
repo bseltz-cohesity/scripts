@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-08-24`] [autoprotectCcsM365Sites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/autoprotectCcsM365Sites) [`New`] autoprotect M365 sites in CCS (no CSV variant)
 * [`2026-08-20`] [unprotectSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/unprotectSQL) [`New`] unprotect SQL servers, instances and databases
 * [`2026-08-20`] [unprotectSQLServer.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/unprotectSQLServer) [`Removed`] deprecated and removed (see new script above)
 * [`2026-08-20`] [unprotectSQLDB.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/unprotectSQLDB) [`Removed`] deprecated and removed (see new script above)
