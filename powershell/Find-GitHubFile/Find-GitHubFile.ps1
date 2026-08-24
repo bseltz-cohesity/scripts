@@ -121,14 +121,14 @@ function Get-GitHubHeaders {
 function Get-DefaultBranch {
     param([string]$Repo, [hashtable]$Headers)
     $uri = "https://api.github.com/repos/$Repo"
-    $resp = Invoke-RestMethod -Uri $uri -Headers $Headers -Method Get
+    $resp = Invoke-RestMethod -Uri $uri -Headers $Headers -Method Get -TimeoutSec 90
     return $resp.default_branch
 }
 
 function Get-RepoTree {
     param([string]$Repo, [string]$Branch, [hashtable]$Headers)
     $uri = "https://api.github.com/repos/$Repo/git/trees/$Branch`?recursive=1"
-    $resp = Invoke-RestMethod -Uri $uri -Headers $Headers -Method Get
+    $resp = Invoke-RestMethod -Uri $uri -Headers $Headers -Method Get -TimeoutSec 90
     if ($resp.truncated) {
         Write-Warning "GitHub truncated the tree response (repo is very large). Results may be incomplete."
     }
