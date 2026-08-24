@@ -26,7 +26,7 @@ then
     then
         echo "*** FREEZE SUCCESSFUL"
         echo "*** STARTING PROTECTION RUN" 
-        python $SCRIPT_ROOT/backupNow.py -v $CLUSTER_ENDPOINT -u $CLUSTER_USER -i -p $CLUSTER_API_KEY -j "$PROTECTION_GROUP_NAME" -q -s 10 -es "$MATCH_STRING"
+        python $SCRIPT_ROOT/backupNow.py -v $CLUSTER_ENDPOINT -u $CLUSTER_USER -i -p $CLUSTER_API_KEY -j "$PROTECTION_GROUP_NAME" -q -s 10 -es "$MATCH_STRING" -est 300
         RUN_STATUS=$?
         if [ $RUN_STATUS -eq 0 ]
         then
@@ -40,6 +40,10 @@ then
         if [ $FREEZE_STATUS -eq 0 ]
         then
             echo "*** THAW SUCCESSFUL"
+            if [ $RUN_STATUS -ne 0 ]
+            then
+                exit 1
+            fi
             exit 0
         else
             echo "*** THAW FAILED"
