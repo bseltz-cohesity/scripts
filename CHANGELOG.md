@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-08-25`] [fortKnoxLegalHold.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/fortKnoxLegalHold) [`New`] set legal hold on FortKnox copies
 * [`2026-08-24`] [vm_freeze_thaw.sh](https://github.com/cohesity/community-automation-samples/tree/main/remoteAdapter/vm_freeze_thaw) [`Update`] updated exit code logic
 * [`2026-08-24`] [autoprotectCcsM365Sites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/autoprotectCcsM365Sites) [`New`] autoprotect M365 sites in CCS (no CSV variant)
 * [`2026-08-20`] [unprotectSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/unprotectSQL) [`New`] unprotect SQL servers, instances and databases
