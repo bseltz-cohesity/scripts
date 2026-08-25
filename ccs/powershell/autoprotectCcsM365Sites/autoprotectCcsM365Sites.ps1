@@ -172,4 +172,5 @@ if($useMBS){
 Write-Host "auto-protecting sites" # ($($objectsNode.protectionSource.id))"
 # $protectionParams | toJson
 $response = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
-$response | toJson
+Write-Host "$($response.protectedObjects[0].error)" -ForegroundColor Yellow
+
