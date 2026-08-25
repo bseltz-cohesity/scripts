@@ -2,6 +2,8 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
+Contributed by: Guna Chidambaram
+
 This script adds, removes, or reports Data Protect legal hold on existing
 FortKnox cloud-vault copies.
 
