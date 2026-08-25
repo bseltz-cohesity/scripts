@@ -99,3 +99,25 @@ copy immediately eligible for expiration.
 * -vaultId: (optional) specify vault ID
 * -vaultName: (optional) specify vault name
 * -numRuns: (optional) max number of runs to query (default is 1000)
+
+## Other selectors
+
+Use one run selector at a time:
+
+* `-latest`
+* `-runId '<jobId>:<runStartTimeUsecs>'`
+* `-startDate '<date>' -endDate '<date>'`
+
+Use `-vaultId` or `-vaultName` to limit the operation to a particular FortKnox
+vault. If neither is supplied, the operation applies to every FortKnox target
+on each selected run.
+
+`-numRuns` controls how many recent runs are retrieved and defaults to 1000.
+
+## Important limitations
+
+* This changes Data Protect legal-hold metadata; it does not extend the cloud
+  provider Object Lock expiration.
+* Do not add retention, delete, resync, or DataLock fields to the request.
+  FortKnox permits only a legal-hold-only update through this API.
+* Legal hold cannot be added after the vaulted copy itself has expired.
