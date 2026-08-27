@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-08-27`] [heliosDashboardExporter.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/grafana/JSON-API/heliosDashboard) [`New`] Build a Helios cluster health dashboard for Grafana
+* [`2026-08-27`] [heliosDashboard.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/python/heliosDashboard) [`New`] Build an HTML Helios cluster health dashboard Using Python
 * [`2026-08-25`] [fortKnoxLegalHold.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/fortKnoxLegalHold) [`New`] set legal hold on FortKnox copies
 * [`2026-08-24`] [vm_freeze_thaw.sh](https://github.com/cohesity/community-automation-samples/tree/main/remoteAdapter/vm_freeze_thaw) [`Update`] updated exit code logic
 * [`2026-08-24`] [autoprotectCcsM365Sites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/autoprotectCcsM365Sites) [`New`] autoprotect M365 sites in CCS (no CSV variant)
