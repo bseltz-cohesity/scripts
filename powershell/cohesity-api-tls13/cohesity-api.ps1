@@ -38,7 +38,7 @@ $culture.DateTimeFormat.LongTimePattern  = $culture.DateTimeFormat.LongTimePatte
 $culture.DateTimeFormat.ShortTimePattern = $culture.DateTimeFormat.ShortTimePattern -replace "`u{202F}", ' '
 [System.Threading.Thread]::CurrentThread.CurrentCulture = $culture
 
-$versionCohesityAPI = '2026.08.06'
+$versionCohesityAPI = '2026.08.27'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
