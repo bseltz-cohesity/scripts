@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2026.08.06 - Brian Seltzer
+#  Version 2026.08.28 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2025-01-10 - added Get-Runs function
@@ -29,15 +29,17 @@
 # 2026-05-13 - reordered auth attempts
 # 2026-07-10 - added fixCsv and displayCsv functions
 # 2026-08-06 - added culture fix for mangled dates
+# 2026-08-28 - added Tls13 negotiation
 #
 # . . . . . . . . . . . . . . . . . . .
+
+$versionCohesityAPI = '2026.08.28'
 
 $culture = [System.Globalization.CultureInfo]::CurrentCulture.Clone()
 $culture.DateTimeFormat.LongTimePattern  = $culture.DateTimeFormat.LongTimePattern  -replace "`u{202F}", ' '
 $culture.DateTimeFormat.ShortTimePattern = $culture.DateTimeFormat.ShortTimePattern -replace "`u{202F}", ' '
 [System.Threading.Thread]::CurrentThread.CurrentCulture = $culture
 
-$versionCohesityAPI = '2026.08.06'
 $heliosEndpoints = @('helios.cohesity.com', 'helios.gov-cohesity.com')
 
 # state cache
@@ -63,6 +65,7 @@ $cohesity_api = @{
     'session' = $null;
     'userAgent' = "cohesity-api/$versionCohesityAPI";
     'debug' = $False;
+    'tlsVersion' = 'Tls12';
 }
 
 $pwfile = $(Join-Path -Path $PSScriptRoot -ChildPath YWRtaW4)
@@ -77,24 +80,24 @@ if($PSVersionTable.Platform -ne 'Unix'){
     if($(Test-Path $CONFDIR) -eq $false){ $null = New-Item -Type Directory -Path $CONFDIR}
 }
 
-if($PSVersionTable.PSEdition -eq 'Desktop'){
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
-    $ignoreCerts = @"
-public class SSLHandler
-{
-    public static System.Net.Security.RemoteCertificateValidationCallback GetSSLHandler()
-    {
-        return new System.Net.Security.RemoteCertificateValidationCallback((sender, certificate, chain, policyErrors) => { return true; });
-    }
-}
-"@
+# if($PSVersionTable.PSEdition -eq 'Desktop'){
+#     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::$cohesity_api['tlsVersion']
+#     [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
+#     $ignoreCerts = @"
+# public class SSLHandler
+# {
+#     public static System.Net.Security.RemoteCertificateValidationCallback GetSSLHandler()
+#     {
+#         return new System.Net.Security.RemoteCertificateValidationCallback((sender, certificate, chain, policyErrors) => { return true; });
+#     }
+# }
+# "@
 
-    if(!("SSLHandler" -as [type])){
-        Add-Type -TypeDefinition $ignoreCerts
-    }
-    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = [SSLHandler]::GetSSLHandler()
-}
+#     if(!("SSLHandler" -as [type])){
+#         Add-Type -TypeDefinition $ignoreCerts
+#     }
+#     [System.Net.ServicePointManager]::ServerCertificateValidationCallback = [SSLHandler]::GetSSLHandler()
+# }
 
 function __writeLog($logmessage){
     # get call stack
@@ -198,6 +201,48 @@ function apiauth([string] $vip='helios.cohesity.com',
                  [switch] $dbg,
                  [switch] $skipForcePasswordChange){
     apidrop -quiet
+
+    # negotiate TLS version =============================
+    try{
+        $myvip, $myport = $vip -split ':'
+        if(!$myport){
+            $myport = '443'
+        }
+        $tcp = New-Object System.Net.Sockets.TcpClient($myvip, $myport)
+        $ssl = New-Object System.Net.Security.SslStream($tcp.GetStream())
+        $ssl.AuthenticateAsClient(
+            $myvip,
+            $null,
+            [System.Security.Authentication.SslProtocols]::Tls13,
+            $false
+        )
+        $cohesity_api['tlsVersion'] = 'Tls13'
+        $ssl.Close(); $tcp.Close()
+    }catch{
+        $cohesity_api['tlsVersion'] = 'Tls12'
+    }
+    # end negotiate TLS version =======================================
+
+    # SSL Handler for PowerShell Desktop ==============================
+    if($PSVersionTable.PSEdition -eq 'Desktop'){
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::$($cohesity_api['tlsVersion'])
+        [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
+        $ignoreCerts = @"
+public class SSLHandler
+{
+    public static System.Net.Security.RemoteCertificateValidationCallback GetSSLHandler()
+    {
+        return new System.Net.Security.RemoteCertificateValidationCallback((sender, certificate, chain, policyErrors) => { return true; });
+    }
+}
+"@
+        if(!("SSLHandler" -as [type])){
+            Add-Type -TypeDefinition $ignoreCerts
+        }
+        [System.Net.ServicePointManager]::ServerCertificateValidationCallback = [SSLHandler]::GetSSLHandler()
+    }
+    # end SSL Handler for PowerShell Desktop ==============================
+
     if($entraIdAuthentication -eq $True){
         $EntraId = $True
     }
@@ -739,13 +784,13 @@ function __auth($method, $url, $body=$null, $header=$cohesity_api.header, $timeo
     # Write-Host "*** starting auth attempt" -ForegroundColor DarkGray
     if($null -ne $body){
         if($PSVersionTable.PSEdition -eq 'Core'){
-            $auth = Invoke-RestMethod -Method $method -Uri $url -header $header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session -ContentType "application/json; charset=utf-8" -SslProtocol Tls12 -UseBasicParsing
+            $auth = Invoke-RestMethod -Method $method -Uri $url -header $header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session -ContentType "application/json; charset=utf-8" -SslProtocol $cohesity_api['tlsVersion'] -UseBasicParsing
         }else{
             $auth = Invoke-RestMethod -Method $method -Uri $url -header $header -Body $body -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout -SessionVariable session -ContentType "application/json; charset=utf-8" -UseBasicParsing
         }
     }else{
         if($PSVersionTable.PSEdition -eq 'Core'){
-            $auth = Invoke-RestMethod -Method $method -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -SkipCertificateCheck -SessionVariable session -ContentType "application/json; charset=utf-8" -UseBasicParsing
+            $auth = Invoke-RestMethod -Method $method -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol $cohesity_api['tlsVersion'] -SkipCertificateCheck -SessionVariable session -ContentType "application/json; charset=utf-8" -UseBasicParsing
         }else{
             $auth = Invoke-RestMethod -Method $method -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SessionVariable session -ContentType "application/json; charset=utf-8" -UseBasicParsing
         }
@@ -759,13 +804,13 @@ function __auth($method, $url, $body=$null, $header=$cohesity_api.header, $timeo
 function __apicall($method, $url, $body=$null, $header=$cohesity_api.header, $timeout=300){
     if($null -ne $body){
         if($PSVersionTable.PSEdition -eq 'Core'){
-            $response = Invoke-RestMethod -Method $method -Uri $url -header $header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout  -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8" -SslProtocol Tls12  -UseBasicParsing
+            $response = Invoke-RestMethod -Method $method -Uri $url -header $header -Body $body -SkipCertificateCheck -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout  -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8" -SslProtocol $cohesity_api['tlsVersion']  -UseBasicParsing
         }else{
             $response = Invoke-RestMethod -Method $method -Uri $url -header $header -Body $body -UserAgent $cohesity_api.userAgent -TimeoutSec $timeout  -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8" -UseBasicParsing
         }
     }else{
         if($PSVersionTable.PSEdition -eq 'Core'){
-            $response = Invoke-RestMethod -Method $method -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -SkipCertificateCheck  -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8" -UseBasicParsing
+            $response = Invoke-RestMethod -Method $method -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent -SslProtocol $cohesity_api['tlsVersion'] -SkipCertificateCheck  -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8" -UseBasicParsing
         }else{
             $response = Invoke-RestMethod -Method $method -Uri $URL -Header $header -TimeoutSec $timeout -UserAgent $cohesity_api.userAgent  -WebSession $cohesity_api.session -ContentType "application/json; charset=utf-8" -UseBasicParsing
         }
@@ -1114,7 +1159,7 @@ function fileDownload($uri, $fileName, [switch]$v2, [switch]$quiet){
             $fileName = $(Join-Path -Path $PSScriptRoot -ChildPath $fileName)
         }
         if($PSVersionTable.PSEdition -eq 'Core'){
-            Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $fileName -Header $cohesity_api.header -WebSession $cohesity_api.session -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -SkipCertificateCheck
+            Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $fileName -Header $cohesity_api.header -WebSession $cohesity_api.session -UserAgent $cohesity_api.userAgent -SslProtocol $cohesity_api['tlsVersion'] -SkipCertificateCheck
         }else{
             Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $fileName -Header $cohesity_api.header -WebSession $cohesity_api.session -UserAgent $cohesity_api.userAgent
         }
@@ -1141,7 +1186,7 @@ function fileUpload($uri, $fileName, [switch]$v2){
             $fileName = $(Join-Path -Path $PSScriptRoot -ChildPath $fileName)
         }
         if($PSVersionTable.PSEdition -eq 'Core'){
-            $result = Invoke-WebRequest -UseBasicParsing -Method Post -Uri $url -InFile $fileName -Header $cohesity_api.header -WebSession $cohesity_api.session -UserAgent $cohesity_api.userAgent -SslProtocol Tls12 -SkipCertificateCheck
+            $result = Invoke-WebRequest -UseBasicParsing -Method Post -Uri $url -InFile $fileName -Header $cohesity_api.header -WebSession $cohesity_api.session -UserAgent $cohesity_api.userAgent -SslProtocol $cohesity_api['tlsVersion'] -SkipCertificateCheck
         }else{
             $result = Invoke-WebRequest -UseBasicParsing -Method Post -Uri $url -InFile $fileName -Header $cohesity_api.header -WebSession $cohesity_api.session -UserAgent $cohesity_api.userAgent
         }
@@ -1888,7 +1933,7 @@ function displayCsv($csvFile){
 # 2023.05.23 - fixed setContext
 # 2023.06.01 - fixed setApiProperty function
 # 2023.07.12 - ignore write failure to pwfile
-# 2023.08.15 - enforce Tls12
+# 2023.08.15 - enforce $TlsVersion
 # 2023.08.28 - add offending line number to cohesity-api-log
 # 2023.09.22 - added fileUpload function
 # 2023.09.24 - web session authentication, added support for password reset. email MFA
