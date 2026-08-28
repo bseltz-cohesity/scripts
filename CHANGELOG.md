@@ -1,6 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
-* [`2026-08-27`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api-tls13) [`New`] Tls13 version of cohesity-api.ps1
+* [`2026-08-28`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added Tls13 negotiation
 * [`2026-08-27`] [heliosDashboardExporter.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/grafana/JSON-API/heliosDashboard) [`New`] Build a Helios cluster health dashboard for Grafana
 * [`2026-08-27`] [heliosDashboard.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/python/heliosDashboard) [`New`] Build an HTML Helios cluster health dashboard Using Python
 * [`2026-08-25`] [fortKnoxLegalHold.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/fortKnoxLegalHold) [`New`] set legal hold on FortKnox copies
