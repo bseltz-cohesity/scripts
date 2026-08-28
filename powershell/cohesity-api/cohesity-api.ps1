@@ -212,7 +212,6 @@ function apiauth([string] $vip='helios.cohesity.com',
         $tcp = New-Object System.Net.Sockets.TcpClient($myvip, $myport)
         $ignoreCert = [System.Net.Security.RemoteCertificateValidationCallback]{ $true }
         $ssl = New-Object System.Net.Security.SslStream($tcp.GetStream(), $false, $ignoreCert)
-        # $ssl = New-Object System.Net.Security.SslStream($tcp.GetStream())
         $ssl.AuthenticateAsClient(
             $myvip,
             $null,
