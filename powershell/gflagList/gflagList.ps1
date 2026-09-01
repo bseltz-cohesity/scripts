@@ -11,7 +11,8 @@ param (
     [Parameter()][switch]$mcm,
     [Parameter()][string]$mfaCode = $null,
     [Parameter()][switch]$emailMfaCode,
-    [Parameter(Mandatory = $True)][string]$serviceName
+    [Parameter(Mandatory = $True)][string]$serviceName,
+    [Parameter()][array]$find
 )
 
 ### source the cohesity-api helper code
@@ -90,6 +91,11 @@ foreach($node in $nodes){
             $ProgressPreference = 'Continue'
             $content = $currentFlags.Content
             $flags = $content -split "\n" | Where-Object {$_.startsWith('--')}
+            if($find){
+                foreach($f in $find){
+                    $flags = $flags | Where-Object {$_ -match $f}
+                }
+            }
             $flags | Sort-Object
             break
         }else{

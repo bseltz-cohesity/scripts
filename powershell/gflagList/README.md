@@ -33,6 +33,16 @@ To get the current list of available gflags for a service:
                 -serviceName magneto
 ```
 
+Filter results to show only the gflags that match 'vss' and 'hyperv':
+
+```powershell
+./gflagList.ps1 -vip mycluster `
+                -username myusername `
+                -domain mydomain.net `
+                -serviceName magneto `
+                -find vss, hyperv
+```
+
 ## Authentication Parameters
 
 * -vip: name or IP of Cohesity cluster
@@ -47,3 +57,4 @@ To get the current list of available gflags for a service:
 ## Other Parameters
 
 * -serviceName: name of service to retrieve available gflags
+* -find: (optional) filter output by string match (comma separated)
