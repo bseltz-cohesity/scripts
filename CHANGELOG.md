@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-09-01`] [gflagList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/gflagList) [`Update`] added -find option
 * [`2026-08-28`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added Tls13 negotiation
 * [`2026-08-27`] [heliosDashboardExporter.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/grafana/JSON-API/heliosDashboard) [`New`] Build a Helios cluster health dashboard for Grafana
 * [`2026-08-27`] [heliosDashboard.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/python/heliosDashboard) [`New`] Build an HTML Helios cluster health dashboard Using Python
