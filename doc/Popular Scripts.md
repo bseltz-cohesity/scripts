@@ -84,7 +84,7 @@ Lists and optionally cancels active archive tasks. Often used by support to help
 
 ## replicationQueue
 
-Lists and optionally cancels active replication tasks. Oten used bty support to help customers who are experiencing a replication backlog.
+Lists and optionally cancels active replication tasks. Often used by support to help customers who are experiencing a replication backlog.
 
 * PowerShell: <https://github.com/cohesity/community-automation-samples/tree/main/powershell/replicationQueue>
 * Python: <https://github.com/cohesity/community-automation-samples/tree/main/python/replicationQueue>
@@ -95,7 +95,7 @@ These scripts are often used by support to help customers free up space on a clu
 
 ## expireOldSnapshots
 
-Expires old backup to free up space on the cluster
+Expires old backups to free up space on the cluster
 
 * PowerShell: <https://github.com/cohesity/community-automation-samples/tree/main/powershell/expireOldSnapshots>
 * Python: <https://github.com/cohesity/community-automation-samples/tree/main/python/expireOldSnapshots>

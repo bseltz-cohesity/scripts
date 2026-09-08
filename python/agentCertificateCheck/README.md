@@ -27,7 +27,7 @@ chmod +x agentCertificateCheck.py
 chmod +x agentCertificateCheck.py
 ```
 
-If the 'chmod' prerequsite cannot be run for any reason, please run the script with the precurser 'python3' (or 'python' depending on the version python currently installed on the system) like:
+If the 'chmod' prerequisite cannot be run for any reason, please run the script with the precursor 'python3' (or 'python' depending on the version of python currently installed on the system) like:
 
 ```bash
 python3 agentCertificateCheck.py -v mycluster -u myuser -d local
@@ -74,7 +74,7 @@ Running the script against selected Helios clusters (note: you will need to crea
 ## Other Parameters
 
 * -w, --excludewindows: (optional) skip windows sources
-* -x, --expirywarningmonths: (optional) report impacted if agent will expire in within X months( default is 6)
+* -x, --expirywarningmonths: (optional) report impacted if agent will expire in within X months (default is 6)
 
 ## Running the Script on a Linux Jump Host
 

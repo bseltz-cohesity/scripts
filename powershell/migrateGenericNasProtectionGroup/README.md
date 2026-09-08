@@ -20,7 +20,7 @@ If you omit the `-cleanupSourceObjects` and `-cleanupSourceObjectsAndExit` switc
 
 After the migration is successful, you can rerun the script using the `-cleanupSourceObjectsAndExit` parameter to delete the old job and old source registrations from the source cluster. Add `-deleteOldSnapshots` if you want to delete the existing backups on the source cluster.
 
-Alternatively, if you're comfortable that the script works fine and migrations are consistently successful, then you can include the `-cleanupSourceObjects` switch in your command, which will delete the old job and source registrations durng the migration. Again, add `-deleteOldSnapshots` if you want to delete the existing backups on the source cluster.
+Alternatively, if you're comfortable that the script works fine and migrations are consistently successful, then you can include the `-cleanupSourceObjects` switch in your command, which will delete the old job and source registrations during the migration. Again, add `-deleteOldSnapshots` if you want to delete the existing backups on the source cluster.
 
 *DO NOT* use the `-cleanupSourceObjectsAndExit` switch until *AFTER* the migration is complete, otherwise the script will simply delete the protection group and the source registrations from the source cluster without the job having been migrated!
 
@@ -99,7 +99,7 @@ Note that if you want to delete existing snapshots when cleaning up, use the `-d
 
 * -targetNGCE: (optional) use when target cluster is NGCE
 * -prefix: (optional) add prefix to target job name
-* -suffix: (optional) add suffic to target job name
+* -suffix: (optional) add suffix to target job name
 * -newJobName: (optional) new name for target job (defaults to jobName)
 * -newPolicyName: (optional) new policy name (defaults to same policy name as source job)
 * -newStorageDomainName: (optional) new storage domain name (defaults to same storage domain name as source job)
@@ -114,4 +114,4 @@ Note that if you want to delete existing snapshots when cleaning up, use the `-d
 * -oldJobSuffix: (optional) specify old job suffix (defaults to current date: yyyy-MM-dd)
 * -cleanupSourceObjects: (optional) delete old job and unregister servers (*destructive!*)
 * -cleanupSourceObjectsAndExit: (optional) delete old job and unregister servers and exit (*destructive!*)
-* -deleteOldSnapshots: (optional) delete existing snapshots when cleaning up old objects (*destrictive!*)
+* -deleteOldSnapshots: (optional) delete existing snapshots when cleaning up old objects (*destructive!*)

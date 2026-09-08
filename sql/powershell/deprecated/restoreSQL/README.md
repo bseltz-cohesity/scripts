@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script demonstrates how to perform an restore of a SQL database. The script can restore the database to the original server, or a different server. It can overwrite the existing database or restore with a different database name.  
+This script demonstrates how to perform a restore of a SQL database. The script can restore the database to the original server, or a different server. It can overwrite the existing database or restore with a different database name.  
 
 ## Warning
 
@@ -128,7 +128,7 @@ Place both files in a folder together and run the main script like so:
 
 Use the **AAG name** as the **-sourceServer** when restoring from an AAG backup, like `-sourceServer myAAG1`
 
-## Source Intances
+## Source Instances
 
 By default, the script will default to MSSQLSERVER as the source instance. You can specify a source instance in a few ways:
 
@@ -156,4 +156,4 @@ Or, if you want to replay logs to a specific point in time, use the **-logTime**
 -logTime '2019-01-20 23:47:02'
 ```
 
-Note that when the -logTime parameter is used with databases where no log backups exist, the full/incremental backup that occured at or before the specified log time will be used.
+Note that when the -logTime parameter is used with databases where no log backups exist, the full/incremental backup that occurred at or before the specified log time will be used.
