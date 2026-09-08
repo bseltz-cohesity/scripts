@@ -70,7 +70,8 @@ To initiate a new migration:
                    -sourceDB MSSQLSERVER/mydb `
                    -targetServer sqlsserver2 `
                    -targetDB mydb2 `
-                   -mdfFolder c:\sqldata 
+                   -mdfFolder c:\sqldata `
+                   -init
 ```
 
 ## Sync Mode
@@ -146,7 +147,7 @@ If none are used, the script will be in list mode.
 
 ## Init Mode Parameters
 
-* -sourceServer: (required for init) Server name (or AAG name) where the database was backed up
+* -sourceServer: (required for init) Server name where the database was backed up
 * -sourceDB: (required for init) Original database name
 * -sourceInstance: (optional) specify source instance name
 * -targetServer: (required for init) Server name to migrate to
