@@ -1,4 +1,4 @@
-# version: 2026-07-10
+# version: 2026-09-08
 
 # process commandline arguments
 [CmdletBinding()]
@@ -13,7 +13,7 @@ param (
     [Parameter()][switch]$mcm,
     [Parameter()][string]$mfaCode = $null,
     [Parameter()][array]$clusterName = $null,
-    [Parameter()][int]$numRuns = 1000,
+    [Parameter()][int]$numRuns = 100,
     [Parameter()][int]$growthDays = 7,
     [Parameter()][switch]$skipDeleted,
     [Parameter()][ValidateSet('KiB','MiB','GiB','TiB','KB','MB','GB','TB')][string]$unit = 'GiB',
@@ -25,7 +25,7 @@ param (
     [Parameter()][array]$environments = $null
 )
 
-$scriptversion = '2026-07-10 (PowerShell)'
+$scriptversion = '2026-09-08 (PowerShell)'
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -92,22 +92,23 @@ function getCloudStats(){
 
 function getConsumerStats($consumerType, $msecsBeforeCurrentTimeToCompare){
     $cookie = ''
-    $consumerStats = @{'statsList'= @()}
+    $statsList = [System.Collections.Generic.List[object]]::new()
     while($True){
         $theseStats = api get "stats/consumers?consumerType=$consumerType&msecsBeforeCurrentTimeToCompare=$($msecsBeforeCurrentTimeToCompare)&cookie=$cookie"
         if($theseStats -and $theseStats.PSObject.Properties['statsList']){
-            $consumerStats['statsList'] = @($consumerStats['statsList'] + $theseStats.statsList)
+            $statsList.AddRange([object[]]$theseStats.statsList)
         }
         if($theseStats -and $theseStats.PSObject.Properties['cookie']){
             $cookie = $theseStats.cookie
         }else{
             $cookie = ''
         }
+        $theseStats = $null
         if($cookie -eq ''){
             break
         }
     }
-    return $consumerStats
+    return @{'statsList' = $statsList}
 }
 
 function reportStorage(){
@@ -266,10 +267,11 @@ function reportStorage(){
                     output "    getting runs"
                 }
                 $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&excludeNonRestorableRuns=true&useCachedData=true"
-                if($lastRunId -ne 0){
-                    $runs.runs = $runs.runs | Where-Object {$_.id -lt $lastRunId}
+                $theseRuns = $runs.runs
+                if($lastRunId -ne 0 -and $theseRuns){
+                    $theseRuns = $theseRuns.Where({$_.id -lt $lastRunId})
                 }
-                foreach($run in $runs.runs){
+                foreach($run in $theseRuns){
                     if($run.isLocalSnapshotsDeleted -ne $True){
                         if($run.PSObject.Properties['isCloudArchivalDirect'] -and $run.isCloudArchivalDirect -eq $True){
                             $isCad = $True
@@ -428,17 +430,21 @@ function reportStorage(){
                         }
                     }
                 }
-                if(!$runs.runs -or $runs.runs.Count -eq 0 -or $runs.runs[-1].id -eq $lastRunId){
+                if(!$theseRuns -or $theseRuns.Count -eq 0 -or $theseRuns[-1].id -eq $lastRunId){
+                    $runs = $null
+                    $theseRuns = $null
                     break
                 }else{
-                    $lastRunId = $runs.runs[-1].id
-                    if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
-                        $endUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs
-                    }elseif($runs.runs[-1].PSObject.Properties['originalBackupInfo']){
-                        $endUsecs = $runs.runs[-1].originalBackupInfo.endTimeUsecs
+                    $lastRunId = $theseRuns[-1].id
+                    if($theseRuns[-1].PSObject.Properties['localBackupInfo']){
+                        $endUsecs = $theseRuns[-1].localBackupInfo.endTimeUsecs
+                    }elseif($theseRuns[-1].PSObject.Properties['originalBackupInfo']){
+                        $endUsecs = $theseRuns[-1].originalBackupInfo.endTimeUsecs
                     }else{
-                        $endUsecs = $runs.runs[-1].archivalInfo.archivalTargetResults[0].endTimeUsecs
+                        $endUsecs = $theseRuns[-1].archivalInfo.archivalTargetResults[0].endTimeUsecs
                     }
+                    $runs = $null
+                    $theseRuns = $null
                 }
             }
             # Write-Host "Run count: $runCount"
@@ -652,10 +658,11 @@ function reportStorage(){
                     output "    getting runs"
                 }
                 $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&endTimeUsecs=$endUsecs&includeTenants=true&includeObjectDetails=true&excludeNonRestorableRuns=true&useCachedData=true"
-                if($lastRunId -ne 0){
-                    $runs.runs = $runs.runs | Where-Object {$_.id -lt $lastRunId}
+                $theseRuns = $runs.runs
+                if($lastRunId -ne 0 -and $theseRuns){
+                    $theseRuns = $theseRuns.Where({$_.id -lt $lastRunId})
                 }
-                foreach($run in $runs.runs){
+                foreach($run in $theseRuns){
                     if($run.isLocalSnapshotsDeleted -ne $True){
                         if($run.PSObject.Properties['localBackupInfo']){
                             $runInfo = $run.localBackupInfo
@@ -719,17 +726,21 @@ function reportStorage(){
                         }
                     }
                 }
-                if(!$runs.runs -or $runs.runs.Count -eq 0 -or $runs.runs[-1].id -eq $lastRunId){
+                if(!$theseRuns -or $theseRuns.Count -eq 0 -or $theseRuns[-1].id -eq $lastRunId){
+                    $runs = $null
+                    $theseRuns = $null
                     break
                 }else{
-                    $lastRunId = $runs.runs[-1].id
-                    if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
-                        $endUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs
-                    }elseif($runs.runs[-1].PSObject.Properties['originalBackupInfo']){
-                        $endUsecs = $runs.runs[-1].originalBackupInfo.endTimeUsecs
+                    $lastRunId = $theseRuns[-1].id
+                    if($theseRuns[-1].PSObject.Properties['localBackupInfo']){
+                        $endUsecs = $theseRuns[-1].localBackupInfo.endTimeUsecs
+                    }elseif($theseRuns[-1].PSObject.Properties['originalBackupInfo']){
+                        $endUsecs = $theseRuns[-1].originalBackupInfo.endTimeUsecs
                     }else{
-                        $endUsecs = $runs.runs[-1].archivalInfo.archivalTargetResults[0].endTimeUsecs
+                        $endUsecs = $theseRuns[-1].archivalInfo.archivalTargetResults[0].endTimeUsecs
                     }
+                    $runs = $null
+                    $theseRuns = $null
                 }
             }
         }
