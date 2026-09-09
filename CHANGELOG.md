@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-09-08`] [restoreSQLv2.py](https://github.com/cohesity/community-automation-samples/tree/main/sql/python/restoreSQLv2) [`New`] python version of restore SQL script
 * [`2026-09-08`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] memory optimizations
 * [`2026-09-01`] [gflagList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/gflagList) [`Update`] added -find option
 * [`2026-08-28`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] added Tls13 negotiation
