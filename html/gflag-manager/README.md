@@ -6,9 +6,9 @@ This is a web-browser-based Gflag manager.
 
 ## Components
 
-- **gflag-manager.html** — the UI. Open this directly in your browser (double-click it, or drag it into a browser tab). No server needed for this part.
-- **gflag-manager-proxy.py** — a tiny local helper. Cohesity's cluster API doesn't send CORS headers, so a browser can't call it directly from a page hosted anywhere but the cluster itself. This script runs on `127.0.0.1` only, adds the CORS headers the browser requires, and forwards the real requests to your cluster/Helios over HTTPS.
-- **gflag-manager-proxy-for-windows.exe** — the same proxy, pre-built for Windows. Use this instead of the `.py` file if the machine doesn't have Python installed.
+- **gflag-manager.html**: the UI. Open this directly in your browser (double-click it, or drag it into a browser tab). No server needed for this part.
+- **gflag-manager-proxy.py**: a tiny local helper. Cohesity's cluster API doesn't send CORS headers, so a browser can't call it directly from a page hosted anywhere but the cluster itself. This script runs on `127.0.0.1` only, adds the CORS headers the browser requires, and forwards the real requests to your cluster/Helios over HTTPS.
+- **gflag-manager-proxy-for-windows.exe**: the same proxy, pre-built for Windows. Use this instead of the `.py` file if the machine doesn't have Python installed.
 
 ## Security note
 
@@ -16,7 +16,7 @@ The proxy only binds to `127.0.0.1`, so nothing outside your machine can reach i
 
 ## Running it
 
-1. Start the proxy — either `python3 gflag-manager-proxy.py` (standard library only — no `pip install` needed) or, on Windows without Python, double-click/run `gflag-manager-proxy-for-windows.exe`.
+1. Start the proxy — either `python3 gflag-manager-proxy.py` or, on Windows without Python, double-click/run `gflag-manager-proxy-for-windows.exe`.
 2. Open `gflag-manager.html` in your browser.
 3. Pick an auth mode (username/password, cluster API key, or Helios/MCM with API key + cluster name), fill in the fields, and click Connect.
 
@@ -42,4 +42,4 @@ kMagneto,magneto_restore_sql_skip_steps_in_path,true,resume-recovery
 kAlerts,alerts_master_suppress_alert_types,60002;;1118;;1043;;1024;;1067;;1033;;10064;;11005,quiet
 ```
 
-Note: when the flag value contains commas, replace them with ;; as shown in the example above, so that they are parsed correctly by the CS import.
+Note: when the flag value contains commas, replace them with ;; as shown in the example above, so that they are parsed correctly by the CSV import.
