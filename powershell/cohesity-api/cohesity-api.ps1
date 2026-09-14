@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2026.08.28 - Brian Seltzer
+#  Version 2026.09.14 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2025-01-10 - added Get-Runs function
@@ -30,10 +30,11 @@
 # 2026-07-10 - added fixCsv and displayCsv functions
 # 2026-08-06 - added culture fix for mangled dates
 # 2026-08-28 - added Tls13 negotiation
+# 2026-09-14 - updated Tls13 negotiation
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2026.08.28'
+$versionCohesityAPI = '2026.09.14'
 
 $culture = [System.Globalization.CultureInfo]::CurrentCulture.Clone()
 $culture.DateTimeFormat.LongTimePattern  = $culture.DateTimeFormat.LongTimePattern  -replace "`u{202F}", ' '
@@ -202,32 +203,9 @@ function apiauth([string] $vip='helios.cohesity.com',
                  [switch] $skipForcePasswordChange){
     apidrop -quiet
 
-    # negotiate TLS version =============================
-    try{
-        $myvip, $myport = $vip -split ':'
-        if(!$myport){
-            $myport = '443'
-        }
-        
-        $tcp = New-Object System.Net.Sockets.TcpClient($myvip, $myport)
-        $ignoreCert = [System.Net.Security.RemoteCertificateValidationCallback]{ $true }
-        $ssl = New-Object System.Net.Security.SslStream($tcp.GetStream(), $false, $ignoreCert)
-        $ssl.AuthenticateAsClient(
-            $myvip,
-            $null,
-            [System.Security.Authentication.SslProtocols]::Tls13,
-            $false
-        )
-        $cohesity_api['tlsVersion'] = 'Tls13'
-        $ssl.Close(); $tcp.Close()
-    }catch{
-        $cohesity_api['tlsVersion'] = 'Tls12'
-    }
-    # end negotiate TLS version =======================================
-
     # SSL Handler for PowerShell Desktop ==============================
     if($PSVersionTable.PSEdition -eq 'Desktop'){
-        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::$($cohesity_api['tlsVersion'])
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { return $true }
         $ignoreCerts = @"
 public class SSLHandler
@@ -244,6 +222,21 @@ public class SSLHandler
         [System.Net.ServicePointManager]::ServerCertificateValidationCallback = [SSLHandler]::GetSSLHandler()
     }
     # end SSL Handler for PowerShell Desktop ==============================
+
+    # negotiate TLS version ===========================================
+    try{
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls13
+        if($PSVersionTable.PSEdition -eq 'Desktop'){
+            $basicInfo = Invoke-RestMethod -Method Head -Uri "https://$vip" -TimeoutSec 10
+        }else{
+            $basicInfo = Invoke-RestMethod -Method Head -Uri "https://$vip" -SslProtocol Tls13 -TimeoutSec 10 -SkipCertificateCheck
+        }
+        $cohesity_api['tlsVersion'] = 'Tls13'
+    }catch{
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        $cohesity_api['tlsVersion'] = 'Tls12'
+    }
+    # end negotiate TLS version =======================================
 
     if($entraIdAuthentication -eq $True){
         $EntraId = $True
