@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-09-14`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] updated Tls13 negotiation
 * [`2026-09-14`] [gflag-manager.html](https://github.com/cohesity/community-automation-samples/tree/main/html/gflag-manager) [`New`] HTML-based Gflag manager
 * [`2026-09-09`] [viewAddWhitelistEntries.py](https://github.com/cohesity/community-automation-samples/tree/main/python/viewAddWhitelistEntries) [`New`] add whitelist entries to a view
 * [`2026-09-09`] [viewAddWhiteListEntriesV2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/viewAddWhiteListEntriesV2) [`Update`] modernized authentication
