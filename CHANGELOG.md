@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-09-14`] [gflag-manager.zip](https://github.com/cohesity/community-automation-samples/tree/main/html/gflag-manager) [`New`] HTML-based Gflag manager
+* [`2026-09-09`] [viewAddWhitelistEntries.py](https://github.com/cohesity/community-automation-samples/tree/main/python/viewAddWhitelistEntries) [`New`] add whitelist entries to a view
+* [`2026-09-09`] [viewAddWhiteListEntriesV2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/viewAddWhiteListEntriesV2) [`Update`] modernized authentication
 * [`2026-09-08`] [restoreSQLv2.py](https://github.com/cohesity/community-automation-samples/tree/main/sql/python/restoreSQLv2) [`New`] python version of restore SQL script
 * [`2026-09-08`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] memory optimizations
 * [`2026-09-01`] [gflagList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/gflagList) [`Update`] added -find option
