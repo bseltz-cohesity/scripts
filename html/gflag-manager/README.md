@@ -4,10 +4,14 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This is a web-browser-based Gflag manager.
 
+## Download
+
+You can download the zip file here: <https://raw.githubusercontent.com/cohesity/community-automation-samples/refs/heads/main/html/gflag-manager/gflag-manager.zip>
+
 ## Components
 
 - **gflag-manager.html**: the UI. Open this directly in your browser (double-click it, or drag it into a browser tab). No server needed for this part.
-- **gflag-manager-proxy.py**: a tiny local helper. Cohesity's cluster API doesn't send CORS headers, so a browser can't call it directly from a page hosted anywhere but the cluster itself. This script runs on `127.0.0.1` only, adds the CORS headers the browser requires, and forwards the real requests to your cluster/Helios over HTTPS.
+- **gflag-manager-proxy.py**: a tiny local proxy. Cohesity's cluster API doesn't send CORS headers, so a browser can't call it directly from a page hosted anywhere but the cluster itself. This script runs on `127.0.0.1` only, adds the CORS headers the browser requires, and forwards the real requests to your cluster/Helios over HTTPS.
 - **gflag-manager-proxy-for-windows.exe**: the same proxy, pre-built for Windows. Use this instead of the `.py` file if the machine doesn't have Python installed.
 
 ## Security note
