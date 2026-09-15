@@ -19,7 +19,8 @@ parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-e', '--emailmfacode', action='store_true')
-parser.add_argument('-j', '--jobname', type=str, required=True)
+parser.add_argument('-j', '--jobname', type=str, default=None)
+parser.add_argument('-x', '--jobid', type=int, default=None)
 parser.add_argument('-n', '--numruns', type=int, default=1000)
 parser.add_argument('-a', '--addhold', action='store_true')
 parser.add_argument('-r', '--removehold', action='store_true')
@@ -53,6 +54,11 @@ daysback = args.daysback
 runid = args.runid
 runidlist = args.runidlist
 rundate = args.rundate
+jobid = args.jobid
+
+if jobname is None and jobid is None:
+    print('jobname or jobid required')
+    exit(1)
 
 
 def gatherList(param=None, filename=None, name='items', required=True):
@@ -108,19 +114,28 @@ if mcm or vip.lower() == 'helios.cohesity.com':
 now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 
-jobs = api('get', 'data-protect/protection-groups?names=%s&isDeleted=false&pruneSourceIds=true&pruneExcludedSourceIds=true' % jobname, v=2)
-if jobs['protectionGroups'] is None:
-    print("Job '%s' not found" % jobname)
-    exit(1)
-job = [job for job in jobs['protectionGroups'] if job['name'].lower() == jobname.lower()]
-if not job:
-    print("Job '%s' not found" % jobname)
-    exit(1)
+if jobid is not None:
+    jobs = api('get', 'protectionJobs?ids=%s' % jobid)
+    if not jobs:
+        print("Job with ID %s not found" % jobid)
+        exit(1)
+    else:
+        job = jobs[0]
+        v1JobId = job['id']  
 else:
-    job = job[0]
-    v2JobId = job['id']
-    v1JobId = v2JobId.split(':')[2]
-    jobname = job['name']
+    jobs = api('get', 'data-protect/protection-groups?names=%s&isDeleted=false&pruneSourceIds=true&pruneExcludedSourceIds=true' % jobname, v=2)
+    if jobs['protectionGroups'] is None:
+        print("Job '%s' not found" % jobname)
+        exit(1)
+    job = [job for job in jobs['protectionGroups'] if job['name'].lower() == jobname.lower()]
+    if not job:
+        print("Job '%s' not found" % jobname)
+        exit(1)
+    else:
+        job = job[0]
+        v2JobId = job['id']
+        v1JobId = v2JobId.split(':')[2]
+        jobname = job['name']
 
 if addhold:
     holdValue = True
