@@ -1,9 +1,10 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-09-16`] [cluster-manager.html](https://github.com/cohesity/community-automation-samples/tree/main/html/cluster-manager) [`New`] HTML app for manageing cluster state/services/gflags
+* [`2026-09-16`] [restoreCcsM365Team.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365Team) [`Update`] fixed restore to alternate mailbox
 * [`2026-09-16`] [validateADBackup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/validateADBackup) [`Update`] modernized authentication
 * [`2026-09-15`] [legalHold.py](https://github.com/cohesity/community-automation-samples/tree/main/python/legalHold) [`Update`] added -x, --jobid parameter
 * [`2026-09-14`] [cohesity-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cohesity-api) [`Update`] updated Tls13 negotiation
-* [`2026-09-14`] [gflag-manager.html](https://github.com/cohesity/community-automation-samples/tree/main/html/gflag-manager) [`New`] HTML-based Gflag manager
 * [`2026-09-09`] [viewAddWhitelistEntries.py](https://github.com/cohesity/community-automation-samples/tree/main/python/viewAddWhitelistEntries) [`New`] add whitelist entries to a view
 * [`2026-09-09`] [viewAddWhiteListEntriesV2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/viewAddWhiteListEntriesV2) [`Update`] modernized authentication
 * [`2026-09-08`] [restoreSQLv2.py](https://github.com/cohesity/community-automation-samples/tree/main/sql/python/restoreSQLv2) [`New`] python version of restore SQL script
