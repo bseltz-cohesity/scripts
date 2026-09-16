@@ -7,10 +7,15 @@ This is a web-browser-based Cohesity cluster manager. It combines two tools behi
 - **Cluster State** — start/stop the cluster, and start/stop/restart individual cluster services.
 - **GFlags** — view, set, clear, export/import, and restart services affected by gflag changes.
 
+## Download
+
+You can download the zip file here: <https://raw.githubusercontent.com/cohesity/community-automation-samples/refs/heads/main/html/cluster-manager/cluster-manager.zip>
+
 ## Components
 
 - **cluster-manager.html**: the UI. Open this directly in your browser (double-click it, or drag it into a browser tab). No server needed for this part.
 - **cluster-manager-proxy.py**: a single local proxy backing both tabs. Cohesity's cluster API doesn't send CORS headers, so a browser can't call it directly from a page hosted anywhere but the cluster itself. This script runs on `127.0.0.1` only, adds the CORS headers the browser requires, and forwards the real requests to your cluster/Helios over HTTPS.
+- **cluster-manager-proxy-for-windows.exe**: the same proxy, pre-built for Windows. Use this instead of the `.py` file if the machine doesn't have Python installed.
 
 ## Security note
 
@@ -18,7 +23,7 @@ The proxy only binds to `127.0.0.1`, so nothing outside your machine can reach i
 
 ## Running it
 
-1. Start the proxy: `python3 cluster-manager-proxy.py` (listens on `http://127.0.0.1:8765`).
+1. Start the proxy: either `python3 cluster-manager-proxy.py` or, on Windows without Python, double-click/run `cluster-manager-proxy-for-windows.exe`. (listens on `http://127.0.0.1:8765`).
 2. Open `cluster-manager.html` in your browser.
 3. Pick an auth mode (username/password, cluster API key, or Helios/MCM with API key + cluster name), fill in the fields, and click Connect.
 4. Use the **Cluster State** and **GFlags** tabs to switch between the two feature sets. Connecting once signs in to both.
