@@ -1,14 +1,15 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][string]$username = 'Ccs',
+    [Parameter()][string]$username = 'DMaaS',
     [Parameter()][array]$teamName,  # optional names of mailboxes protect
     [Parameter()][string]$teamList = '',  # optional textfile of mailboxes to protect
     [Parameter()][datetime]$recoverDate,
     [Parameter()][string]$targetSource,
     [Parameter()][string]$targetTeam,
-    [Parameter()][string]$source,
-    [Parameter()][int]$pageSize = 1000
+    [Parameter(Mandatory=$True)][string]$source,
+    [Parameter()][int]$pageSize = 1000,
+    [Parameter(Mandatory=$True)][string]$region
 )
 
 
@@ -49,40 +50,55 @@ if(!$cohesity_api.authorized){
 
 $sessionUser = api get sessionUser
 $tenantId = $sessionUser.profiles[0].tenantId
-$regions = api get -mcmv2 dms/tenants/regions?tenantId=$tenantId
-$regionList = $regions.tenantRegionInfoList.regionId -join ','
+# $regions = api get -mcmv2 dms/tenants/regions?tenantId=$tenantId
+# $regionList = $regions.tenantRegionInfoList.regionId -join ','
+$regionList = @($region)
 $selectedRegion = $null
 $selectedRegionObject = $null
-$targetMailboxName = $null
-$targetMailboxId = $null
+$targetTeamName = $null
+$targetTeamId = $null
 $targetParentId = $null
 
 foreach($objName in $objectNames){
     $search = api get -v2 "data-protect/search/objects?searchString=$objName&regionIds=$regionList&o365ObjectTypes=kTeam&isProtected=true&environments=kO365&includeTenants=true&count=$pageSize"
     $exactMatch = $search.objects | Where-Object name -eq $objName
-    if($source){
-        $exactMatch = $exactMatch | Where-Object {$_.sourceInfo.name -eq $source}
-    }
+    $exactMatch = $exactMatch | Where-Object {$_.sourceInfo.name -eq $source}
     if(! $exactMatch){
         Write-Host "$objName not found" -ForegroundColor Yellow
     }else{
         $x = 0
         foreach($result in $exactMatch | Where-Object {$_.name -eq $objName}){
             $x += 1
-            foreach($objectProtectionInfo in $result.objectProtectionInfos){
+            foreach($objectProtectionInfo in $result.objectProtectionInfos | Where-Object {$_.regionId -eq $region}){
+                if($targetParentId -eq $null){
+                    $targetParentId = $objectProtectionInfo.sourceId
+                }
                 $objectId = $objectProtectionInfo.objectId
                 $objectRegionId = $objectProtectionInfo.regionId
                 if($selectedRegion -eq $null){
                     $selectedRegion = $objectRegionId
                     $selectedRegionObject = $objName
-                    if($targetSource){
-                        $rootSource = api get "protectionSources/rootNodes?environments=kO365" -region $objectRegionId | Where-Object {$_.protectionSource.name -eq $targetSource}
-                        if(!$rootSource){
-                            Write-Host "$targetSource not found" -ForegroundColor Yellow
-                            exit
+                    if($targetSource -or $targetTeam){
+                        if($targetSource){
+                            $rootSource = api get "protectionSources/rootNodes?environments=kO365" -region $objectRegionId | Where-Object {$_.protectionSource.name -eq $targetSource}
+                            if(!$rootSource){
+                                Write-Host "$targetSource not found" -ForegroundColor Yellow
+                                exit
+                            }
+                            $targetParentId = $rootSource[0].protectionSource.id
                         }
-                        $targetParentId = $rootSource[0].protectionSource.id
+                        if($targetTeam){
+                            $targetSearch = api get -v2 "data-protect/search/objects?sourceIds=$targetParentId&searchString=$targetTeam&o365ObjectTypes=kTeam&includeTenants=true&environments=kO365" -region $objectRegionId # &regionIds=$region"
+                            $targetObject = $targetSearch.objects | Where-Object {$_.name -eq $targetTeam}
+                            if(! $targetObject){
+                                Write-Host "Target Team $targetTeam not found" -ForegroundColor Yellow
+                                exit 1
+                            }else{
+                                $targetOPI = $targetObject[0].objectProtectionInfos | Where-Object {$_.regionId -eq $region}
+                            }
+                        }
                     }
+
                 }else{
                     if($objectRegionId -ne $selectedRegion){
                         Write-Host "$objName is in a different region than $selectedRegionObject and must be restored separately" -ForegroundColor Yellow
@@ -132,14 +148,34 @@ foreach($objName in $objectNames){
                         }
                     }
 
-                    if($targetSource){
-                        Write-Host "Restoring $objName to $targetSource"
-                        $restoreParams.office365Params.recoverTeamParams['targetDomainObjectId'] = @{
-                            "id" = [int64]$targetParentId
+                    if($targetSource -or $targetTeam){
+                        $restoreParams.office365Params.recoverMsTeamParams.restoreToOriginal = $false
+                        $restoreParams.office365Params.recoverMsTeamParams['shouldRestoreStandardMetadataFields'] = $false
+                        if($targetSource){
+                            $restoreParams.office365Params.recoverMsTeamParams['targetDomainObjectId'] = @{
+                                "id" = [int64]$targetParentId
+                            }
                         }
-                    }else{
-                        Write-Host "Restoring $objName"
+                        if($targetTeam){
+                            $restoreParams.office365Params.recoverMsTeamParams['targetTeamName'] = $null
+                            $restoreParams.office365Params.recoverMsTeamParams['createNewTeam'] = $false
+                            $restoreParams.office365Params.recoverMsTeamParams['targetMsTeamParam'] = @{
+                                "targetTeam" = @{
+                                    "id" = $targetOPI.objectId;
+                                    "name" = $targetObject[0].name;
+                                    "primarySMTPAddress" = $targetObject[0].o365Params.primarySMTPAddress
+                                };
+                                "parentSourceId" = $targetParentId;
+                                "targetTeamsChannelParam" = @{
+                                    "createNewChannel" = $false;
+                                    "channelOwners" = @(
+                                        $null
+                                    )
+                                }
+                            }
+                        }
                     }
+                    Write-Host "Restoring $objName"
                     $null = api post -v2 "data-protect/recoveries" $restoreParams -region $objectRegionId
                 }else{
                     Write-Host "No snapshots available for $objName"

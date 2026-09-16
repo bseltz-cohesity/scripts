@@ -25,7 +25,7 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./restoreCcsM365Team.ps1 -teamName team1, team2
+./restoreCcsM365Team.ps1 -teamName team1, team2 -region azure-centralus
 ```
 
 ## Basic Parameters
@@ -33,7 +33,8 @@ Place both files in a folder together and run the main script like so:
 * -username: (optional) used for password storage only (default is 'Ccs')
 * -teamName: (optional) one or more team names (comma separated)
 * -teamList: (optional) text file of team names (one per line)
-* -source: (optional) registered M365 protection source to restore from
+* -source: registered M365 protection source to restore from
+* -region: specify region to find source and team(s)
 * -pageSize: (optional) limit number of objects returned pr page (default is 1000)
 
 ## Alternate Location Parameters
