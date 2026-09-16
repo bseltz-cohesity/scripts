@@ -69,7 +69,7 @@ if(! $adPasswd){
     }
 }
 
-$finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')
+$finishedStates = @('kCanceled', 'kFailure', 'kWarning', 'kSuccess')
 $goodStates = @('kSuccess', 'kWarning')
 
 $date = (get-date).ToString()
@@ -212,76 +212,80 @@ if(! $searchResult.vms){
     $finishedRuns = $runs | Where-Object {$_.backupRun.status -in $finishedStates}
     if($finishedRuns){
         $run = $finishedRuns[0]
-    }
-    # $run = (api get "protectionRuns?jobId=$jobId&numRuns=2" | Where-Object {$_.backupRun.status -in $finishedStates})[0]
-    $lastRunUsecs = $run.backupRun.stats.startTimeUsecs
-    $lastStatus = $run.backupRun.status
-    if($lastStatus -in $goodStates){
-        $dcName = $doc.objectId.entity.displayName
-        # mount AD backup
-        $mountTaskDate = (get-date).ToString('yyyy-MM-dd_HH-mm-ss')
-        $mountTaskName = "Recover-$($dcName)_$mountTaskDate"
-        $mountParams = @{
-            "name"                      = $mountTaskName;
-            "applicationEnvironment"    = "kAD";
-            "applicationRestoreObjects" = @(
-                @{
-                    "applicationServerId" = $doc.objectId.entity.id;
-                    "adRestoreParameters" = @{
-                        "port"        = $adPort;
-                        "credentials" = @{
-                            "username" = $adUser;
-                            "password" = $adPasswd
-                        }
+        $lastRunUsecs = $run.backupRun.stats.startTimeUsecs
+        $lastStatus = $run.backupRun.status
+        if($lastStatus -in $goodStates){
+            $dcName = $doc.objectId.entity.displayName
+            # mount AD backup
+            $mountTaskDate = (get-date).ToString('yyyy-MM-dd_HH-mm-ss')
+            $mountTaskName = "Recover-$($dcName)_$mountTaskDate"
+            $mountParams = @{
+                "name"                      = $mountTaskName;
+                "applicationEnvironment"    = "kAD";
+                "applicationRestoreObjects" = @(
+                    @{
+                        "applicationServerId" = $doc.objectId.entity.id;
+                        "adRestoreParameters" = @{
+                            "port"        = $adPort;
+                            "credentials" = @{
+                                "username" = $adUser;
+                                "password" = $adPasswd
+                            }
+                        };
+                        "targetHostId"        = $doc.objectId.entity.parentId
+                    }
+                );
+                "hostingProtectionSource"   = @{
+                    "environment"        = "kAD";
+                    "jobId"              = $doc.objectId.jobId;
+                    "jobUid"             = @{
+                        "clusterId"            = $doc.objectId.jobUid.clusterId;
+                        "clusterIncarnationId" = $doc.objectId.jobUid.clusterIncarnationId;
+                        "id"                   = $doc.objectId.jobUid.objectId
                     };
-                    "targetHostId"        = $doc.objectId.entity.parentId
+                    "jobRunId"           = $version.instanceId.jobInstanceId;
+                    "protectionSourceId" = $doc.objectId.entity.parentId;
+                    "startedTimeUsecs"   = $version.instanceId.jobStartTimeUsecs;
+                    "sourceName"         = ""
                 }
-            );
-            "hostingProtectionSource"   = @{
-                "environment"        = "kAD";
-                "jobId"              = $doc.objectId.jobId;
-                "jobUid"             = @{
-                    "clusterId"            = $doc.objectId.jobUid.clusterId;
-                    "clusterIncarnationId" = $doc.objectId.jobUid.clusterIncarnationId;
-                    "id"                   = $doc.objectId.jobUid.objectId
-                };
-                "jobRunId"           = $version.instanceId.jobInstanceId;
-                "protectionSourceId" = $doc.objectId.entity.parentId;
-                "startedTimeUsecs"   = $version.instanceId.jobStartTimeUsecs;
-                "sourceName"         = ""
             }
-        }
-        Write-Host "Mounting AD instance..."
-        $restoreTask = api post restore/applicationsRecover $mountParams
-        # wait for mount to complete
-        if($restoreTask.id){
-            $taskId = $restoreTask.id
-            Start-Sleep 5
-            $restoreTask = api get "/restoretasks/$taskId"
-            while($restoreTask[0].restoreTask.performRestoreTaskState.base.publicStatus -notin $finishedStates){
+            Write-Host "Mounting AD instance..."
+            $restoreTask = api post restore/applicationsRecover $mountParams
+            # wait for mount to complete
+            if($restoreTask.id){
+                $taskId = $restoreTask.id
                 Start-Sleep 5
                 $restoreTask = api get "/restoretasks/$taskId"
-            }
-            if($restoreTask[0].restoreTask.performRestoreTaskState.base.publicStatus -ne 'kSuccess'){
-                Write-Host "Something went wrong with the AD mount" -ForegroundColor Yellow
-            }else{
-                Write-Host "AD mount successful..."
-                # query mounted AD topology
-                $adTopology = api get "restore/adDomainRootTopology?restoreTaskId=$taskId"
-                if($adTopology){
-                    $readableBackup = $True
-                    Write-Host "Backup Validated!" -ForegroundColor Green
+                while($restoreTask[0].restoreTask.performRestoreTaskState.base.publicStatus -notin $finishedStates){
+                    Start-Sleep 5
+                    $restoreTask = api get "/restoretasks/$taskId"
                 }
-                # destroy mount
-                Write-Host "Tearing down mount..."
-                $null = api post "/destroyclone/$taskId"
+                if($restoreTask[0].restoreTask.performRestoreTaskState.base.publicStatus -ne 'kSuccess'){
+                    Write-Host "Something went wrong with the AD mount" -ForegroundColor Yellow
+                }else{
+                    Write-Host "AD mount successful..."
+                    # query mounted AD topology
+                    $adTopology = api get "restore/adDomainRootTopology?restoreTaskId=$taskId"
+                    if($adTopology){
+                        $readableBackup = $True
+                        Write-Host "Backup Validated!" -ForegroundColor Green
+                    }
+                    # destroy mount
+                    Write-Host "Tearing down mount..."
+                    $null = api post "/destroyclone/$taskId"
+                }
+            }else{
+                Write-Host "Something went wrong with the AD mount" -ForegroundColor Yellow
             }
         }else{
-            Write-Host "Something went wrong with the AD mount" -ForegroundColor Yellow
+            Write-Host "Last backup status was: $($lastStatus.subString(1))" -ForegroundColor Yellow
         }
     }else{
-        Write-Host "Last backup status was: $($lastStatus.subString(1))" -ForegroundColor Yellow
+        Write-Host "No completed backups found" -ForegroundColor Yellow
+        $lastStatus = 'kNone'
     }
+    # $run = (api get "protectionRuns?jobId=$jobId&numRuns=2" | Where-Object {$_.backupRun.status -in $finishedStates})[0]
+
 }
 
 # report
