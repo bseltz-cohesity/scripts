@@ -269,6 +269,7 @@
       <div class="actions-row">
         <button class="secondary" id="refreshBtn">Refresh</button>
         <button class="secondary" id="exportBtn">Export CSV</button>
+        <span class="checkline"><input type="checkbox" id="excludeAutoSetFlags" checked> Filter out auto set gflags</span>
       </div>
       <div id="flagsBanner" class="status-banner hidden"></div>
     </div>
@@ -732,9 +733,11 @@ el('refreshBtn').addEventListener('click', loadFlags);
 
 el('exportBtn').addEventListener('click', () => {
   if (!lastFlagsData) return;
+  const excludeAutoSet = el('excludeAutoSetFlags').checked;
   const rows = [['Service Name', 'Flag Name', 'Flag Value', 'Reason', 'Timestamp']];
   (lastFlagsData.services || []).forEach(svc => {
     (svc.gflags || []).forEach(f => {
+      if (excludeAutoSet && ((f.reason || '').includes('Auto set by Cohesity') || (f.reason || '').includes('Auto-tuned by Apollo'))) return;
       const val = String(f.value).replace(/,/g, ';;');
       rows.push([svc.serviceName, f.name, val, f.reason || '', formatTimestamp(f.timestamp)]);
     });
