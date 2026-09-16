@@ -11,9 +11,17 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter(Mandatory = $True)][string]$vip, # Cohesity cluster to connect to
-    [Parameter(Mandatory = $True)][string]$username, # Cohesity username
-    [Parameter()][string]$domain = 'local', # Cohesity user domain name
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$helios,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter(Mandatory = $True)][string]$domainController, # AD domain controller
     [Parameter(Mandatory = $True)][string]$adUser, # Active Directory user
     [Parameter()][string]$adPasswd, # Active Directory user password
@@ -27,6 +35,31 @@ param (
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
+# authentication =============================================
+# demand clusterName for Helios
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios" -ForegroundColor Yellow
+    exit 1
+}
+
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $helios -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
+
+# select helios managed cluster
+if($USING_HELIOS){
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
+        exit 1
+    }
+}
+# end authentication =========================================
+
 # get/set ad password
 if(! $adPasswd){
     $adPasswd = Get-CohesityAPIPassword -vip $domainController -username $adUser
@@ -36,10 +69,7 @@ if(! $adPasswd){
     }
 }
 
-# authenticate
-apiauth -vip $vip -username $username -domain $domain
-
-$finishedStates = @('kSuccess','kFailed','kCanceled', 'kFailure')
+$finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')
 
 $date = (get-date).ToString()
 
@@ -165,6 +195,7 @@ $html += '</span>
 
 $readableBackup = $False
 # find domain controller
+Write-Host "Finding backups..."
 $searchResult = api get "/searchvms?entityTypes=kAD&vmName=$domainController"
 if(! $searchResult.vms){
     Write-Host "Domain Controller not found" -ForegroundColor Yellow
@@ -213,6 +244,7 @@ if(! $searchResult.vms){
             "sourceName"         = ""
         }
     }
+    Write-Host "Mounting AD instance..."
     $restoreTask = api post restore/applicationsRecover $mountParams
     # wait for mount to complete
     if($restoreTask.id){
