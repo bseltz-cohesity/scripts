@@ -308,7 +308,7 @@ function reportRuns(){
                                 if($totalRunBytesRead -gt 0 -and $snapshotInfo.stats.bytesRead){
                                     $objectShareOfRun = $snapshotInfo.stats.bytesRead / $totalRunBytesRead
                                 }else{
-                                    $objectShareOfRun = 0
+                                    $objectShareOfRun = 1
                                 }
                                 if($object.PSObject.Properties['replicationInfo'] -and $object.replicationInfo.PSObject.Properties['replicationTargetResults']){
                                     reportReplications
