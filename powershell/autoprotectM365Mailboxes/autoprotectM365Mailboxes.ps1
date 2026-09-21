@@ -60,6 +60,8 @@ if($USING_HELIOS){
 }
 # end authentication =========================================
 
+$subject = "Autoprotect M365 Mailboxes (script)"
+
 $logFile = "$($jobPrefix)-log.txt"
 $today = Get-Date -UFormat '%Y-%m-%d %H:%M:%S'
 "`n==================================`nScript started $today`n==================================" | Out-File -FilePath $logFile -Append
@@ -329,6 +331,8 @@ foreach($job in $updateJobs.Values){
     $null = api put -v2 data-protect/protection-groups/$($job.id) $job
     if($cohesity_api.last_api_error -ne 'OK'){
         $message += "!! Script Error: updating $($job.name): $($cohesity_api.last_api_error)\n"
+        $subject = "!! ERRORS !! Autoprotect M365 Mailboxes (script)"
+        "$($cohesity_api.last_api_error)" | Out-File -FilePath $logFile -Append
     }
 }
 
@@ -354,6 +358,8 @@ foreach($job in $unchangedJobs.Values){
         $null = api put -v2 data-protect/protection-groups/$($job.id) $job
         if($cohesity_api.last_api_error -ne 'OK'){
             $message += "!! Script Error: updating $($job.name): $($cohesity_api.last_api_error)\n"
+            $subject = "!! ERRORS !! Autoprotect M365 Mailboxes (script)"
+            "$($cohesity_api.last_api_error)" | Out-File -FilePath $logFile -Append
         }
     }
 }
@@ -376,12 +382,14 @@ foreach($job in $newJobs.Values){
     $null = api post -v2 data-protect/protection-groups $job
     if($cohesity_api.last_api_error -ne 'OK'){
         $message += "!! Script Error: creating $($job.name): $($cohesity_api.last_api_error)\n"
+        $subject = "!! ERRORS !! Autoprotect M365 Mailboxes (script)"
+        "$($cohesity_api.last_api_error)" | Out-File -FilePath $logFile -Append
     }    
 }
 
 if($smtpServer -and $sendTo -and $sendFrom){
     write-host "`nsending report to $([string]::Join(", ", $sendTo))"
     foreach($toaddr in $sendTo){
-        Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject "Autoprotect M365 Mailboxes (script)" -Body $message -WarningAction SilentlyContinue
+        Send-MailMessage -From $sendFrom -To $toaddr -SmtpServer $smtpServer -Port $smtpPort -Subject $subject -Body $message -WarningAction SilentlyContinue
     }
 }
