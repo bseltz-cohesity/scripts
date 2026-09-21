@@ -223,7 +223,7 @@ while(1){
         $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
         $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
         $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
-        if($autoProtected -ne $True -and $node.protectionSource.id -notin $script:protectedIndex){
+        if($autoProtected -ne $True -and $node.protectionSource.id -notin $script:protectedIndex -and $foundObjects -lt $maxToProtect){
             if($includeDomain.Count -eq 0 -or $(($node.protectionSource.office365ProtectionSource.primarySMTPAddress -split '@')[-1]) -in $includeDomain){
                 $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
                 $objectsToAdd = @($objectsToAdd + @{'name' = $node.protectionSource.name; 'id' = $node.protectionSource.id})
@@ -231,9 +231,9 @@ while(1){
             }
         }
         $lastCursor = $node.protectionSource.id
-        if($foundObjects -ge $maxToProtect){
-            break
-        }
+        # if($foundObjects -ge $maxToProtect){
+        #     break
+        # }
     }
     if($cursor){
         $mailboxes = api get "protectionSources?pageSize=50000&nodeId=$($mailboxesNode.protectionSource.id)&id=$($mailboxesNode.protectionSource.id)&allUnderHierarchy=false&hasValidMailbox=true&useCachedData=false&afterCursorEntityId=$cursor"
@@ -248,7 +248,7 @@ while(1){
             $nodeIdIndex = @($nodeIdIndex + $node.protectionSource.id)
             $nameIndex[$node.protectionSource.name] = $node.protectionSource.id
             $smtpIndex[$node.protectionSource.office365ProtectionSource.primarySMTPAddress] = $node.protectionSource.id
-            if($autoProtected -ne $True -and $node.protectionSource.id -notin $script:protectedIndex){
+            if($autoProtected -ne $True -and $node.protectionSource.id -notin $script:protectedIndex -and $foundObjects -lt $maxToProtect){
                 if($includeDomain.Count -eq 0 -or $(($node.protectionSource.office365ProtectionSource.primarySMTPAddress -split '@')[-1]) -in $includeDomain){
                     $unprotectedIndex = @($unprotectedIndex + $node.protectionSource.id)
                     $objectsToAdd = @($objectsToAdd + @{'name' = $node.protectionSource.name; 'id' = $node.protectionSource.id})
@@ -309,11 +309,14 @@ foreach($obj in $objectsToAdd){
 foreach($job in $updateJobs.Values){
     # unprotect missing objects
     foreach($obj in $job.office365Params.objects){
-        $search = $search = api get -v2 "data-protect/search/objects?objectIds=$($obj.id)"
-        if($search.objects.Count -eq 0){
-            "$($job.name) -- $($obj.id) (deleted)" | Tee-Object -FilePath $logFile -Append
+        if($obj.id -notin $nodeIdIndex){
             $job.office365Params.objects = @($job.office365Params.objects | Where-Object {$_.id -ne $obj.id})
         }
+        # $search = $search = api get -v2 "data-protect/search/objects?objectIds=$($obj.id)"
+        # if($search.objects.Count -eq 0){
+        #     "$($job.name) -- $($obj.id) (deleted)" | Tee-Object -FilePath $logFile -Append
+        #     $job.office365Params.objects = @($job.office365Params.objects | Where-Object {$_.id -ne $obj.id})
+        # }
     }
     if($excludeFolders){
         setApiProperty -object $job.office365Params -name 'outlookProtectionTypeParams' -value @{
@@ -324,6 +327,9 @@ foreach($job in $updateJobs.Values){
         }
     }
     $null = api put -v2 data-protect/protection-groups/$($job.id) $job
+    if($cohesity_api.last_api_error -ne 'OK'){
+        $message += "!! Script Error: updating $($job.name): $($cohesity_api.last_api_error)\n"
+    }
 }
 
 foreach($job in $unchangedJobs.Values){
@@ -337,18 +343,18 @@ foreach($job in $unchangedJobs.Values){
                 "includeFolders" = $null
             }
             $updateThisJob = $True
-        }
-        foreach($obj in $job.office365Params.objects){
-            $search = $search = api get -v2 "data-protect/search/objects?objectIds=$($obj.id)"
-            if($search.objects.Count -eq 0){
-                "$($job.name) -- $($obj.id) (deleted)" | Tee-Object -FilePath $logFile -Append
-                $job.office365Params.objects = @($job.office365Params.objects | Where-Object {$_.id -ne $obj.id})
-                $updateThisJob = $True
+            foreach($obj in $job.office365Params.objects){
+                if($obj.id -notin $nodeIdIndex){
+                    $job.office365Params.objects = @($job.office365Params.objects | Where-Object {$_.id -ne $obj.id})
+                }
             }
         }
     }
     if($updateThisJob -eq $True){
         $null = api put -v2 data-protect/protection-groups/$($job.id) $job
+        if($cohesity_api.last_api_error -ne 'OK'){
+            $message += "!! Script Error: updating $($job.name): $($cohesity_api.last_api_error)\n"
+        }
     }
 }
 
@@ -362,7 +368,15 @@ foreach($job in $newJobs.Values){
             "includeFolders" = $null
         }
     }
+    foreach($obj in $job.office365Params.objects){
+        if($obj.id -notin $nodeIdIndex){
+            $job.office365Params.objects = @($job.office365Params.objects | Where-Object {$_.id -ne $obj.id})
+        }
+    }
     $null = api post -v2 data-protect/protection-groups $job
+    if($cohesity_api.last_api_error -ne 'OK'){
+        $message += "!! Script Error: creating $($job.name): $($cohesity_api.last_api_error)\n"
+    }    
 }
 
 if($smtpServer -and $sendTo -and $sendFrom){
