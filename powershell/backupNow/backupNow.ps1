@@ -1,4 +1,4 @@
-# version 2026.05.20
+# version 2026.09.22
 
 # version history
 # ===============
@@ -34,6 +34,7 @@
 # 2026.02.01 - added enableCohesityAPIDebugger (requires cohesity-api.ps1 version 2026.01.01 or later)
 # 2026.05.05 - minor bug fixes
 # 2026.05.20 - fixed new object search
+# 2026.09.22 - fixed source ID selection
 #
 # extended error codes
 # ====================
@@ -408,6 +409,7 @@ if($objects){
                         exit 1
                     }
                 }
+                $thisObject.objectProtectionInfos = @($thisObject.objectProtectionInfos | Where-Object {$v2JobId -in @($_.protectionGroups.id)})
                 $objectId = $thisObject.objectProtectionInfos[0].objectId
                 $sourceIds += $objectId
                 $selectedSources = @($selectedSources + $objectId)
