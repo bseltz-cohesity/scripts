@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2026.07.30
+# version 2026.09.22
 
 # version history
 # ===============
@@ -41,6 +41,7 @@
 # 2026.05.20 - fixed new object search
 # 2026.07.29 - fixed string match for direct archival run
 # 2026.07.30 - fixed progress monitor for direct archival run and fixed exit code for job already running
+# 2026.09.22 - fixed source ID selection
 #
 # extended error codes
 # ====================
@@ -473,13 +474,15 @@ if objectnames is not None:
                     if 'protectionGroups' in o and o['protectionGroups'] is not None:
                         for p in o['protectionGroups']:
                             protectionGroupIds.append(p['id'])
+                            if p['id'] == v2JobId:
+                                sourceId = o['objectId']
                 if v2JobId not in protectionGroupIds:
                     out('Object %s not protected by %s' % (objectname, jobName))
                     if extendederrorcodes is True:
                         bail(3)
                     else:
                         bail(1)
-                sourceId = thisObject[0]['objectProtectionInfos'][0]['objectId']
+                # sourceId = thisObject[0]['objectProtectionInfos'][0]['objectId']
             if sourceId is not None:
                 sourceIds.append(sourceId)
                 selectedSources.append(sourceId)
