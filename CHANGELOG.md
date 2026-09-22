@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-09-22`] [resetUserPassword.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/resetUserPassword) [`New`] reset a Cohesity user's password
 * [`2026-09-22`] [backupNow.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/backupNow) [`Update`] fixed source ID selection
 * [`2026-09-22`] [backupNow.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backupNow) [`Update`] fixed source ID selection
 * [`2026-09-21`] [autoprotectM365Mailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/autoprotectM365Mailboxes) [`Update`] fixed obsolute object removal
