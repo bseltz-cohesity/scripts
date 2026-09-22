@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-09-22`] [backupNow.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/backupNow) [`Update`] fixed source ID selection
+* [`2026-09-22`] [backupNow.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backupNow) [`Update`] fixed source ID selection
 * [`2026-09-21`] [autoprotectM365Mailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/autoprotectM365Mailboxes) [`Update`] fixed obsolute object removal
 * [`2026-09-16`] [cluster-manager.html](https://github.com/cohesity/community-automation-samples/tree/main/html/cluster-manager) [`New`] HTML app for manageing cluster state/services/gflags
 * [`2026-09-16`] [restoreCcsM365Team.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/restoreCcsM365Team) [`Update`] fixed restore to alternate mailbox
