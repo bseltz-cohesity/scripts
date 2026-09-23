@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """BackupNow for python"""
 
-# version 2026.09.22
+# version 2026.09.23
 
 # version history
 # ===============
@@ -42,6 +42,7 @@
 # 2026.07.29 - fixed string match for direct archival run
 # 2026.07.30 - fixed progress monitor for direct archival run and fixed exit code for job already running
 # 2026.09.22 - fixed source ID selection
+# 2026.09.23 - fixed CAD/NGCE retention control
 #
 # extended error codes
 # ====================
@@ -495,6 +496,9 @@ if objectnames is not None:
 
 finishedStates = ['kCanceled', 'kSuccess', 'kFailure', 'kWarning', 'kCanceling', '3', '4', '5', '6', 'Canceled', 'Succeeded', 'Failed', 'SucceededWithWarning']
 
+# use base retention and copy targets from policy
+policy = api('get', 'protectionPolicies/%s' % job['policyId'], timeout=timeoutsec)
+
 jobData = {
     "copyRunTargets": [],
     "sourceIds": [],
@@ -503,12 +507,20 @@ jobData = {
 }
 
 if keepLocalFor is not None:
+    v2policy = api('get', 'data-protect/policies/%s' % job['policyId'], v=2, timeout=timeoutsec)
     jobData['copyRunTargets'] = [
         {
             "type": "kLocal",
             "daysToKeep": keepLocalFor
         }
     ]
+    if 'primaryBackupTarget' in v2policy['backupPolicy']['regular'] and v2policy['backupPolicy']['regular']['primaryBackupTarget']['targetType'] == 'Archival':
+        jobData['copyRunTargets'][0]['type'] = 'kArchival'
+        jobData['copyRunTargets'][0]['archivalTarget'] = {
+            "vaultId": v2policy['backupPolicy']['regular']['primaryBackupTarget']['archivalTargetSettings']['targetId'],
+            "vaultName": v2policy['backupPolicy']['regular']['primaryBackupTarget']['archivalTargetSettings']['targetName'],
+            "vaultType": "kCloud"
+        }
 
 if backupType != 'kRegular':
     jobData['usePolicyDefaults'] = False
@@ -534,9 +546,6 @@ else:
 # add objects (DB)
 if len(runNowParameters) > 0:
     jobData['runNowParameters'] = runNowParameters
-
-# use base retention and copy targets from policy
-policy = api('get', 'protectionPolicies/%s' % job['policyId'], timeout=timeoutsec)
 
 if localonly is True or noarchive is True or noreplica is True:
     jobData['usePolicyDefaults'] = False
