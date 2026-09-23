@@ -1,4 +1,4 @@
-# version 2026.09.22
+# version 2026.09.23
 
 # version history
 # ===============
@@ -35,6 +35,7 @@
 # 2026.05.05 - minor bug fixes
 # 2026.05.20 - fixed new object search
 # 2026.09.22 - fixed source ID selection
+# 2026.09.23 - fixed CAD/NGCE retention control
 #
 # extended error codes
 # ====================
@@ -425,18 +426,27 @@ if($objects){
     }
 }
 
+# retrieve policy settings
+$policy = api get "protectionPolicies/$policyId" -timeout $timeoutSec
+
 $copyRunTargets = @()
 if($keepLocalFor){
+    $v2policy = api get -v2 "data-protect/policies/$policyId" -timeout $timeoutSec
     $copyRunTargets = @(
         @{
             "type" = "kLocal";
             "daysToKeep" = $keepLocalFor
         }
     )
+    if($v2policy.backupPolicy.regular.PSObject.Properties['primaryBackupTarget'] -and $v2policy.backupPolicy.regular.primaryBackupTarget.targetType -eq 'Archival'){
+        $copyRunTargets[0].type = 'kArchival'
+        $copyRunTargets[0]['archivalTarget'] = @{
+            "vaultId" = $v2policy.backupPolicy.regular.primaryBackupTarget.archivalTargetSettings.targetId;
+            "vaultName" = $v2policy.backupPolicy.regular.primaryBackupTarget.archivalTargetSettings.targetName;
+            "vaultType" = "kCloud"
+        }
+    }
 }
-
-# retrieve policy settings
-$policy = api get "protectionPolicies/$policyId" -timeout $timeoutSec
 
 # replication
 if((! $localOnly) -and (! $noReplica)){
