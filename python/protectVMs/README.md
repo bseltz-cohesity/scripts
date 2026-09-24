@@ -56,6 +56,7 @@ To add VMs to an existing protection group:
 * -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
 * -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
 * -d, --domain: (optional) domain of username (defaults to local)
+* -t, --tenant: (optional) name of organization to impersonate
 * -i, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password or API key
 * -np, --noprompt: (optional) do not prompt for password
@@ -70,6 +71,8 @@ To add VMs to an existing protection group:
 * -vc, --vcentername: (optional) name of registered vCenter source
 * -n, --vmname: (optional) name of VM to protect (repeat for multiple)
 * -l, --vmlist: (optional) text file of VM names to protect (one per line)
+* -it, --includetag: include tag (repeat for multiple tags)
+* -et, --excludetag: exclude tag (repeat for multiple tags)
 
 ## New Job Parameters
 
@@ -81,3 +84,4 @@ To add VMs to an existing protection group:
 * -fs, --fullsla: (optional) full SLA minutes (default is 120)
 * -z, --pause: (optional) pause future runs of new job
 * -ei, --enableindexing: (optional) enable indexing
+* -a, --appconsistent: (optional) quiesce VMs during backup

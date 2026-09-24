@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
 parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-t', '--tenant', type=str, default=None)
 parser.add_argument('-c', '--clustername', type=str, default=None)
 parser.add_argument('-mcm', '--mcm', action='store_true')
 parser.add_argument('-i', '--useApiKey', action='store_true')
@@ -29,12 +30,16 @@ parser.add_argument('-is', '--incrementalsla', type=int, default=60)    # increm
 parser.add_argument('-fs', '--fullsla', type=int, default=120)          # full SLA minutes
 parser.add_argument('-z', '--pause', action='store_true')
 parser.add_argument('-ei', '--enableindexing', action='store_true')
+parser.add_argument('-a', '--appconsistent', action='store_true')
+parser.add_argument('-it', '--includetag', action='append', type=str)
+parser.add_argument('-et', '--excludetag', action='append', type=str)
 
 args = parser.parse_args()
 
 vip = args.vip
 username = args.username
 domain = args.domain
+tenant = args.tenant
 clustername = args.clustername
 mcm = args.mcm
 useApiKey = args.useApiKey
@@ -54,6 +59,33 @@ incrementalsla = args.incrementalsla
 fullsla = args.fullsla
 pause = args.pause
 enableindexing = args.enableindexing
+includetags = args.includetag
+excludetags = args.excludetag
+appconsistent = args.appconsistent
+
+
+# get object ID function
+def getObjectId(objectName, source):
+
+    d = {'_object_id': None}
+
+    def get_nodes(node):
+        if 'name' in node:
+            if node['name'].lower() == objectName.lower():
+                d['_object_id'] = node['id']
+                exit
+        if 'protectionSource' in node:
+            if node['protectionSource']['name'].lower() == objectName.lower():
+                d['_object_id'] = node['protectionSource']['id']
+                exit
+        if 'nodes' in node:
+            for node in node['nodes']:
+                if d['_object_id'] is None:
+                    get_nodes(node)
+                else:
+                    exit
+    get_nodes(source)
+    return d['_object_id']
 
 
 # gather server list
@@ -72,7 +104,11 @@ def gatherList(param=None, filename=None, name='items', required=True):
     return items
 
 
-vmnames = gatherList(vmname, vmlist, name='VMs', required=True)
+vmnames = gatherList(vmname, vmlist, name='VMs', required=False)
+
+if len(vmnames) == 0 and includetags is None and excludetags is None:
+    print('no VMs or tags specified')
+    exit(1)
 
 if pause:
     isPaused = True
@@ -83,6 +119,11 @@ if enableindexing:
     indexingEnabled = True
 else:
     indexingEnabled = False
+
+if appconsistent:
+    appconsistency = True
+else:
+    appconsistency = False
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), emailMfaCode=emailmfacode, mfaCode=mfacode)
@@ -105,7 +146,7 @@ vcenters = api('get', 'protectionSources/rootNodes?environments=kVMware')
 
 # find existing job
 job = None
-jobs = api('get', 'data-protect/protection-groups?environments=kVMware&pruneSourceIds=true&pruneExcludedSourceIds=true&isActive=true&isDeleted=false&useCachedData=true', v=2)
+jobs = api('get', 'data-protect/protection-groups?environments=kVMware&isActive=true&isDeleted=false&useCachedData=true', v=2)
 if jobs is not None and 'protectionGroups' in jobs and jobs['protectionGroups'] is not None and len(jobs['protectionGroups']) > 0:
     jobs = [j for j in jobs['protectionGroups'] if j['name'].lower() == jobname.lower()]
     if jobs is not None and len(jobs) > 0:
@@ -204,7 +245,7 @@ else:
             "excludeObjectIds": [],
             "vmTagIds": [],
             "excludeVmTagIds": [],
-            "appConsistentSnapshot": False,
+            "appConsistentSnapshot": appconsistency,
             "fallbackToCrashConsistentSnapshot": False,
             "skipPhysicalRDMDisks": False,
             "globalExcludeDisks": [],
@@ -239,24 +280,82 @@ else:
         }
     }
 
-vms = api('get', 'protectionSources/virtualMachines?id=%s' % vcenter['protectionSource']['id'])
-for thisvmname in vmnames:
-    thisvm = [v for v in vms if v['name'].lower() == thisvmname.lower()]
-    if thisvm is not None and len(thisvm) > 0:
-        if len(thisvm) > 1:
-            print('*** found duplicate VM names, protecing all...')
-        for vm in thisvm:
-            if vm['id'] not in [o['id'] for o in job['vmwareParams']['objects']]:
-                newobject = {
-                    "excludeDisks": None,
-                    "id": vm['id'],
-                    "name": vm['name'],
-                    "isAutoprotected": False
-                }
-                job['vmwareParams']['objects'].append(newobject)
-            print('    protecting %s' % thisvmname)
-    else:
-        print('    warning: %s not found' % thisvmname)
+# handlde tags
+if includetags is not None or excludetags is not None:
+    vcenterObj = api('get','protectionSources?id=%s&excludeTypes=kDatacenter' % vcenter['protectionSource']['id'])[0]
+
+    # gather include tag IDs
+    includeTagIds = []
+    if includetags is not None:
+        for tag in includetags:
+            tagId = getObjectId(tag, vcenterObj)
+            if tagId is not None:
+                includeTagIds.append(tagId)
+            else:
+                print('tag %s not found' % tag)
+                exit(1)
+        print('    protecting tags')
+
+    # gather exclude tag IDs
+    excludeTagIds = []
+    if excludetags is not None:
+        for tag in excludetags:
+            tagId = getObjectId(tag, vcenterObj)
+            if tagId is not None:
+                excludeTagIds.append(tagId)
+            else:
+                print('tag %s not found' % tag)
+                exit(1)
+        print('    excluding tags')
+
+    # include tags
+    if len(includeTagIds) > 0:
+        if newJob is True:
+            job['vmwareParams']['vmTagIds'] = []
+        else:
+            if 'vmTagIds' not in job['vmwareParams'] or job['vmwareParams']['vmTagIds'] is None:
+                display(job)
+                job['vmwareParams']['vmTagIds'] = []
+        if list(includetags) not in job['vmwareParams']['vmTagIds']:
+            job['vmwareParams']['vmTagIds'].append(includeTagIds)
+
+    # exclude tags
+    if len(excludeTagIds) > 0:
+        if newJob is True:
+            job['vmwareParams']['excludeVmTagIds'] = []
+        else:
+            if 'excludeVmTagIds' not in job['vmwareParams'] or job['vmwareParams']['excludeVmTagIds'] is None:
+                job['vmwareParams']['excludeVmTagIds'] = []
+        if list(excludeTagIds) not in job['vmwareParams']['excludeVmTagIds']:
+            job['vmwareParams']['excludeVmTagIds'].append(excludeTagIds)
+
+    # make lists unique
+    if job['vmwareParams']['vmTagIds'] is not None and len(job['vmwareParams']['vmTagIds']) > 0:
+        job['vmwareParams']['vmTagIds'] = [list(x) for x in set(tuple(x) for x in job['vmwareParams']['vmTagIds'])]
+
+    if job['vmwareParams']['excludeVmTagIds'] is not None and len(job['vmwareParams']['excludeVmTagIds']) > 0:
+        job['vmwareParams']['excludeVmTagIds'] = [list(x) for x in set(tuple(x) for x in job['vmwareParams']['excludeVmTagIds'])]
+
+# handle individual vms
+if len(vmnames) >> 0:
+    vms = api('get', 'protectionSources/virtualMachines?id=%s' % vcenter['protectionSource']['id'])
+    for thisvmname in vmnames:
+        thisvm = [v for v in vms if v['name'].lower() == thisvmname.lower()]
+        if thisvm is not None and len(thisvm) > 0:
+            if len(thisvm) > 1:
+                print('*** found duplicate VM names, protecing all...')
+            for vm in thisvm:
+                if vm['id'] not in [o['id'] for o in job['vmwareParams']['objects']]:
+                    newobject = {
+                        "excludeDisks": None,
+                        "id": vm['id'],
+                        "name": vm['name'],
+                        "isAutoprotected": False
+                    }
+                    job['vmwareParams']['objects'].append(newobject)
+                print('    protecting %s' % thisvmname)
+        else:
+            print('    warning: %s not found' % thisvmname)
 
 # create or update job
 if newJob is True:
