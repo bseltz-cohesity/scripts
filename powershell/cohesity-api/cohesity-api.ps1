@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2026.09.14 - Brian Seltzer
+#  Version 2026.09.24 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2025-01-10 - added Get-Runs function
@@ -31,10 +31,11 @@
 # 2026-08-06 - added culture fix for mangled dates
 # 2026-08-28 - added Tls13 negotiation
 # 2026-09-14 - updated Tls13 negotiation
+# 2026-09-24 - remove double slashes from URLs
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2026.09.14'
+$versionCohesityAPI = '2026.09.24'
 
 $culture = [System.Globalization.CultureInfo]::CurrentCulture.Clone()
 $culture.DateTimeFormat.LongTimePattern  = $culture.DateTimeFormat.LongTimePattern  -replace "`u{202F}", ' '
@@ -993,7 +994,7 @@ function api($method,
             }
             return $null
         }
-        
+
         if($uri.StartsWith("https://")){
             $url = $uri
         }elseif($v2){
@@ -1011,6 +1012,9 @@ function api($method,
         if($url -match ' ' -and $url -notmatch '%'){
             $url = [uri]::EscapeUriString($url)
         }
+        # replace double shashes
+        $url = $url -replace '(?<!:)//+', '/'
+
         $retryCounter = 0
         while($retryCounter -le 10){
             try {
