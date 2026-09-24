@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-09-24`] [protectVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectVMs) [`Update`] added support for tags
 * [`2026-09-23`] [backupNow.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/backupNow) [`Update`] fixed CAD/NGCE retention control
 * [`2026-09-23`] [backupNow.py](https://github.com/cohesity/community-automation-samples/tree/main/python/backupNow) [`Update`] fixed CAD/NGCE retention control
 * [`2026-09-22`] [resetUserPassword.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/resetUserPassword) [`New`] reset a Cohesity user's password
