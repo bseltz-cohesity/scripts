@@ -85,3 +85,9 @@ To add VMs to an existing protection group:
 * -z, --pause: (optional) pause future runs of new job
 * -ei, --enableindexing: (optional) enable indexing
 * -a, --appconsistent: (optional) quiesce VMs during backup
+
+## Tag Logic
+
+When multiple tags are specified, these are combined (logical AND), meaning that a VM must have all specified tags to be included (or excluded).
+
+To achieve a logical OR, simply run the script again with different tags, and those tags will be appended to the list of tag selections.

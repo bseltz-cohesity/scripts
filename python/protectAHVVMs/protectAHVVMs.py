@@ -10,6 +10,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
 parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-t', '--tenant', type=str, default=None)
 parser.add_argument('-c', '--clustername', type=str, default=None)
 parser.add_argument('-mcm', '--mcm', action='store_true')
 parser.add_argument('-i', '--useApiKey', action='store_true')
@@ -30,11 +31,14 @@ parser.add_argument('-fs', '--fullsla', type=int, default=120)          # full S
 parser.add_argument('-z', '--pause', action='store_true')
 parser.add_argument('-ei', '--enableindexing', action='store_true')
 parser.add_argument('-ed', '--excludedisk', action='append', type=str)
+parser.add_argument('-it', '--includetag', action='append', type=str)
+parser.add_argument('-et', '--excludetag', action='append', type=str)
 args = parser.parse_args()
 
 vip = args.vip
 username = args.username
 domain = args.domain
+tenant = args.tenant
 clustername = args.clustername
 mcm = args.mcm
 useApiKey = args.useApiKey
@@ -55,6 +59,9 @@ fullsla = args.fullsla
 pause = args.pause
 enableindexing = args.enableindexing
 excludedisks = args.excludedisk
+includetags = args.includetag
+excludetags = args.excludetag
+
 
 # gather server list
 def gatherList(param=None, filename=None, name='items', required=True):
@@ -72,7 +79,11 @@ def gatherList(param=None, filename=None, name='items', required=True):
     return items
 
 
-vmnames = gatherList(vmname, vmlist, name='VMs', required=True)
+vmnames = gatherList(vmname, vmlist, name='VMs', required=False)
+
+if len(vmnames) == 0 and includetags is None and excludetags is None:
+    print('no VMs or tags specified')
+    exit(1)
 
 if pause:
     isPaused = True
@@ -84,49 +95,26 @@ if enableindexing:
 else:
     indexingEnabled = False
 
-
-# get object ID
-def getObjectId(objectName):
-
-    d = {'_object_id': None}
-
-    def get_nodes(node):
-        if 'name' in node:
-            if node['name'].lower() == objectName.lower():
-                d['_object_id'] = node
-                exit
-        if 'protectionSource' in node:
-            if node['protectionSource']['name'].lower() == objectName.lower():
-                d['_object_id'] = node['protectionSource']
-                exit
-        if 'nodes' in node:
-            for node in node['nodes']:
-                if d['_object_id'] is None:
-                    get_nodes(node)
-                else:
-                    exit
-
-    if d['_object_id'] is None:
-        get_nodes(source)
-
-    return d['_object_id']
-
+# authentication =========================================================
+# demand clustername if connecting to helios or mcm
+if (mcm or vip.lower() == 'helios.cohesity.com') and clustername is None:
+    print('-c, --clustername is required when connecting to Helios or MCM')
+    exit(1)
 
 # authenticate
-apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), emailMfaCode=emailmfacode, mfaCode=mfacode)
-
-# if connected to helios or mcm, select access cluster
-if mcm or vip.lower() == 'helios.cohesity.com':
-    if clustername is not None:
-        heliosCluster(clustername)
-    else:
-        print('-clustername is required when connecting to Helios or MCM')
-        exit()
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, emailMfaCode=emailmfacode, tenantId=tenant)
 
 # exit if not authenticated
 if apiconnected() is False:
     print('authentication failed')
     exit(1)
+
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    heliosCluster(clustername)
+    if LAST_API_ERROR() != 'OK':
+        exit(1)
+# end authentication =====================================================
 
 # get AHV protection source
 sources = api('get', 'protectionSources/rootNodes?environments=kAcropolis')
@@ -257,6 +245,34 @@ else:
         }
     }
 
+
+# get object ID
+def getObjectId(objectName):
+
+    d = {'_object_id': None}
+
+    def get_nodes(node):
+        if 'name' in node:
+            if node['name'].lower() == objectName.lower():
+                d['_object_id'] = node
+                exit
+        if 'protectionSource' in node:
+            if node['protectionSource']['name'].lower() == objectName.lower():
+                d['_object_id'] = node['protectionSource']
+                exit
+        if 'nodes' in node:
+            for node in node['nodes']:
+                if d['_object_id'] is None:
+                    get_nodes(node)
+                else:
+                    exit
+
+    if d['_object_id'] is None:
+        get_nodes(source)
+
+    return d['_object_id']
+
+
 for thisvmname in vmnames:
     vm = getObjectId(thisvmname)
     if vm is not None:
@@ -281,6 +297,54 @@ for thisvmname in vmnames:
         print('    protecting %s' % thisvmname)
     else:
         print('    warning: %s not found' % thisvmname)
+
+# handlde tags
+if includetags is not None or excludetags is not None:
+
+    # gather include tag IDs
+    includeTagIds = []
+    if includetags is not None:
+        for tag in includetags:
+            tagId = getObjectId(tag)
+            if tagId is not None:
+                includeTagIds.append(tagId)
+            else:
+                print('tag %s not found' % tag)
+                exit(1)
+        print('    protecting tags')
+
+    # gather exclude tag IDs
+    excludeTagIds = []
+    if excludetags is not None:
+        for tag in excludetags:
+            tagId = getObjectId(tag)
+            if tagId is not None:
+                excludeTagIds.append(tagId)
+            else:
+                print('tag %s not found' % tag)
+                exit(1)
+        print('    excluding tags')
+
+    # include tags
+    if len(includeTagIds) > 0:
+        if newJob is True:
+            job['acropolisParams']['vmTagIds'] = []
+        else:
+            if 'vmTagIds' not in job['acropolisParams'] or job['acropolisParams']['vmTagIds'] is None:
+                display(job)
+                job['acropolisParams']['vmTagIds'] = []
+        if list(includetags) not in job['acropolisParams']['vmTagIds']:
+            job['acropolisParams']['vmTagIds'].append(includeTagIds)
+
+    # exclude tags
+    if len(excludeTagIds) > 0:
+        if newJob is True:
+            job['acropolisParams']['excludeVmTagIds'] = []
+        else:
+            if 'excludeVmTagIds' not in job['acropolisParams'] or job['acropolisParams']['excludeVmTagIds'] is None:
+                job['acropolisParams']['excludeVmTagIds'] = []
+        if list(excludeTagIds) not in job['acropolisParams']['excludeVmTagIds']:
+            job['acropolisParams']['excludeVmTagIds'].append(excludeTagIds)
 
 # create or update job
 if newJob is True:

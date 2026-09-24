@@ -37,6 +37,7 @@ Place both files in a folder together and run the main script like so:
 * -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
 * -u, --username: (optional) username to authenticate to Cohesity cluster (default is helios)
 * -d, --domain: (optional) domain of username (defaults to local)
+* -t, --tenant: (optional) multi-tenancy tenant name
 * -i, --useApiKey: (optional) use API key for authentication
 * -pwd, --password: (optional) password or API key
 * -np, --noprompt: (optional) do not prompt for password
@@ -45,12 +46,18 @@ Place both files in a folder together and run the main script like so:
 * -m, --mfacode: (optional) MFA code for authentication
 * -e, --emailmfacode: (optional) send MFA code via email
 
-## Other Parameters
+## Main Parameters
 
 * -j, --jobname: name of the job to add the vms to
 * -s, --sourcename: name of registered AHV source
 * -n, --vmname: (optional) name of VM to protect (repeat for multiple)
 * -l, --vmlist: (optional) text file containing VMs to protect (one per line)
+* -it, --includetag: include tag (repeat for multiple tags)
+* -et, --excludetag: exclude tag (repeat for multiple tags)
+* -ed, --excludedisk: (optional) exclude disk by controller type and unit number, e.g. ide:1 (repeat for multiple)
+
+## New Job Parameters
+
 * -sd, --storagedomain: (optional) name of storage domain to create job in (default is DefaultStorageDomain)
 * -p, --policyname: (optional) name of protection policy to use for new job (only required for new job)
 * -tz, --timezone: (optional) time zone for new job (default is US/Eastern)
@@ -59,4 +66,9 @@ Place both files in a folder together and run the main script like so:
 * -fs, --fullsla: (optional) full SLA minutes (default is 120)
 * -z, --pause: (optional) pause protection group
 * -ei, --enableindexing: (optional) enable indexing
-* -ed, --excludedisk: (optional) exclude disk by controller type and unit number, e.g. ide:1 (repeat for multiple)
+
+## Tag Logic
+
+When multiple tags are specified, these are combined (logical AND), meaning that a VM must have all specified tags to be included (or excluded).
+
+To achieve a logical OR, simply run the script again with different tags, and those tags will be appended to the list of tag selections.
