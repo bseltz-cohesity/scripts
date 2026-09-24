@@ -39,16 +39,16 @@ Place both files in a folder together and run the main script like so:
 * -pwd, --password: (optional) password or API key
 * -np, --noprompt: (optional) don't prompt for credentials if none are found/stored
 * -m, --mfacode: (optional) MFA code
-* -o, --outpath: (optional) local directory to save the log file and downloaded bundle to (defaults to the current directory)
+* -o, --outpath: (optional) local directory to downloaded to (defaults to the current directory)
 
 ## Collection Parameters
 
-* -n, --nodeips: (optional) comma separated node IPs to collect from (defaults to every node Siren's own form lists, i.e. its "Select All")
-* -s, --services: (optional) comma separated service names to collect logs for (defaults to every service Siren's own form lists for this cluster/version; any name you pass that Siren doesn't recognize is dropped with a warning rather than silently failing the whole request)
-* -ls, --listservices: (optional) print the service names Siren considers valid for this cluster (sorted alphabetically), then exit without collecting anything
+* -n, --nodeips: (optional) comma separated node IPs to collect from (defaults to all nodes)
+* -s, --services: (optional) comma separated service names to collect logs for (defaults to all services)
+* -ls, --listservices: (optional) print list of valid service names and exit
 * -mt, --msgtypes: (optional) comma separated log message types to collect (default: INFO,WARNING,ERROR,FATAL)
-* -c, --criticallogsonly: (optional) collect FATAL logs only, skipping /var/log/messages, /var/log/secure, heap files, physical agent logs, and system info ("Collect Critical Logs Only" on the web form)
-* -fd, --forcedelete: (optional) force delete the Timecapsule directory's existing content on the node(s) before collecting ("Force delete Timecapsule dir content" on the web form)
+* -c, --criticallogsonly: (optional) collect FATAL logs only
+* -fd, --forcedelete: (optional) force delete old timecapsules
 * -hb, --hoursback: (optional) collect logs from N hours ago until now, in UTC (default: 4; the cluster caps this at 48 hours)
 * -od, --outputdir: (optional) directory on the cluster node(s) to write the bundle to (default: /home/cohesity/data/timecapsules)
 

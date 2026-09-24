@@ -43,13 +43,13 @@ Place the files in a folder together and run the main script like so:
 
 ## Collection Parameters
 
-* -outpath: (optional) local directory to save the log file and downloaded bundle to (defaults to the current directory)
-* -nodeIps: (optional) comma separated node IPs to collect from (defaults to every node Siren's own form lists, i.e. its "Select All")
-* -services: (optional) comma separated service names to collect logs for (defaults to every service Siren's own form lists for this cluster/version; any name you pass that Siren doesn't recognize is dropped with a warning rather than silently failing the whole request)
-* -listServices: (optional) print the service names Siren considers valid for this cluster (sorted alphabetically), then exit without collecting anything
+* -outpath: (optional) local directory to download to (defaults to the current directory)
+* -nodeIps: (optional) comma separated node IPs to collect from (defaults to all nodes)
+* -services: (optional) comma separated service names to collect logs for (defaults to all services)
+* -listServices: (optional) print the list of valid service names, then exit
 * -msgTypes: (optional) comma separated log message types to collect (default: INFO,WARNING,ERROR,FATAL)
-* -criticalLogsOnly: (optional) collect FATAL logs only, skipping /var/log/messages, /var/log/secure, heap files, physical agent logs, and system info ("Collect Critical Logs Only" on the web form)
-* -forceDelete: (optional) force delete the Timecapsule directory's existing content on the node(s) before collecting ("Force delete Timecapsule dir content" on the web form)
+* -criticalLogsOnly: (optional) collect FATAL logs only
+* -forceDelete: (optional) force delete old timecapsules
 * -hoursBack: (optional) collect logs from N hours ago until now, in UTC (default: 4; the cluster caps this at 48 hours)
 * -outputDir: (optional) directory on the cluster node(s) to write the bundle to (default: /home/cohesity/data/timecapsules)
 
@@ -57,7 +57,7 @@ Place the files in a folder together and run the main script like so:
 
 * -pollIntervalSecs: (optional) seconds between polls while waiting for the bundle to appear and finish writing (default: 15)
 * -pollWaitMins: (optional) minutes to wait for the collection to finish before giving up (default: 30)
-* -dbg: (optional) print the full request URL before submitting it, and the HTTP status/byte count of the response (named -dbg instead of -debug since PowerShell's `[CmdletBinding()]` already reserves a common -Debug parameter)
+* -dbg: (optional) print the full request URL before submitting it, and the HTTP status/byte count of the response
 
 ## Examples
 
