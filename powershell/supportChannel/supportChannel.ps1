@@ -12,6 +12,8 @@ param (
     [Parameter()][string]$clusterName,
     [Parameter()][switch]$enable,
     [Parameter()][switch]$disable,
+    [Parameter()][switch]$sudoEnable,
+    [Parameter()][switch]$sudoDisable,
     [Parameter()][int]$days = 1
 )
 
@@ -69,6 +71,22 @@ if($enable){
         Write-Host "`nSupport Channel is enabled until $endDate`n"
     }else{
         Write-Host "`nSupport Channel is disabled`n"
+    }
+}
+
+if($sudoEnable -or $sudoDisable){
+    if($sudoEnable){
+        Write-Host "Enabling sudo access for support user`n"
+        $sudoParams = @{"sudoAccessEnable" = $True; "sudoAccessEndTimestampMsecs" = $((timeAgo -720 hours) / 1000)}
+    }else{
+        Write-Host "Disabling sudo access for support user`n"
+        $sudoParams = @{"sudoAccessEnable" = $false}
+    }
+    
+    $nodes = api get nodes
+    foreach($node in $nodes){
+        copySessionCookie $node.ip
+        $null = api put "https://$($node.ip)/irisservices/api/v1/public/users/linuxSupportUserSudoAccess" $sudoParams # @{"sudoAccessEnable" = $True; "sudoAccessEndTimestampMsecs" = $((timeAgo -720 hours) / 1000)}
     }
 }
 
