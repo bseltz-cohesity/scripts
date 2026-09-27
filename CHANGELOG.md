@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-09-27`] [restoreM365Onedrive.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/restoreM365Onedrive) [`New`] restore M365 Onedrives
+* [`2026-09-27`] [restoreM365Mailbox.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/restoreM365Mailbox) [`New`] restore M365 Mailboxes
 * [`2026-09-25`] [supportChannel.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/supportChannel) [`Update`] added sudo access control
 * [`2026-09-24`] [collectTimeCapsule.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/collectTimeCapsule) [`New`] collect timecapsule from cluster
 * [`2026-09-24`] [collectTimeCapsule.py](https://github.com/cohesity/community-automation-samples/tree/main/python/collectTimeCapsule) [`New`] collect timecapsule from cluster
