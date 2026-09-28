@@ -60,6 +60,7 @@ if(!$objectsNode){
 }
 
 $script:idIndex = @()
+$script:alreadyProtected = @()
 
 function getNodes($node){
     if($node.PSObject.Properties['nodes']){
@@ -68,6 +69,7 @@ function getNodes($node){
         }
     }
     if($node.protectionSource.office365ProtectionSource.siteInfo.isGroupSite -eq $True -or $node.protectionSource.office365ProtectionSource.siteInfo.isTeamSite -eq $True){
+        $script:alreadyProtected = @($script:alreadyProtected + $node.protectioonSource.id)
         continue
     }
     $script:idIndex = @($script:idIndex + $node.protectionSource.id)
@@ -92,7 +94,6 @@ while(1){
 $script:idIndex = @($script:idIndex | Sort-Object -Unique)
 
 # search (in batches) for these objects to see if any are already protected in another region
-$script:alreadyProtected = @()
 
 if(@($script:idIndex).Count -gt 0){
     Write-Host "Checking for sites already protected in other regions"
