@@ -18,13 +18,6 @@ param (
     [Parameter()][int]$days = 1
 )
 
-$autoExtension = $True
-$autoExtensionString = 'enabled'
-if($noAutoExtension){
-    $autoExtension = $false
-    $autoExtensionString = 'disabled'
-}
-
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
@@ -55,6 +48,16 @@ if($USING_HELIOS){
 
 $cluster = api get cluster
 $isRTEnabled = $cluster.reverseTunnelEnabled
+
+$autoExtensionString = 'N/A'
+$autoExtension = $True
+if($cluster.PSObject.Properties['reverseTunnelEnableExtension']){
+    $autoExtensionString = 'enabled'
+    if($noAutoExtension){
+        $autoExtension = $false
+        $autoExtensionString = 'disabled'
+    }
+}
 
 if($enable){
     $endDate = (Get-Date).AddDays($days)

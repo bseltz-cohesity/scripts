@@ -40,10 +40,6 @@ sudoEnable = args.sudoEnable
 sudoDisable = args.sudoDisable
 noAutoExtension = args.noAutoExtension
 
-autoextension = True
-if noAutoExtension is True:
-    autoextension = False
-
 # authentication =========================================================
 # demand clustername if connecting to helios or mcm
 if (mcm or vip.lower() == 'helios.cohesity.com') and clustername is None:
@@ -68,6 +64,15 @@ if mcm or vip.lower() == 'helios.cohesity.com':
 cluster = api('get', 'cluster')
 isRTEnabled = cluster['reverseTunnelEnabled']
 
+autoextensionString = 'N/A'
+autoextension = True
+if 'reverseTunnelEnableExtension' in cluster:
+    autoextensionString = 'enabled'
+    if noAutoExtension is True:
+        autoextension = False
+        autoextensionString = 'disabled'
+
+
 if sudoEnable or sudoDisable:
     if sudoEnable:
         print("\nEnabling sudo access for support user")
@@ -89,7 +94,7 @@ if enable:
     endDateUsecs = timeAgo(-days, 'days')
     endDate = usecsToDate(endDateUsecs)
     endDateMsecs = int(endDateUsecs / 1000)
-    print('\nEnabling Support Channel until %s...\n' % endDate)
+    print('\nEnabling Support Channel until %s (auto-extension is %s)...\n' % (endDate, autoextensionString))
     rtParams = {
         "enableExtension": autoextension,
         "enableReverseTunnel": True,
@@ -105,8 +110,12 @@ elif disable:
     result = api('put', '/reverseTunnel', rtParams)
 else:
     if isRTEnabled:
+        if 'reverseTunnelEnableExtension' in cluster:
+            autoextensionString = 'disabled'
+            if cluster['reverseTunnelEnableExtension'] is True:
+                autoextensionString = 'enaabled'
         endDate = usecsToDate(cluster['reverseTunnelEndTimeMsecs'] * 1000)
-        print('\nSupport Channel is enabled until %s\n' % endDate)
+        print('\nSupport Channel is enabled until %s (auto-extension is %s)\n' % (endDate, autoextensionString))
     else:
         print('\nSupport Channel is disabled\n')
 
