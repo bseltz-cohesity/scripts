@@ -74,4 +74,4 @@ To disable support channel:
 * -x, --disable: (optional) disable support channel
 * -se, --sudoEnable: (optional) enable sudo access for support user
 * -sd, --sudoDisable: (optional) disable sudo access for support user
-* -na, ---noAutoExtension: (optional) do not enable automatic extension
+* -na, --noAutoExtension: (optional) do not enable automatic extension
