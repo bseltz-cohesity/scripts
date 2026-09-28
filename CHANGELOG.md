@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-09-28`] [heliosReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/python/heliosReport) [`Update`] added --tenant, --includeccs, --ccsonly options
 * [`2026-09-28`] [heliosCSVReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/powershell/heliosCSVReport) [`Update`] added -tenant support for organizations
 * [`2026-09-27`] [restoreM365Onedrive.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/restoreM365Onedrive) [`New`] restore M365 Onedrives
 * [`2026-09-27`] [restoreM365Mailbox.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/restoreM365Mailbox) [`New`] restore M365 Mailboxes
