@@ -2,6 +2,7 @@
 param (
     [Parameter()][string]$vip = 'helios.cohesity.com',
     [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$tenant,
     [Parameter()][switch]$EntraId,
     [Parameter()][string]$startDate = '',
     [Parameter()][string]$endDate = '',
@@ -50,17 +51,19 @@ $filterTextList = @(gatherList -FilePath $filterList -Name 'filter text list' -R
 
 # authenticate
 . (Join-Path $PSScriptRoot 'cohesity-api.ps1')
-apiauth -vip $vip -username $username -domain 'local' -helios -entraIdAuthentication $EntraId
+apiauth -vip $vip -username $username -domain 'local' -helios -entraIdAuthentication $EntraId -tenant $tenant
 $context = getContext
 
 $allClusters = @()
 if(!$ccsOnly){
-    $allClusters = (api get -mcmv2 'cluster-mgmt/info').cohesityClusters
+    $allClusters = api get -mcm clusters/connectionStatus
+    # $allClusters = (api get -mcmv2 'cluster-mgmt/info').cohesityClusters
 }
+
 $regions = api get -mcmv2 'dms/regions'
 if($includeCCS -or $ccsOnly){
     foreach ($region in $regions.regions){
-        setApiProperty -object $region -name 'clusterName' -Value $region.name
+        # setApiProperty -object $region -name 'clusterName' -Value $region.name
         $allClusters = @($allClusters + $region)
     }
 }
@@ -68,10 +71,10 @@ if($includeCCS -or $ccsOnly){
 $selectedClusters = $allClusters
 if($clusterNames.Length -gt 0){
     $selectedClusters = $allClusters | Where-Object {
-        $_.clusterName -in $clusterNames -or $_.clusterId -in $clusterNames
+        $_.name -in $clusterNames -or $_.clusterId -in $clusterNames
     }
     $unknownClusters = $clusterNames | Where-Object {
-        $_ -notin @($allClusters.clusterName)-and $_ -notin @($allClusters.clusterId)
+        $_ -notin @($allClusters.name) -and $_ -notin @($allClusters.clusterId)
     }
     if($unknownClusters){
         Write-Host "Clusters not found:`n $($unknownClusters -join ', ')" -ForegroundColor Yellow; exit
@@ -178,15 +181,15 @@ Write-Host "`nRetrieving report data...`n"
 
 # Build work items  (one per cluster × range combination)
 $workItems = [System.Collections.Generic.List[hashtable]]::new()
-foreach ($cluster in ($selectedClusters | Sort-Object -Property clusterName)){
-    $systemId = if($cluster.clusterName -in @($regions.regions.name)){
+foreach ($cluster in ($selectedClusters | Sort-Object -Property name)){
+    $systemId = if($cluster.name -in @($regions.regions.name)){
         $cluster.id
     } else {
         "$($cluster.clusterId):$($cluster.clusterIncarnationId)"
     }
     foreach ($range in $ranges){
         $workItems.Add(@{
-            ClusterName = $cluster.clusterName
+            ClusterName = $cluster.name
             SystemId = $systemId
             Range = $range
             ReportNumber = $reportNumber
@@ -400,7 +403,7 @@ foreach ($clusterGroup in $byCluster){
     # Convert epoch timestamps
     foreach ($col in ($epochCols | Sort-Object -Unique)){
         $csv | Where-Object { $_.$col -ne $null -and $_.$col -ne 0 } | ForEach-Object {
-            $_.$col = usecsToDate $_.$col
+            $_.$col = (usecsToDate $_.$col)
         }
     }
 

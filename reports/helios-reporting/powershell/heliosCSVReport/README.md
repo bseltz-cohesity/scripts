@@ -32,6 +32,7 @@ Place all files in a folder together, then run the main script like so:
 
 * -vip: (optional) defaults to helios.cohesity.com
 * -username: (optional) defaults to helios
+* -tenant: (optional) organization to impersonate
 * -startDate: (optional) specify start of date range
 * -endDate: (optional) specify end of date range
 * -thisCalendarMonth: (optional) set date range to this month
