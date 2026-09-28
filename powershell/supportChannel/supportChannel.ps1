@@ -19,8 +19,10 @@ param (
 )
 
 $autoExtension = $True
+$autoExtensionString = 'enabled'
 if($noAutoExtension){
     $autoExtension = $false
+    $autoExtensionString = 'disabled'
 }
 
 # source the cohesity-api helper code
@@ -56,7 +58,7 @@ $isRTEnabled = $cluster.reverseTunnelEnabled
 
 if($enable){
     $endDate = (Get-Date).AddDays($days)
-    Write-Host "`nEnabling Support Channel until $($endDate)...`n"
+    Write-Host "`nEnabling Support Channel until $($endDate) (auto-extension is $autoExtensionString)...`n"
     $endDateUsecs = dateToUsecs $endDate
     $endDateMsecs = [Int64][math]::round($endDateUsecs / 1000, 0)
     $rtParams = @{
@@ -74,8 +76,15 @@ if($enable){
     $null = api put /reverseTunnel $rtParams
 }else{
     if($isRTEnabled){
+        $autoExtensionString = 'N/A'
+        if($cluster.PSObject.Properties['reverseTunnelEnableExtension']){
+            $autoExtensionString = 'disabled'
+            if($cluster.reverseTunnelEnableExtension -eq $True){
+                $autoExtensionString = 'enaabled'
+            }
+        }
         $endDate = usecsToDate ($cluster.reverseTunnelEndTimeMsecs * 1000)
-        Write-Host "`nSupport Channel is enabled until $endDate`n"
+        Write-Host "`nSupport Channel is enabled until $endDate (auto-extension is $autoExtensionString)`n"
     }else{
         Write-Host "`nSupport Channel is disabled`n"
     }
