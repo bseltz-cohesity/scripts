@@ -69,7 +69,7 @@ function getNodes($node){
         }
     }
     if($node.protectionSource.office365ProtectionSource.siteInfo.isGroupSite -eq $True -or $node.protectionSource.office365ProtectionSource.siteInfo.isTeamSite -eq $True){
-        $script:alreadyProtected = @($script:alreadyProtected + $node.protectioonSource.id)
+        $script:alreadyProtected = @($script:alreadyProtected + $node.protectionSource.id)
         continue
     }
     $script:idIndex = @($script:idIndex + $node.protectionSource.id)
