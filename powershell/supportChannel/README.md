@@ -76,3 +76,4 @@ To disable support channel:
 * -days: (optional) number of days to enable or extend support channel (default is 1)
 * -sudoEnable: (optional) enable sudo access for support user
 * -sudoDisable: (optional) disable sudo access for support user
+* -noAutoExtension: (optional) do not enable automatic extension

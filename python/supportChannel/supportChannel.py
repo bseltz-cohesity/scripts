@@ -2,6 +2,7 @@
 
 from pyhesity import *
 from time import sleep
+import requests.packages.urllib3
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -17,6 +18,9 @@ parser.add_argument('-m', '--mfacode', type=str, default=None)
 parser.add_argument('-e', '--enable', action='store_true')
 parser.add_argument('-x', '--disable', action='store_true')
 parser.add_argument('-y', '--days', type=int, default=1)
+parser.add_argument('-se','--sudoEnable', action='store_true')
+parser.add_argument('-sd','--sudoDisable', action='store_true')
+parser.add_argument('-na','--noAutoExtension', action='store_true')
 
 args = parser.parse_args()
 
@@ -32,6 +36,13 @@ mfacode = args.mfacode
 enable = args.enable
 disable = args.disable
 days = args.days
+sudoEnable = args.sudoEnable
+sudoDisable = args.sudoDisable
+noAutoExtension = args.noAutoExtension
+
+autoextension = True
+if noAutoExtension is True:
+    autoextension = False
 
 # authentication =========================================================
 # demand clustername if connecting to helios or mcm
@@ -57,12 +68,30 @@ if mcm or vip.lower() == 'helios.cohesity.com':
 cluster = api('get', 'cluster')
 isRTEnabled = cluster['reverseTunnelEnabled']
 
+if sudoEnable or sudoDisable:
+    if sudoEnable:
+        print("\nEnabling sudo access for support user")
+        sudoParams = {
+            "sudoAccessEnable": True, 
+            "sudoAccessEndTimestampMsecs": (timeAgo(-720,'hours') / 1000)
+        }
+    else:
+        print("\nDisabling sudo access for support user")
+        sudoParams = {"sudoAccessEnable": False}
+
+    context = getContext()
+    cookies = context['COOKIES']
+    nodes = api('get', 'nodes')
+    for node in nodes:
+        result = context['SESSION'].put("https://%s/irisservices/api/v1/public/users/linuxSupportUserSudoAccess" % node['ip'], sudoParams, verify=False, headers=context['HEADER'], cookies=cookies)
+
 if enable:
     endDateUsecs = timeAgo(-days, 'days')
     endDate = usecsToDate(endDateUsecs)
     endDateMsecs = int(endDateUsecs / 1000)
     print('\nEnabling Support Channel until %s...\n' % endDate)
     rtParams = {
+        "enableExtension": autoextension,
         "enableReverseTunnel": True,
         "reverseTunnelEnableEndTimeMsecs": endDateMsecs
     }

@@ -14,8 +14,14 @@ param (
     [Parameter()][switch]$disable,
     [Parameter()][switch]$sudoEnable,
     [Parameter()][switch]$sudoDisable,
+    [Parameter()][switch]$noAutoExtension,
     [Parameter()][int]$days = 1
 )
+
+$autoExtension = $True
+if($noAutoExtension){
+    $autoExtension = $false
+}
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
@@ -54,6 +60,7 @@ if($enable){
     $endDateUsecs = dateToUsecs $endDate
     $endDateMsecs = [Int64][math]::round($endDateUsecs / 1000, 0)
     $rtParams = @{
+        "enableExtension" = $autoExtension;
         "enableReverseTunnel" = $True;
         "reverseTunnelEnableEndTimeMsecs" = $endDateMsecs
     }
