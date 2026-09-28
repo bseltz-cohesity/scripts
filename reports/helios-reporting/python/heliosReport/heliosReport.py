@@ -15,9 +15,10 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
 parser.add_argument('-u', '--username', type=str, default='helios')
+parser.add_argument('-t', '--tenant', type=str, default=None)
 parser.add_argument('-s', '--startdate', type=str, default='')
 parser.add_argument('-e', '--enddate', type=str, default='')
-parser.add_argument('-t', '--thismonth', action='store_true')
+parser.add_argument('-tm', '--thismonth', action='store_true')
 parser.add_argument('-l', '--lastmonth', action='store_true')
 parser.add_argument('-y', '--days', type=int, default=7)
 parser.add_argument('-x', '--dayrange', type=int, default=180)
@@ -37,11 +38,13 @@ parser.add_argument('-env', '--environment', action='append', type=str)
 parser.add_argument('-on', '--objectname', action='append', type=str)
 parser.add_argument('-ol', '--objectlist', type=str, default=None)
 parser.add_argument('-w', '--workers', type=int, default=4)
-
+parser.add_argument('-ic', '--includeccs', action='store_true')
+parser.add_argument('-cc', '--ccsonly', action='store_true')
 args = parser.parse_args()
 
 vip = args.vip
 username = args.username
+tenant = args.tenant
 startdate = args.startdate
 enddate = args.enddate
 thismonth = args.thismonth
@@ -64,6 +67,8 @@ environments = args.environment
 objectnames = args.objectname
 objectlist = args.objectlist
 max_workers = args.workers
+includeccs = args.includeccs
+ccsonly = args.ccsonly
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -164,15 +169,19 @@ if filters:
         parsed_filters.append(parse_filter(f))
 
 # Authenticate
-apiauth(vip=vip, username=username, domain='local', helios=True)
+apiauth(vip=vip, username=username, domain='local', helios=True, tenantId=tenant)
 
-allClusters = heliosClusters()
-for selectedCluster in allClusters:
-    selectedCluster['id'] = '%s:%s' % (selectedCluster['clusterId'], selectedCluster['clusterIncarnationId'])
+allClusters = []
+if not ccsonly:
+    # allClusters = heliosClusters()
+    allClusters = api('get', 'clusters/connectionStatus', mcm=True)
+    for selectedCluster in allClusters:
+        selectedCluster['id'] = '%s:%s' % (selectedCluster['clusterId'], selectedCluster['clusterIncarnationId'])
 
-regions = api('get', 'dms/regions', mcmv2=True)
-if regions and 'regions' in regions and regions['regions']:
-    allClusters.extend(regions['regions'])
+if includeccs or ccsonly:
+    regions = api('get', 'dms/regions', mcmv2=True)
+    if regions and 'regions' in regions and regions['regions']:
+        allClusters.extend(regions['regions'])
 
 selectedClusters = allClusters
 

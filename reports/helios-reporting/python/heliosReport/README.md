@@ -29,9 +29,10 @@ Place both files in a folder together and run the main script like so:
 
 * -v, --vip: (optional) defaults to helios.cohesity.com
 * -u, --username: (optional) defaults to helios
+* -t, --tenant: (optional) organoization to impersonate
 * -s, --startdate: (optional) specify start of date range
 * -e, --enddate: (optional) specify end of date range
-* -t, --thismonth: (optional) set date range to this month
+* -tm, --thismonth: (optional) set date range to this month
 * -l, --lastmonth: (optional) set date range to last month
 * -y, --days: (optional) limit report to last X days (default is 7)
 * -x, --dayrange: (optional) limit day range per API query (default is 180)
@@ -40,6 +41,8 @@ Place both files in a folder together and run the main script like so:
 * -n, --units: (optional) MiB or GiB (default is MiB)
 * -r, --reportname: (optional) name of helios report (default is 'Protection Runs')
 * -c, --clustername: (optional) limit to one or more cluster names (repeat for multiple)
+* -ic, --includeccs: (optional) include CCS regions
+* -cc, --ccsonly: (optional) include only CCS regions (no clusters)
 * -z, --timezone: (optional) default is 'America/New_York'
 * -sr, --showrecord: (optional) show format of one record and exit
 * -env, --environment: (optional) filter on environment (e.g. kVMware) repeat for multiple
