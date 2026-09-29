@@ -1,13 +1,17 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][string]$vip = 'helios.cohesity.com',
+    [Parameter()][string]$vip='helios.cohesity.com',
     [Parameter()][string]$username = 'helios',
     [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
     [Parameter()][switch]$useApiKey,
     [Parameter()][string]$password,
-    [Parameter()][switch]$mcm,
-    [Parameter()][string]$clusterName = $null,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$helios,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,
     [Parameter(Mandatory = $True)][string]$sourceName,
     [Parameter(Mandatory = $True)][string]$jobName,
     [Parameter()][array]$vmName,
@@ -68,26 +72,30 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 
 $vmNames = @(gatherList -Param $vmName -FilePath $vmList -Name 'vms' -Required $True)
 
-# authenticate
-if($mcm){
-    apiauth -vip $vip -username $username -domain $domain -helios -password $password
-}else{
-    if($useApiKey){
-        apiauth -vip $vip -username $username -domain $domain -useApiKey -password $password
-    }else{
-        apiauth -vip $vip -username $username -domain $domain -password $password
-    }
+# authentication =============================================
+# demand clusterName for Helios
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios" -ForegroundColor Yellow
+    exit 1
 }
 
-# select helios/mcm managed cluster
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $helios -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
+
+# select helios managed cluster
 if($USING_HELIOS){
-    if($clusterName){
-        heliosCluster $clusterName
-    }else{
-        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
         exit 1
     }
 }
+# end authentication =========================================
 
 $awsParamName = @{
     'kAgent' = 'agentProtectionTypeParams'; 

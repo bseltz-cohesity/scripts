@@ -48,13 +48,17 @@ or provide a text file with a list of VMs to protect:
 
 ## Authentication Parameters
 
-* -vip: (optional) Cohesity cluster or MCM to connect to (defaults to helios.cohesity.com)
-* -username: (optional) Cohesity username (defaults to helios)
-* -domain: (optional) Active Directory domain of user (defaults to local)
-* -useApiKey: (optional) Use API key for authentication
-* -password: (optional) will use stored password by default
-* -mcm: (optional) connect via MCM
-* -clusterName: (optional) required when connecting through Helios or MCM
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
 
 ## EC2 Parameters
 
