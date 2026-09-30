@@ -78,3 +78,4 @@ or provide a text file with a list of VMs to protect:
 * -storageDomainName: (optional) default is 'DefaultStorageDomain'
 * -paused: (optional) pause future runs (new job only)
 * -qosPolicy: (optional) kBackupHDD or kBackupSSD (default is kBackupHDD)
+* -ngce: (optional) create protection group on next-gen cloud edition cluster

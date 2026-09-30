@@ -24,6 +24,7 @@ param (
     [Parameter()][string]$storageDomainName = 'DefaultStorageDomain',
     [Parameter()][string]$policyName,
     [Parameter()][switch]$paused,
+    [Parameter()][switch]$ngce,
     [Parameter()][ValidateSet('kBackupHDD', 'kBackupSSD')][string]$qosPolicy = 'kBackupHDD'
 )
 
@@ -149,22 +150,27 @@ if(! $job){
     }
     
     # get storageDomain
-    $viewBoxes = api get viewBoxes
-    if($viewBoxes -is [array]){
-            $viewBox = $viewBoxes | Where-Object { $_.name -ieq $storageDomainName }
-            if (!$viewBox) { 
-                write-host "Storage domain $storageDomainName not Found" -ForegroundColor Yellow
-                exit
-            }
-    }else{
-        $viewBox = $viewBoxes[0]
+    $viewBoxId = $null
+    if(!$ngce){
+        $viewBoxes = api get viewBoxes
+        if($viewBoxes -is [array]){
+                $viewBox = $viewBoxes | Where-Object { $_.name -ieq $storageDomainName }
+                if (!$viewBox) { 
+                    write-host "Storage domain $storageDomainName not Found" -ForegroundColor Yellow
+                    exit
+                }
+
+        }else{
+            $viewBox = $viewBoxes[0]
+        }
+        $viewBoxId = $viewBox.id
     }
 
     $job = @{
         "name" = $jobName;
         "policyId" = $policy.id;
         "priority" = "kMedium";
-        "storageDomainId" = $viewBox.id;
+        "storageDomainId" = $viewBoxId;
         "description" = "";
         "startTime" = @{
             "hour"     = [int]$hour;
