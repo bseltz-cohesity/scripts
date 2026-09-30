@@ -8,16 +8,16 @@ It authenticates to Helios once and reuses that session across every cluster / m
 
 ## Download the script
 
-`cohesity-api.ps1` is the shared Cohesity REST API helper module used by all of these PowerShell samples. Run this from PowerShell to download it into your current directory:
+Run these commands from PowerShell to download the script(s) into your current directory
 
 ```powershell
 # Download Commands
+$scriptName = 'heliosConsumerTrendReport'
 $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main'
+(Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/reports/helios-reporting/powershell/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
 # End Download Commands
 ```
-
-Place `heliosConsumerTrendReport.ps1` in the same folder as `cohesity-api.ps1`.
 
 ## Components
 
