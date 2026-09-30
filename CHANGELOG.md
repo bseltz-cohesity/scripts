@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-09-30`] [heliosConsumerTrendReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/powershell/heliosConsumerTrendReport) [`New`] create storage consumer trend report
+* [`2026-09-29`] [protectEC2VMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectEC2VMs) [`Update`] modernized authentication
 * [`2026-09-28`] [autoprotectCcsM365Sites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/autoprotectCcsM365Sites) [`Update`] exclude teat/group sites
 * [`2026-09-28`] [supportChannel.py](https://github.com/cohesity/community-automation-samples/tree/main/python/supportChannel) [`Update`] added -se, --sudoEnable, -sd, --sudoDisable, and -na, --noAutoExtension options
 * [`2026-09-28`] [supportChannel.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/supportChannel) [`Update`] added -noAutoExtension option
