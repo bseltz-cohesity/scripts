@@ -12,6 +12,7 @@ param (
     [Parameter()][string]$mfaCode,
     [Parameter()][string]$clusterName,
     [Parameter()][array]$jobName,
+    [Parameter()][string]$newJobName,
     [Parameter()][string]$jobList,
     [Parameter()][string]$prefix = '',
     [Parameter()][string]$suffix = '',
@@ -46,9 +47,9 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 }
 
 
-if($prefix -eq '' -and $suffix -eq '' -and !$deleteOldJob){
-    Write-Host "You must use either -prefix or -suffix or -deleteOldJob" -foregroundcolor Yellow
-    exit
+if($prefix -eq '' -and $suffix -eq '' -and !$deleteOldJob -and !$newJobName){
+    Write-Host "You must use either -prefix or -suffix or -deleteOldJob or -newJobName" -foregroundcolor Yellow
+    exit 1
 }
 
 # source the cohesity-api helper code
@@ -80,6 +81,11 @@ if($USING_HELIOS){
 # end authentication =========================================
 
 $jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Required $True)
+
+if(@($jobNames).Count -gt 1 -and $newJobName){
+    Write-Host "When -newJobName is specified, only one job can be moved" -ForegroundColor Yellow
+    exit 1
+}
 
 $jobs = api get -v2 'data-protect/protection-groups?isActive=true'
 $newStorageDomain = api get viewBoxes | Where-Object name -eq $newStorageDomainName

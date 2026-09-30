@@ -53,6 +53,7 @@ Place all files in a folder together. then, run the main script like so:
 * -jobList: (optional) text file of protection group names to migrate (one per line)
 * -newStorageDomainName: name of storage domain to migrate to
 * -newPolicyName: (optional) change the policy used by the job
+* -newJobName: (optional) rename new job
 * -prefix: (optional) add a prefix to the name of the new protection group
 * -suffix: (optional) add a suffix to the name of the new protection group
 * -renameOldJob: (optional) apply prefix and suffix to old protection group (instead of the new protection group)
