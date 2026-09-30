@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-09-30`] [protectEC2VMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectEC2VMs) [`Update`] added -ngce switch
+* [`2026-09-30`] [protectAHVVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectAHVVMs) [`Update`] fixed tag bug
+* [`2026-09-30`] [moveProtectionGroup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/moveProtectionGroup) [`Update`] added -newJobName parameter
 * [`2026-09-30`] [heliosConsumerTrendReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/powershell/heliosConsumerTrendReport) [`New`] create storage consumer trend report
 * [`2026-09-29`] [protectEC2VMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectEC2VMs) [`Update`] modernized authentication
 * [`2026-09-28`] [autoprotectCcsM365Sites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/autoprotectCcsM365Sites) [`Update`] exclude teat/group sites
