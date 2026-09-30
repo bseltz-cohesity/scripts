@@ -307,7 +307,7 @@ if includetags is not None or excludetags is not None:
         for tag in includetags:
             tagId = getObjectId(tag)
             if tagId is not None:
-                includeTagIds.append(tagId)
+                includeTagIds.append(tagId['id'])
             else:
                 print('tag %s not found' % tag)
                 exit(1)
@@ -319,7 +319,7 @@ if includetags is not None or excludetags is not None:
         for tag in excludetags:
             tagId = getObjectId(tag)
             if tagId is not None:
-                excludeTagIds.append(tagId)
+                excludeTagIds.append(tagId['id'])
             else:
                 print('tag %s not found' % tag)
                 exit(1)
