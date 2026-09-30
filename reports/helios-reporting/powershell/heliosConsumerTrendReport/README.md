@@ -32,10 +32,6 @@ Run the main script like so:
 
 By default this pulls the last 12 complete calendar months for every self-managed cluster connected to Helios. CCS regions are never included - CCS has neither views nor protection groups, so there's nothing for these two reports to return there.
 
-## Report names
-
-The script looks up two Helios reports by their exact title: **Storage Consumption by Views** and **Storage Consumption by Protection Groups**. If your Helios tenant has these reports under slightly different titles, edit the `$reportConfigs` array near the top of the script.
-
 ## Parameters
 
 * -vip: (optional) defaults to helios.cohesity.com
