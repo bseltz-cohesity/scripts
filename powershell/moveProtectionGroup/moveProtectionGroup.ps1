@@ -138,6 +138,10 @@ foreach($thisJobName in $jobNames){
     }
 
     $job.name = $originalJobName
+    if($newJobName){
+        $job.name = $newJobName
+    }
+    
     $job.storageDomainId = $newStorageDomain.id
 
     if($newPolicyName){
