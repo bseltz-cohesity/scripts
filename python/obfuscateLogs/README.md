@@ -2,7 +2,7 @@
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This script will obfuscate the file paths (and other path-like strings) in log files. The script will unzip/re-zip and untar/tar gz and tar files.
+This script will obfuscate file paths, filenames, directory names, entity/path identifiers, MAC addresses, and certificate/key fingerprints in log files, plus any additional custom rules you supply (e.g. IP addresses, hostnames, URLs). The script will unzip/re-zip and untar/tar gz and tar files.
 
 Note: Minimum python version required - v3.2
 
