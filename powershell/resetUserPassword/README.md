@@ -60,5 +60,6 @@ You will be prompted to enter and confirm the new password. To skip the prompt, 
 * -targetUsername: (required) username of the LOCAL Cohesity user whose password is being reset
 * -newPassword: (optional) the new password to set; if omitted, you will be prompted to enter and confirm one
 * -generatePassword: (optional) generate a random strong password instead of prompting (the generated password is printed once, on success)
+* -currentPassword: (optional) only required if resetting your own password. Will be prompted if omitted
 
 Note: -newPassword or -generatePassword must be provided when -noPrompt is specified, since the script cannot otherwise prompt for a password.

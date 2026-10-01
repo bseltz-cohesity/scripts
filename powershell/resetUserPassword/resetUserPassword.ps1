@@ -26,7 +26,8 @@ param (
     # target user / new password parameters
     [Parameter(Mandatory = $True)][string]$targetUsername,
     [Parameter()][string]$newPassword,
-    [Parameter()][switch]$generatePassword
+    [Parameter()][switch]$generatePassword,
+    [Parameter()][string]$currentPassword
 )
 
 # password resets are only supported for LOCAL Cohesity users
@@ -66,6 +67,8 @@ if($USING_HELIOS){
     $targetLocation = $clusterName
 }
 
+$currentUserInfo = api get sessionUser
+
 Write-Host "Looking up user $targetUsername..."
 $existingUsers = api get -v2 "users?usernames=$targetUsername&domain=$targetDomain"
 $targetUser = @($existingUsers.users | Where-Object {$_.username -eq $targetUsername})
@@ -83,6 +86,17 @@ if($targetUser.Count -gt 1){
 
 $targetUser = $targetUser[0]
 # end find the target user =====================================
+
+$sameUser = $False
+if($targetUser.sid -eq $currentUserInfo.sid){
+    $sameUser = $True
+    if(!$currentPassword){
+        if(! $currentPassword){
+            $secureString = Read-Host -Prompt "Enter current password for $($targetUser.username)" -AsSecureString
+            $currentPassword = [System.Runtime.InteropServices.Marshal]::PtrToStringBSTR([System.Runtime.InteropServices.Marshal]::SecureStringToBSTR( $secureString ))
+        }
+    }
+}
 
 # determine the new password ===================================
 if(!$newPassword){
@@ -124,6 +138,11 @@ foreach($prop in 'description', 'effectiveTimeMsecs', 'expiryTimeMsecs', 'locked
 $updateParams['localUserParams'] = @{
     'password' = $newPassword
 }
+
+if($sameUser -eq $True){
+    $updateParams.localUserParams['currentPassword'] = $currentPassword
+}
+
 if($targetUser.localUserParams -and $targetUser.localUserParams.PSObject.Properties['email']){
     $updateParams['localUserParams']['email'] = $targetUser.localUserParams.email
 }
