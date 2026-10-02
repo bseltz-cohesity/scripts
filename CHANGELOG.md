@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-10-02`] [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`Update`] fixed # bug
 * [`2026-10-01`] [resetUserPassword.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/resetUserPassword) [`Update`] updated to support changing your own password
 * [`2026-09-30`] [protectEC2VMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectEC2VMs) [`Update`] added -ngce switch
 * [`2026-09-30`] [protectAHVVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectAHVVMs) [`Update`] fixed tag bug
