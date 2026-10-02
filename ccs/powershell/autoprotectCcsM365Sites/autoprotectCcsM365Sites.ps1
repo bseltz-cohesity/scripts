@@ -165,13 +165,66 @@ $script:protectionParams = @{
 }
 
 if($useMBS){
-    $protectionParams.objects[0].environment = "kO365SharepointCSM"
+    $script:protectionParams.objects[0].environment = "kO365SharepointCSM"
 }else{
-    $protectionParams.policyId = $policy.id
+    $script:protectionParams.policyId = $policy.id
 }
 
 Write-Host "auto-protecting sites" # ($($objectsNode.protectionSource.id))"
-# $protectionParams | toJson
-$response = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
+# $script:protectionParams | toJson
+$response = api post -v2 "data-protect/protected-objects?regionIds=$region" $script:protectionParams
 Write-Host "$($response.protectedObjects[0].error)" -ForegroundColor Yellow
+if($response.protectedObjects[0].error -match 'The non leaf level object'){
+    Write-Host "Updating instead..."
+    $script:protectionParams = @{
+        "policyId"         = "";
+        "startTime"        = @{
+            "hour"     = [int64]$hour;
+            "minute"   = [int64]$minute;
+            "timeZone" = $timeZone
+        };
+        "priority"         = "kMedium";
+        "sla"              = @(
+            @{
+                "backupRunType" = "kFull";
+                "slaMinutes"    = $fullSlaMinutes
+            };
+            @{
+                "backupRunType" = "kIncremental";
+                "slaMinutes"    = $incrementalSlaMinutes
+            }
+        );
+        "qosPolicy"        = "kBackupSSD";
+        "abortInBlackouts" = $false;
+        "environment" = "kO365Sharepoint";
+        "office365Params" = @{
+            "objectProtectionType"              = "kSharePoint";
+            "sharepointSiteObjectProtectionParams" = @{
+                "objects"        = @(
+                    @{
+                        "id" = $objectsNode.protectionSource.id;
+                        "shouldAutoProtectObject" = $True;
+                        "excludeObjectIds" = @($script:alreadyProtected | Sort-Object)
+                    }
+                );
+                "indexingPolicy" = @{
+                    "enableIndexing" = $true;
+                    "includePaths"   = @(
+                        "/"
+                    );
+                    "excludePaths"   = @()
+                }
+            }
+        }
+    }
 
+    if($useMBS){
+        $script:protectionParams.objects[0].environment = "kO365SharepointCSM"
+    }else{
+        $script:protectionParams.policyId = $policy.id
+    }
+
+    # $script:protectionParams | toJson
+    $response = api put -v2 "data-protect/protected-objects/$($objectsNode.protectionSource.id)?regionIds=$region" $script:protectionParams
+    $response | toJson
+}
