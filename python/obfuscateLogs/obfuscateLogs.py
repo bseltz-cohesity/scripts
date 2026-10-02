@@ -35,7 +35,7 @@ ignore_paths = [
     '/javascript',
     '/html',
     '/pre',
-    '/br'
+    '/br',
     '/#',
     '/.',
     '/(',
