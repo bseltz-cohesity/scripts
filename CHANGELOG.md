@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-10-04`] [backupPerformanceMetrics.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/backupPerformanceMetrics) [`New`] generate HTML graph of protection job performance metrics
+* [`2026-10-02`] [autoprotectCcsM365Sites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/autoprotectCcsM365Sites) [`Update`] added update mode
 * [`2026-10-02`] [obfuscateLogs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/obfuscateLogs) [`Update`] fixed # bug
 * [`2026-10-01`] [resetUserPassword.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/resetUserPassword) [`Update`] updated to support changing your own password
 * [`2026-09-30`] [protectEC2VMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectEC2VMs) [`Update`] added -ngce switch
