@@ -18,13 +18,7 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 # End Download Commands
 ```
 
-The report's graphs are rendered with [Chart.js](https://www.chartjs.org) (v4.4.4, MIT licensed), which this script loads from a `chart.umd.js` file placed next to it, so the report still renders with no internet access. Grab a copy and save it alongside the script like so:
-
-```powershell
-# example
-(Invoke-WebRequest -UseBasicParsing -Uri 'https://unpkg.com/chart.js@4.4.4/dist/chart.umd.js').content | Out-File chart.umd.js
-# end example
-```
+The report's graphs are rendered with [Chart.js](https://www.chartjs.org) (v4.4.4, MIT licensed)
 
 ## Components
 
