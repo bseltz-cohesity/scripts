@@ -25,7 +25,6 @@ The report's graphs are rendered with [Chart.js](https://www.chartjs.org) (v4.4.
 * [backupPerformanceMetrics.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/powershell/backupPerformanceMetrics/backupPerformanceMetrics.ps1): the main PowerShell script
 * [chart.umd.js](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/powershell/backupPerformanceMetrics/chart.umd.js): javascript chart functions
 * [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
-* chart.umd.js: the Chart.js library used to render the graphs (see above)
 
 Place all three files in a folder together and run the main script like so:
 
