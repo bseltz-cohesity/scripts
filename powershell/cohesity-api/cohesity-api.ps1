@@ -1,6 +1,6 @@
 # . . . . . . . . . . . . . . . . . . .
 #  PowerShell Module for Cohesity API
-#  Version 2026.09.24 - Brian Seltzer
+#  Version 2026.10.05 - Brian Seltzer
 # . . . . . . . . . . . . . . . . . . .
 #
 # 2025-01-10 - added Get-Runs function
@@ -32,10 +32,11 @@
 # 2026-08-28 - added Tls13 negotiation
 # 2026-09-14 - updated Tls13 negotiation
 # 2026-09-24 - remove double slashes from URLs
+# 2026-10-05 - updated error handling
 #
 # . . . . . . . . . . . . . . . . . . .
 
-$versionCohesityAPI = '2026.09.24'
+$versionCohesityAPI = '2026.10.05'
 
 $culture = [System.Globalization.CultureInfo]::CurrentCulture.Clone()
 $culture.DateTimeFormat.LongTimePattern  = $culture.DateTimeFormat.LongTimePattern  -replace "`u{202F}", ' '
