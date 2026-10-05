@@ -353,13 +353,13 @@ if($False -eq $independentRestores){
     }
 }else{
     # perform independent restores
-    if($noIndex -or ($doc.versions | Where-Object {$_.numEntriesIndexed -eq 0 -or $_.indexingStatus -ne 2})){
+    if($noIndex){ # -or ($doc.versions | Where-Object {$_.numEntriesIndexed -eq 0 -or $_.indexingStatus -ne 2})){
         Write-Host "Crawling for files..."
     }
     foreach($file in $files){
         $fileRestored = $False
         $encodedFile = [System.Web.HttpUtility]::UrlEncode($file)
-        if($noIndex -or ($doc.versions | Where-Object {$_.numEntriesIndexed -eq 0 -or $_.indexingStatus -ne 2})){
+        if($noIndex){ # -or ($doc.versions | Where-Object {$_.numEntriesIndexed -eq 0 -or $_.indexingStatus -ne 2})){
             # there are non indexed snapshots, try non indexed search
             $global:foundFile = $false
             foreach($version in $doc.versions){
