@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-10-05`] [restoreFiles.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/restoreFiles) [`Update`] updated search index behavior
 * [`2026-10-05`] [epic](https://github.com/cohesity/community-automation-samples/tree/main/epic) [`New`] created new top-level folder for epic-related scripts
 * [`2026-10-04`] [backupPerformanceMetrics.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/backupPerformanceMetrics) [`New`] generate HTML graph of protection job performance metrics
 * [`2026-10-02`] [autoprotectCcsM365Sites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/autoprotectCcsM365Sites) [`Update`] added update mode
