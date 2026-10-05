@@ -325,15 +325,21 @@ else { document.getElementById('writeLatencyChart').outerHTML = '<div class="no-
 # contains '${...}' template-literal syntax) or any JSON payload that happens to
 # contain a '$'. String.Replace() does a plain literal substitution.
 
-# Chart.js v4.4.4 (MIT License, https://www.chartjs.org) is loaded from a companion
-# file next to this script, rather than from a CDN, so the report still renders
-# charts with no internet access.
+# Chart.js v4.4.4 (MIT License, https://www.chartjs.org) is normally loaded from a
+# companion file next to this script, so the report still renders charts with no
+# internet access. If that file isn't present, fall back to fetching it online.
+$chartJsCdnUrl = 'https://unpkg.com/chart.js@4.4.4/dist/chart.umd.js'
 $chartJsPath = Join-Path -Path $PSScriptRoot -ChildPath 'chart.umd.js'
-if(! (Test-Path $chartJsPath)){
-    Write-Host "chart.umd.js not found next to the script at $chartJsPath - charts will not render" -ForegroundColor Yellow
-    $chartJsSource = ''
-}else{
+if(Test-Path $chartJsPath){
     $chartJsSource = Get-Content -Path $chartJsPath -Raw
+}else{
+    Write-Host "chart.umd.js not found next to the script - fetching it from $chartJsCdnUrl" -ForegroundColor Yellow
+    try{
+        $chartJsSource = (Invoke-WebRequest -UseBasicParsing -Uri $chartJsCdnUrl).Content
+    }catch{
+        Write-Host "Unable to fetch Chart.js from $chartJsCdnUrl - charts will not render. $($_.Exception.Message)" -ForegroundColor Yellow
+        $chartJsSource = ''
+    }
 }
 
 if($theme -eq 'dark'){
