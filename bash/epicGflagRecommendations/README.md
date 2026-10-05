@@ -19,15 +19,15 @@ chmod +x epicGflagRecommendations.sh
 ./epicGflagRecommendations.sh -n <count> -o <AIX|LINUX> [options]
 ```
 
-| Short | Long             | Required | Description                                                                                          |
-|-------|------------------|----------|--------------------------------------------------------------------------------------------------------|
-| `-n`  | `--node-count`     | Yes      | Number of nodes in the Cohesity cluster (1-256).                                                       |
-| `-o`  | `--host-os`        | Yes      | Operating system of the EPIC mount host: `AIX` or `LINUX`.                                             |
-| `-s`  | `--nic-speed`      | No       | Mount host NIC speed range: `10GbE` or `>10GbE`. Default: `>10GbE`.                                     |
-| `-c`  | `--cpu-cores`      | No       | Number of CPU cores on the mount host (1-1024), e.g. 2 x Intel Xeon 12-core = 24. Default: `24`.        |
-| `-a`  | `--agent-endpoint` | No       | Hostname or IP of the mount host, substituted into the agent CLI commands. Default: a placeholder you can fill in later. |
-| `-f`  | `--output-file`    | No       | Path to the text file the recommendations are written to. Default: `./EpicGflagRecommendations.txt`.   |
-| `-h`  | `--help`           | No       | Show usage and exit.                                                                                    |
+| Short | Long               | Required | Description                                                                                                               |
+|-------|--------------------|----------|---------------------------------------------------------------------------------------------------------------------------|
+| `-n`  | `--node-count`     | Yes      | Number of nodes in the Cohesity cluster (1-256).                                                                          |
+| `-o`  | `--host-os`        | Yes      | Operating system of the EPIC mount host: `AIX` or `LINUX`.                                                                |
+| `-s`  | `--nic-speed`      | No       | Mount host NIC speed range: `10GbE` or `>10GbE`. Default: `>10GbE`.                                                       |
+| `-c`  | `--cpu-cores`      | No       | Number of CPU cores on the mount host (1-1024), e.g. 2 x Intel Xeon 12-core = 24. Default: `24`.                          |
+| `-a`  | `--agent-endpoint` | No       | Hostname or IP of the mount host, substituted into the agent CLI commands. Default: a placeholder you can fill in later.  |
+| `-f`  | `--output-file`    | No       | Path to the text file the recommendations are written to. Default: `./EpicGflagRecommendations.txt`.                      |
+| `-h`  | `--help`           | No       | Show usage and exit.                                                                                                      |
 
 ## Examples
 
