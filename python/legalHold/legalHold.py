@@ -123,7 +123,7 @@ if jobid is not None:
         job = jobs[0]
         v1JobId = job['id']  
 else:
-    jobs = api('get', 'data-protect/protection-groups?names=%s&isDeleted=false&pruneSourceIds=true&pruneExcludedSourceIds=true' % jobname, v=2)
+    jobs = api('get', 'data-protect/protection-groups?names=%s&pruneSourceIds=true&pruneExcludedSourceIds=true' % jobname, v=2)
     if jobs['protectionGroups'] is None:
         print("Job '%s' not found" % jobname)
         exit(1)
