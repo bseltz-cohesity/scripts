@@ -74,5 +74,6 @@ Warning: Any snapshots whose new expire date is set to a date in the past will e
 * -after: (optional) operate on runs after this date (e.g. '2022-09-01 23:00:00')
 * -backupType: (optional) choose one of kRegular, kFull, kLog, kSystem. Default is AllExceptLogs
 * -commit: (optional) perform the changes. If omitted, script will run in show/only mode
-* -maxRuns: (optional) dig back in time for X snapshots. Default is 100000. Increase this value to get further back in time, decrease this parameter if the script reports an error that the response it too large
+* -numRuns: (optional) page through x runs at a time (default is 1000)
+* -maxRuns: (optional) DEPRECATED (does nothing)
 * -allowReduction: (optional) if omitted, the script will not reduce the retention of any snapshots
