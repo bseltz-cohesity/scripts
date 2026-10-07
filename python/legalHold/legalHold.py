@@ -115,13 +115,14 @@ now = datetime.now()
 nowUsecs = dateToUsecs(now.strftime("%Y-%m-%d %H:%M:%S"))
 
 if jobid is not None:
-    jobs = api('get', 'protectionJobs?ids=%s' % jobid)
-    if not jobs:
-        print("Job with ID %s not found" % jobid)
-        exit(1)
-    else:
-        job = jobs[0]
-        v1JobId = job['id']  
+    v1JobId = jobid
+    # jobs = api('get', 'protectionJobs?ids=%s' % jobid)
+    # if not jobs:
+    #     print("Job with ID %s not found" % jobid)
+    #     exit(1)
+    # else:
+    #     job = jobs[0]
+    #     v1JobId = job['id']  
 else:
     jobs = api('get', 'data-protect/protection-groups?names=%s&pruneSourceIds=true&pruneExcludedSourceIds=true' % jobname, v=2)
     if jobs['protectionGroups'] is None:
