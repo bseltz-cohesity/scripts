@@ -20,6 +20,7 @@ param (
     [Parameter(Mandatory = $True)][string]$daysToKeep,
     [Parameter()][ValidateSet("kRegular","kFull","kLog","kSystem","AllExceptLogs")][string]$backupType = 'AllExceptLogs',
     [Parameter()][int]$maxRuns = 100000,
+    [Parameter()][int]$numRuns = 1000,
     [Parameter()][switch]$commit,
     [Parameter()][switch]$allowReduction
 )
@@ -201,18 +202,42 @@ if($backupType -eq 'AllExceptLogs'){
 }
 
 foreach($job in $myjoblist){
-    $runs = (api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$maxRuns&runTypes=$myBackupType&startTimeUsecs=$afterUsecs&endTimeUsecs=$beforeUsecs&excludeNonRestorableRuns=true&includeObjectDetails=true").runs
-    foreach($run in $runs){
-        $backupInfo = getRunBackupInfo $run
-        if(!$backupInfo){
-            continue
+    $lastRunId = 0
+    while($True){
+        $runs = api get -v2 "data-protect/protection-groups/$($job.id)/runs?numRuns=$numRuns&runTypes=$myBackupType&startTimeUsecs=$afterUsecs&endTimeUsecs=$beforeUsecs&excludeNonRestorableRuns=true&includeObjectDetails=true"
+        # if(!$runs.runs -or @($runs.runs).Count -eq 0 -or $runs.runs[-1].id -eq $lastRunId){
+        #     break
+        # }
+        if($lastRunId -ne 0){
+            $runs.runs = $runs.runs | Where-Object {$_.id -lt $lastRunId}
         }
-        if($run.isLocalSnapshotsDeleted -eq $True){
-            continue
+        foreach($run in $runs.runs){
+            $backupInfo = getRunBackupInfo $run
+            if(!$backupInfo){
+                continue
+            }
+            if($run.isLocalSnapshotsDeleted -eq $True){
+                continue
+            }
+            if($backupInfo.startTimeUsecs -le $afterUsecs -or $backupInfo.endTimeUsecs -gt $beforeUsecs){
+                continue
+            }
+            changeRetention $run $backupInfo $job.id $job.name
         }
-        if($backupInfo.startTimeUsecs -le $afterUsecs -or $backupInfo.endTimeUsecs -gt $beforeUsecs){
-            continue
+        if(!$runs.runs -or @($runs.runs).Count -eq 0 -or $runs.runs[-1].id -eq $lastRunId){
+            break
+        }else{
+            $lastRunId = $runs.runs[-1].id
+            if($runs.runs[-1].PSObject.Properties['localBackupInfo']){
+                $beforeUsecs = $runs.runs[-1].localBackupInfo.endTimeUsecs
+            }elseif($runs.runs[-1].PSObject.Properties['originalBackupInfo']){
+                $beforeUsecs = $runs.runs[-1].originalBackupInfo.endTimeUsecs
+            }else{
+                $beforeUsecs = $runs.runs[-1].archivalInfo.archivalTargetResults[0].endTimeUsecs
+            }
+            if($beforeUsecs -le $afterUsecs){
+                break
+            }
         }
-        changeRetention $run $backupInfo $job.id $job.name
     }
 }
