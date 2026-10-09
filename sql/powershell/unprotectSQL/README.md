@@ -72,6 +72,7 @@ Place all files in a folder together. And run the script like so:
 * -instanceName: (optional) one or more instance names, scoped to each server above (comma separated)
 * -dbName: (optional) one or more database names to unprotect, scoped to each instance above (comma separated)
 * -dbList: (optional) text file of database names (one per line)
+* -deleteJobIfEmpty: (optional) delete protection group if no objects remain selected
 
 If -dbName/-dbList is omitted, -instanceName specifies whole instances to unprotect. If both -instanceName and -dbName/-dbList are omitted, -serverName specifies whole servers to unprotect. If -dbName/-dbList is used without -instanceName, the instance defaults to MSSQLSERVER.
 

@@ -17,7 +17,8 @@ param (
     [Parameter()][string]$serverList,
     [Parameter()][array]$instanceName,
     [Parameter()][array]$dbName,
-    [Parameter()][string]$dbList
+    [Parameter()][string]$dbList,
+    [Parameter()][switch]$deleteJobIfEmpty
 )
 
 # gather list from command line params and file
@@ -227,6 +228,17 @@ foreach($servername in $serversToAdd){
 if(! $changesMade){
     Write-Host "No changes made. Exiting without committing changes." -ForegroundColor Yellow
     exit 1
+}
+
+if(@($params.objects).Count -eq 0){
+    if($deleteJobIfEmpty){
+        Write-Host "Last object removed. Deleting $jobName..."
+        $null = api delete -v2 "data-protect/protection-groups/$($job.id)?deleteSnapshots=false"
+        exit 0
+    }else{
+        Write-Host "Can't delete last object from $jobName" -ForegroundColor Yellow
+        exit 1
+    }
 }
 
 Write-Host "Updating job $jobName..."
