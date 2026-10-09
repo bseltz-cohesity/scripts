@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-10-09`] [unprotectSQL.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/unprotectSQL) [`Update`] handle empty protection group
 * [`2026-10-08`] [deleteObjectBackups.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/deleteObjectBackups) [`Update`] updated API calls to find backups for objects no longer present
 * [`2026-10-07`] [legalHold.py](https://github.com/cohesity/community-automation-samples/tree/main/python/legalHold) [`Update`] fixes
 * [`2026-10-07`] [changeLocalRetention.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/changeLocalRetention) [`Update`] added paging for runs
