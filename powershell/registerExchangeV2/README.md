@@ -10,7 +10,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-$scriptName = 'base'
+$scriptName = 'registerExchangeV2'
 $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
@@ -19,13 +19,19 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 
 ## Components
 
-* base.ps1: the main PowerShell script
-* cohesity-api.ps1: the Cohesity REST API helper module
+* [registerExchangeV2.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/registerExchangeV2/registerExchangeV2.ps1): the main PowerShell script
+* [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./base.ps1 -vip mycluster -username myusername -domain mydomain.net
+# example
+./registerExchangeV2.ps1 -vip mycluster `
+                         -username myusername `
+                         -domain mydomain.net `
+                         -exchangeFQDN myexchange.mydomain.net `
+                         -exchangeUser myuser@mydomain.net
+# end example
 ```
 
 ## Authentication Parameters
