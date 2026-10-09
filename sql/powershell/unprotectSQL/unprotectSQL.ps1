@@ -236,7 +236,7 @@ if(@($params.objects).Count -eq 0){
         $null = api delete -v2 "data-protect/protection-groups/$($job.id)?deleteSnapshots=false"
         exit 0
     }else{
-        Write-Host "Can't delete last object from $jobName" -ForegroundColor Yellow
+        Write-Host "Can't delete last object from $jobName. Canceling changes." -ForegroundColor Yellow
         exit 1
     }
 }
