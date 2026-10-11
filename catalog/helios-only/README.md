@@ -1,6 +1,6 @@
 # Helios-Only
 
-[← Back to catalog index](../index.md)
+[← Back to catalog index](../README.md)
 
 Total scripts: **15**
 

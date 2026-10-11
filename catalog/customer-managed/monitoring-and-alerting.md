@@ -1,6 +1,6 @@
 # Customer-Managed — Monitoring & Alerting
 
-[← Back to Customer-Managed](index.md)
+[← Back to Customer-Managed](README.md)
 
 Total scripts: **11**
 

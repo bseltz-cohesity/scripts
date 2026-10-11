@@ -1,6 +1,6 @@
 # Customer-Managed — Custom Reporting DB
 
-[← Back to Customer-Managed](index.md)
+[← Back to Customer-Managed](README.md)
 
 Total scripts: **10**
 

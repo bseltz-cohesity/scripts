@@ -1,6 +1,6 @@
 # CCS (Cohesity Cloud Services) — General / Multi-Platform
 
-[← Back to CCS (Cohesity Cloud Services)](index.md)
+[← Back to CCS (Cohesity Cloud Services)](README.md)
 
 Total scripts: **5**
 

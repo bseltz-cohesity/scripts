@@ -1,6 +1,6 @@
 # CCS (Cohesity Cloud Services)
 
-[← Back to catalog index](../index.md)
+[← Back to catalog index](../README.md)
 
 Total scripts: **62**
 
