@@ -2,13 +2,13 @@
 
 [← Back to catalog index](../README.md)
 
-Total scripts: **811**
+Total scripts: **813**
 
 ## Popular Scripts
 
 | Sub-Category | Scripts |
 | --- | --- |
-| [Favorites](favorites.md) | 17 |
+| [Favorites](favorites.md) | 19 |
 
 ## Administration
 
@@ -88,7 +88,7 @@ Total scripts: **811**
 | [Capacity Reporting](capacity-reporting.md) | 17 |
 | [Custom Reporting DB](custom-reporting-db.md) | 10 |
 | [General Reporting](general-reporting.md) | 71 |
-| [Helios Reporting](helios-reporting.md) | 17 |
+| [Helios Reporting](helios-reporting.md) | 19 |
 
 ## Storage & NAS
 

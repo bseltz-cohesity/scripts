@@ -2,13 +2,13 @@
 
 [← Back to catalog index](../README.md)
 
-Total scripts: **62**
+Total scripts: **64**
 
 ## Popular Scripts
 
 | Sub-Category | Scripts |
 | --- | --- |
-| [Favorites](favorites.md) | 5 |
+| [Favorites](favorites.md) | 7 |
 
 ## Administration
 
@@ -63,3 +63,4 @@ Total scripts: **62**
 | Sub-Category | Scripts |
 | --- | --- |
 | [General Reporting](general-reporting.md) | 2 |
+| [Helios Reporting](helios-reporting.md) | 2 |
