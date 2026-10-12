@@ -4,6 +4,12 @@
 
 Total scripts: **62**
 
+## Popular Scripts
+
+| Sub-Category | Scripts |
+| --- | --- |
+| [Favorites](favorites.md) | 5 |
+
 ## Administration
 
 | Sub-Category | Scripts |
