@@ -1,5 +1,5 @@
 ### process commandline arguments
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding=$False)]
 param (
     [Parameter()][string]$vip='helios.cohesity.com',
     [Parameter()][string]$username = 'helios',
@@ -20,7 +20,8 @@ param (
    [Parameter()][switch]$quickScan,       # break scan if a completion is found or if no copyRuns are detected
    [Parameter()][switch]$showFinished,    # show completed archives
    [Parameter()][int]$numRuns = 1000,
-   [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB'
+   [Parameter()][ValidateSet('MiB','GiB','TiB')][string]$unit = 'MiB',
+   [Parameter()][int]$daysTilExpire = 0
 )
 
 # gather list of jobs
@@ -87,7 +88,6 @@ $outfileName = "ArchiveQueue-$($cluster.name)-$dateString.tsv"
 "Job ID`tJob Name`tRun Date`tLogical $unit`tPhysical $unit`tStatus`tTarget`tStart Time`tEnd Time`tExpiry Time" | Out-File -FilePath $outfileName
 
 $nowUsecs = dateToUsecs (get-date)
-$thenUsecs = [int64]($nowUsecs + ($daysTilExpire * 24 * 60 * 60 * 1000000))
 
 $runningTasks = 0
 
