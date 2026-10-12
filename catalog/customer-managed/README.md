@@ -57,7 +57,7 @@ Total scripts: **813**
 
 | Sub-Category | Scripts |
 | --- | --- |
-| [PhysicalServer](physicalserver.md) | 3 |
+| [Physical-Server](physical-server.md) | 3 |
 
 ## Other Workloads
 
