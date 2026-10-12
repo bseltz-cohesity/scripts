@@ -4,23 +4,13 @@
 
 Total scripts: **8**
 
-## Cluster & System Administration (1)
-
-| Script | Language | Date Last Updated | Use Case |
-| --- | --- | --- | --- |
-| [joinActiveDirectory.py](https://github.com/cohesity/community-automation-samples/tree/main/python/joinActiveDirectory) | Python | 2024-11-04 | This script will join the Cohesity cluster to an Active Directory domain. |
-
-## Cluster Configuration (1)
+## Cluster Configuration (3)
 
 | Script | Language | Date Last Updated | Use Case |
 | --- | --- | --- | --- |
 | [addActiveDirectory.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/addActiveDirectory) | PowerShell | 2024-11-04 | This script joins a Cohesity cluster to Active Directory. (the main powershell script) |
-
-## Cluster Create (1)
-
-| Script | Language | Date Last Updated | Use Case |
-| --- | --- | --- | --- |
 | [exampleConfig.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/addActiveDirectory) | PowerShell | 2024-11-04 | This script joins a Cohesity cluster to Active Directory. (example configuration file) |
+| [joinActiveDirectory.py](https://github.com/cohesity/community-automation-samples/tree/main/python/joinActiveDirectory) | Python | 2024-11-04 | This script will join the Cohesity cluster to an Active Directory domain. |
 
 ## Protection & Recovery (3)
 
