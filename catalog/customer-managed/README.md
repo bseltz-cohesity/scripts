@@ -49,9 +49,15 @@ Total scripts: **813**
 | [AWS](aws.md) | 12 |
 | [Azure](azure.md) | 8 |
 | [GCP](gcp.md) | 2 |
-| [Hyper-V](hyper-v.md) | 2 |
+| [Hyper-V](hyper-v.md) | 5 |
 | [Nutanix AHV](nutanix-ahv.md) | 6 |
-| [VMware](vmware.md) | 45 |
+| [VMware](vmware.md) | 48 |
+
+## Other
+
+| Sub-Category | Scripts |
+| --- | --- |
+| [PhysicalServer](physicalserver.md) | 3 |
 
 ## Other Workloads
 

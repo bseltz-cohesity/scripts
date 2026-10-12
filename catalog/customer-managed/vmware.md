@@ -2,7 +2,7 @@
 
 [← Back to Customer-Managed](README.md)
 
-Total scripts: **45**
+Total scripts: **48**
 
 ## Monitoring & Alerting (1)
 
@@ -17,7 +17,7 @@ Total scripts: **45**
 | [powerOnVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/vmware/python/powerOnVMs) | Python | 2026-03-01 | This script powers on the specified VMs. |
 | [vCenterTest.py](https://github.com/cohesity/community-automation-samples/tree/main/python/vCenterTest) | Python | 2024-11-04 | This script performs a simple authentication to vCenter to test connectivity and credentials. |
 
-## Protection & Recovery (33)
+## Protection & Recovery (36)
 
 | Script | Language | Date Last Updated | Use Case |
 | --- | --- | --- | --- |
@@ -31,6 +31,8 @@ Total scripts: **45**
 | [excludeVMsAllJobs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/excludeVMs) | Python | 2024-11-04 | This python script applies exclusions to an autoprotect VM protection job. (alternate script (all jobs)) |
 | [excludeVMsByTag.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/excludeVMsByTag) | PowerShell | 2024-11-04 | This PowerShell script excludes VMs from protection jobs by vSphere tag. |
 | [expungeVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/expungeVM) | PowerShell | 2024-11-04 | This powershell script searches for a VM, and deletes all backups of that VM, including the local snapshots and archives. |
+| [instantVolumeMount.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/instantVolumeMount) | PowerShell | 2024-11-04 | This script demonstrates how to perform an Instant Volume Mount using PowerShell. (the main powershell script) |
+| [instantVolumeMount.py](https://github.com/cohesity/community-automation-samples/tree/main/python/instantVolumeMount) | Python | 2024-11-04 | This python script performs an Instant Volume Mount recovery to a VM or physical server. (the main python script) |
 | [linux_vm_freeze_thaw.sh](https://github.com/cohesity/community-automation-samples/tree/main/bash/linux_vm_freeze_thaw) | Bash/Shell | 2024-11-04 | This bash script can be used as a VMTools Freeze/Thaw Script for a Cohesity VMware backup to freeze and thaw applications running in a Linux VM. |
 | [listVMsInJobRun.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/listVMsInJobRun) | PowerShell | 2024-11-04 | This PowerShell script lists the VMs that were backed up by the past few runs of a protection job. |
 | [protectedVMsWithExcludedDisks.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectedVMsWithExcludedDisks) | PowerShell | 2025-04-25 | This PowerShell script reports on protected VMs that have excluded disks. |
@@ -47,6 +49,7 @@ Total scripts: **45**
 | [recoverVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/recoverVMs) | Python | 2025-04-10 | This python script recovers one or more VMs. |
 | [registerVcenter.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/registerVcenter) | PowerShell | 2024-11-04 | This powershell script registers vCenter as a protection source in Cohesity. |
 | [registerVcenter.py](https://github.com/cohesity/community-automation-samples/tree/main/python/registerVcenter) | Python | 2024-12-09 | This script registers or updates a vCenter protection source. |
+| [tearDownVolumeMount.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/instantVolumeMount) | PowerShell | 2024-11-04 | This script demonstrates how to perform an Instant Volume Mount using PowerShell. |
 | [unprotectedVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/unprotectedVMs) | Python | 2024-11-04 | This script reports unprotected VMs. Output is written to a CSV file |
 | [unprotectMissingVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/unprotectMissingVMs) | PowerShell | 2024-11-04 | This PowerShell script updates VMware protection jobs to remove missing VMs. |
 | [unprotectVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/unprotectVM) | PowerShell | 2024-11-04 | This PowerShell script removes VMs from protection groups. |
