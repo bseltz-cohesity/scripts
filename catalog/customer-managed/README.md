@@ -53,12 +53,6 @@ Total scripts: **813**
 | [Nutanix AHV](nutanix-ahv.md) | 6 |
 | [VMware](vmware.md) | 48 |
 
-## Other
-
-| Sub-Category | Scripts |
-| --- | --- |
-| [Physical-Server](physical-server.md) | 3 |
-
 ## Other Workloads
 
 | Sub-Category | Scripts |
@@ -75,7 +69,7 @@ Total scripts: **813**
 | Sub-Category | Scripts |
 | --- | --- |
 | [Agent Management](agent-management.md) | 20 |
-| [Physical Server](physical-server.md) | 31 |
+| [Physical Server](physical-server.md) | 34 |
 
 ## Protection Workflows
 
