@@ -8,7 +8,7 @@ Total scripts: **813**
 
 | Sub-Category | Scripts |
 | --- | --- |
-| [Favorites](favorites.md) | 19 |
+| [Favorites](favorites.md) | 20 |
 
 ## Administration
 

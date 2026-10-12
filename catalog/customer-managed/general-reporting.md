@@ -4,12 +4,11 @@
 
 Total scripts: **71**
 
-## Cluster & System Administration (2)
+## Cluster & System Administration (1)
 
 | Script | Language | Date Last Updated | Use Case |
 | --- | --- | --- | --- |
 | [clusterProtectedObjects.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterProtectedObjects) | PowerShell | 2024-11-04 | This PowerShell script lists protected object (objects where protection runs have occurred) in Cohesity. |
-| [clusterProtectionRuns.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/clusterProtectionRuns) | Python | 2026-06-16 | This python script lists the active snapshot count for every protected object in Cohesity. |
 
 ## Protection & Recovery (3)
 
@@ -19,7 +18,7 @@ Total scripts: **71**
 | [validateServerBackup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/validateServerBackup) | PowerShell | 2026-05-15 | This PowerShell script validates backups for physical and virtual servers. The script will generate an html report and send it to email recipients. The validation process instructs the cluster to mount the latest backup volume and retrieve a directory listing. If the directory is readable, the backup is considered valid. |
 | [validateServerBackup.py](https://github.com/cohesity/community-automation-samples/tree/main/python/validateServerBackup) | Python | 2024-12-10 | This python script validates backups for physical and virtual servers. The script will generate an html report and send it to email recipients. The validation process instructs the cluster to mount the latest backup volume and retrieve a directory listing. If the directory is readable, the backup is considered valid. |
 
-## Reporting & Analytics (66)
+## Reporting & Analytics (67)
 
 | Script | Language | Date Last Updated | Use Case |
 | --- | --- | --- | --- |
@@ -34,6 +33,7 @@ Total scripts: **71**
 | [clusterIPs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/clusterIPs) | Python | 2024-11-04 | This script reports what IP addresses are used by a cluster. Output is written to a CSV file |
 | [clusterProtectionActivities.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterProtectionActivities) | PowerShell | 2026-09-18 | This PowerShell script generates a protection activities report. |
 | [clusterProtectionRuns.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterProtectionRuns) | PowerShell | 2026-08-06 | This PowerShell script generates a protection runs report. |
+| [clusterProtectionRuns.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/clusterProtectionRuns) | Python | 2026-06-16 | This python script lists the active snapshot count for every protected object in Cohesity. |
 | [consumptionTrend.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/consumptionTrend) | PowerShell | 2024-11-04 | This PowerShell script reports per-job and per-view storage consumption trends. Output will be saved to an HTML report. |
 | [crowdstrikeReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/crowdstrikeReport) | PowerShell | 2024-11-04 | This powershell generates a report that shows the most recent C-00000291 file that was backed up for each Windows system (physical or virtual) protected by Cohesity. |
 | [crowdstrikeReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/crowdstrikeReport) | Python | 2024-11-04 | This python script generates a report that shows the most recent C-00000291 file that was backed up for each Windows system (physical or virtual) protected by Cohesity. |
