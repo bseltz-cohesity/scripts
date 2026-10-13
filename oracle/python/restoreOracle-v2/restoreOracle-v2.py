@@ -189,7 +189,7 @@ if tde is True and (updateKSP is True or sourceCdbKeystorePassword is None):
     pwentity = originalSourceDB.replace('/','.')
     sourceCdbKeystorePassword = pw(vip=sourceserver, username=pwentity, password=sourceCdbKeystorePassword, updatepw=updateKSP)
 if tde is True and (updateKSP is True or targetCdbKeystorePassword is None):
-    pwentity = targetdb.replace('/','.')
+    pwentity = '%s.%s' % (targetcdb, targetdb)
     targetCdbKeystorePassword = pw(vip=targetserver, username=pwentity, password=targetCdbKeystorePassword, updatepw=updateKSP)
 
 # authenticate
