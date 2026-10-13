@@ -186,9 +186,11 @@ updateKSP = None
 if resetStoredKeystorePasswords is True:
     updateKSP = True
 if tde is True and (updateKSP is True or sourceCdbKeystorePassword is None):
-    sourceCdbKeystorePassword = pw(vip=sourceserver, username=originalSourceDB, password=sourceCdbKeystorePassword, updatepw=updateKSP)
+    pwentity = originalSourceDB.replace('/','.')
+    sourceCdbKeystorePassword = pw(vip=sourceserver, username=pwentity, password=sourceCdbKeystorePassword, updatepw=updateKSP)
 if tde is True and (updateKSP is True or targetCdbKeystorePassword is None):
-    targetCdbKeystorePassword = pw(vip=targetserver, username=targetdb, password=targetCdbKeystorePassword, updatepw=updateKSP)
+    pwentity = targetdb.replace('/','.')
+    targetCdbKeystorePassword = pw(vip=targetserver, username=pwentity, password=targetCdbKeystorePassword, updatepw=updateKSP)
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), emailMfaCode=emailmfacode, mfaCode=mfacode)
