@@ -170,6 +170,13 @@ Restoring an Oracle RAC DB:
 * -dbg, --dbg: (optional) display api payload and exit (without restoring)
 * -pi, --printinfo: (optional) print vip, source and target servers/databases to screen
 
+## TDE Parameters
+
+* -rsk, --resetStoredKeystorePasswords: (optional) reset stored keystore passwords
+* -tde, --tde: (optional) require keystore passwords
+* -sk, --sourceCdbKeystorePassword: (optional) source CDB keystore password
+* -tk, --targetCdbKeystorePassword: (optional) source CDB keystore password
+
 ## Point in Time Recovery
 
 If you want to replay the logs to the very latest available point in time, use the **-l** parameter.

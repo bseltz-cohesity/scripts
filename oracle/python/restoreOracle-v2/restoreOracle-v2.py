@@ -58,6 +58,10 @@ parser.add_argument('-inst', '--instant', action='store_true')  # instant recove
 parser.add_argument('-man', '--manual', action='store_true')  # manual migration
 parser.add_argument('-cpf', '--clearpfileparameters', action='store_true')  # clear existing pfile parameters
 parser.add_argument('-pi', '--printinfo', action='store_true')  # clear existing pfile parameters
+parser.add_argument('-rsk', '--resetStoredKeystorePasswords', action='store_true')  # reset stored keystore passwords
+parser.add_argument('-tde', '--tde', action='store_true')  # prompt for keystore passwords
+parser.add_argument('-sk', '--sourceCdbKeystorePassword', type=str, default=None)  # source keystore password
+parser.add_argument('-tk', '--targetCdbKeystorePassword', type=str, default=None)  # target keystore password
 
 args = parser.parse_args()
 
@@ -114,6 +118,10 @@ redologsizemb = args.redologsizemb
 redologprefix = args.redologprefix
 bctfilepath = args.bctfilepath
 dbg = args.dbg
+resetStoredKeystorePasswords = args.resetStoredKeystorePasswords
+tde = args.tde
+sourceCdbKeystorePassword = args.sourceCdbKeystorePassword
+targetCdbKeystorePassword = args.targetCdbKeystorePassword
 
 # gather server list
 def gatherList(param=None, filename=None, name='items', required=True):
@@ -172,6 +180,15 @@ if targetdb == sourcedb and targetserver == sourceserver and instant is not True
     if overwrite is not True:
         print('Please use the --overwrite parameter to confirm overwrite of the source database!')
         exit(1)
+
+# keystore passwords
+updateKSP = None
+if resetStoredKeystorePasswords is True:
+    updateKSP = True
+if tde is True and (updateKSP is True or sourceCdbKeystorePassword is None):
+    sourceCdbKeystorePassword = pw(vip=sourceserver, username=originalSourceDB, password=sourceCdbKeystorePassword, updatepw=updateKSP)
+if tde is True and (updateKSP is True or targetCdbKeystorePassword is None):
+    targetCdbKeystorePassword = pw(vip=targetserver, username=targetdb, password=targetCdbKeystorePassword, updatepw=updateKSP)
 
 # authenticate
 apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), emailMfaCode=emailmfacode, mfaCode=mfacode)
@@ -439,6 +456,11 @@ else:
                         "value": targetdb
                     }
                 ]
+            # keystore passwords
+            if sourceCdbKeystorePassword is not None:
+                sourceConfig['recoverDatabaseParams']['granularRestoreInfo']['pdbRestoreParams']['sourceCdbKeystorePassword'] = sourceCdbKeystorePassword
+            if targetCdbKeystorePassword is not None:
+                sourceConfig['recoverDatabaseParams']['granularRestoreInfo']['pdbRestoreParams']['targetCdbKeystorePassword'] = targetCdbKeystorePassword
         if isCDB is True:
             sourceConfig['recoverDatabaseParams']['granularRestoreInfo']['pdbRestoreParams']['restoreToExistingCdb'] = False
     if bctfilepath is not None:
