@@ -1,17 +1,17 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][string]$vip = 'helios.cohesity.com',   # the cluster to connect to (DNS name or IP)
-    [Parameter()][string]$username = 'helios',           # username (local or AD)
-    [Parameter()][string]$domain = 'local',              # local or AD domain
-    [Parameter()][switch]$useApiKey,                     # use API key for authentication
-    [Parameter()][string]$password,                      # optional password
-    [Parameter()][switch]$noPrompt,                      # do not prompt for password
-    [Parameter()][string]$tenant,                        # org to impersonate
-    [Parameter()][switch]$mcm,                           # connect to MCM endpoint
-    [Parameter()][string]$mfaCode = $null,               # MFA code
-    [Parameter()][switch]$emailMfaCode,                  # email MFA code
-    [Parameter()][string]$clusterName = $null,           # helios cluster to access
+    [Parameter()][string]$vip='helios.cohesity.com',
+    [Parameter()][string]$username = 'helios',
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
+    [Parameter()][switch]$useApiKey,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$helios,
+    [Parameter()][string]$mfaCode,
+    [Parameter()][switch]$emailMfaCode,
+    [Parameter()][string]$clusterName,           # helios cluster to access
     [Parameter()][array]$jobName,
     [Parameter()][string]$jobList,
     [Parameter()][switch]$showExclusions,
@@ -22,23 +22,30 @@ param (
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-# authenticate
-apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -noPromptForPassword $noPrompt
+# authentication =============================================
+# demand clusterName for Helios
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios" -ForegroundColor Yellow
+    exit 1
+}
 
-# select helios/mcm managed cluster
-if($USING_HELIOS -and !$region){
-    if($clusterName){
-        $thisCluster = heliosCluster $clusterName
-    }else{
-        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $helios -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
+
+# select helios managed cluster
+if($USING_HELIOS){
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
         exit 1
     }
 }
-
-if(!$cohesity_api.authorized){
-    Write-Host "Not authenticated"
-    exit 1
-}
+# end authentication =========================================
 
 # gather list from command line params and file
 function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items'){
@@ -141,16 +148,17 @@ function getTaggedVMs($vCenterName, $tags){
     return $matchVMs
 }
 
-$vCenters = api get "protectionSources?includeVMFolders=true"
+$vCenters = api get protectionSources/registrationInfo?environments=kVMware
 
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
 
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         $autoprotected = $false
         $vCenterId = $job.vmwareParams.sourceId
-        $vCenter = $vCenters | Where-Object {$_.protectionSource.id -eq $vCenterId}
-        $vCenterName = $vCenter.protectionSource.name
+        $vCenterRootNode = $vCenters.rootNodes | Where-Object {$_.rootNode.id -eq $vCenterId}
+        $vCenterName = $vCenterRootNode.rootNode.name
         if($vCenterName -notin $script:vmHierarchy.Keys){
+            $vCenter = api get "protectionSources?id=$vCenterId&includeVMFolders=true"
             $script:vmHierarchy[$vCenterName] = @()
             indexChildren $vCenterName $vCenter @()
             $script:vmHierarchy[$vCenterName] = $script:vmHierarchy[$vCenterName] | ConvertTo-Json -Depth 99 | ConvertFrom-Json
