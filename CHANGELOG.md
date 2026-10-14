@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-10-14`] [vmJobSelections.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/vmJobSelections) [`Update`] improved API queries
 * [`2026-10-13`] [restoreOracle-v2.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/restoreOracle-v2) [`Update`] added TDE support
 * [`2026-10-12`] [archiveQueue.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/archiveQueue) [`Update`] fixed missing argument
 * [`2026-10-09`] [registerExchangeV2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/registerExchangeV2) [`New`] Register an O365 Recovery To Exchange Server Source Using PowerShell
