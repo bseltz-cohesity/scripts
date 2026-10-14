@@ -310,6 +310,6 @@
 
 ## Old Change Logs
 
-* [CHANGELOG 2025](https://github.com/cohesity/community-automation-samples/blob/main/Old-CHANGELOG-2025.md)
-* [CHANGELOG 2024](https://github.com/cohesity/community-automation-samples/blob/main/Old-CHANGELOG-2024.md)
-* [CHANGELOG 2023](https://github.com/cohesity/community-automation-samples/blob/main/Old-CHANGELOG-2023.md)
+* [CHANGELOG 2025](https://github.com/cohesity/community-automation-samples/blob/main/doc/CHANGELOG-2025.md)
+* [CHANGELOG 2024](https://github.com/cohesity/community-automation-samples/blob/main/doc/CHANGELOG-2024.md)
+* [CHANGELOG 2023](https://github.com/cohesity/community-automation-samples/blob/main/doc/CHANGELOG-2023.md)
