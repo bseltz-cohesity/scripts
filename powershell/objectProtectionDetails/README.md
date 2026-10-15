@@ -28,9 +28,7 @@ Place both files in a folder together and run the main script like so:
 ./objectProtectionDetails.ps1 -vip mycluster `
                               -username myusername `
                               -domain mydomain.net `
-                              -objects vm1, vm2 `
-                              -startDate 2019-10-01 `
-                              -endDate 2019-11-01
+                              -objects vm1, vm2
 ```
 
 or
@@ -41,11 +39,21 @@ or
 # end example
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -vip: Cohesity Cluster to connect to
-* -username: Cohesity username
-* -domain: (optional) Active Directory domain of user (defaults to local)
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -mcm: (optional) connect through MCM/Helios OnPrem
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
 * -objects: one or more object names to report
-* -startDate: (optional) detaults to one month ago
-* -endDate: (optional) defaults to now
+* -exactMatchOnly: (optional) results must exactly match the object name
