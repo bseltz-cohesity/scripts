@@ -119,7 +119,11 @@ foreach($job in $jobs | Sort-Object -Property name){
     $thisJobName = $job.name
     if($jobNames.Count -eq 0 -or $thisJobName -in $jobNames){
         "Getting tasks for $thisJobName"
-        $runs = api get "protectionRuns?jobId=$jobId&numRuns=$numRuns&excludeTasks=true"
+        if($newerThanUsecs){
+            $runs = api get "protectionRuns?jobId=$jobId&numRuns=$numRuns&startTimeUsecs=$newerThanUsecs&excludeTasks=true"
+        }else{
+            $runs = api get "protectionRuns?jobId=$jobId&numRuns=$numRuns&excludeTasks=true"
+        }
         foreach($run in $runs){
             $runStartTimeUsecs = $run.backupRun.stats.startTimeUsecs
             foreach($copyRun in $run.copyRun){
@@ -186,7 +190,10 @@ if($runningTasks.Keys.Count -gt 0){
                                 }
                             }
                             if($commit){
+                                "                       --> Cancelling Replication Task ID: {0}" -f $task.taskUid.objectId
                                 $null = api post "protectionRuns/cancel/$($t.jobId)" $cancelTaskParams
+                            }else{
+                                "                       --> Would cancel Replication Task ID: {0} (use -commit to actually cancel)" -f $task.taskUid.objectId
                             }
                         }
                     }
@@ -202,4 +209,3 @@ if($runningTasks.Keys.Count -gt 0){
 }
 
 Write-Host "`nOutput saved to $outfileName`nand $outfileName2`n"
-
