@@ -71,7 +71,7 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 $jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Required $false)
 
 Write-Host "Getting protection groups..."
-$jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&environments=kVMware"
+$jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&environments=kVMware,kAcropolis"
 
 if($jobNames.Count -gt 0){
     $notfoundJobs = $jobNames | Where-Object {$_ -notin $jobs.protectionGroups.name}
@@ -87,15 +87,24 @@ $outFileName = join-path -Path $PSScriptRoot -ChildPath "vmSelections-$($cluster
 
 $script:vmHierarchy = @{}
 
+# return the environment-specific protection source object (VMware or Acropolis)
+function getEnvSource($source){
+    if($source.protectionSource.PSObject.Properties['vmWareProtectionSource']){
+        return $source.protectionSource.vmWareProtectionSource
+    }
+    return $source.protectionSource.acropolisProtectionSource
+}
+
 function indexChildren($vCenterName, $source, $parents = @(), $parent = ''){
-    if($source.protectionSource.vmWareProtectionSource.PSObject.Properties['tagAttributes']){
-        $parents = @($parents + $source.protectionSource.vmWareProtectionSource.tagAttributes.id)
+    $envSource = getEnvSource $source
+    if($envSource.PSObject.Properties['tagAttributes']){
+        $parents = @($parents + $envSource.tagAttributes.id)
     }
     $thisNode = $script:vmHierarchy[$vCenterName] | Where-Object id -eq $source.protectionSource.id
     if(! $thisNode){
         $thisNode = @{'id' = $source.protectionSource.id; 
                       'name' = $source.protectionSource.name; 
-                      'type' = $source.protectionSource.vmWareProtectionSource.type; 
+                      'type' = $envSource.type;
                       'parents' = $parents;
                       'parent' = $parent;
                       'alreadyIndexed' = $false;
@@ -148,22 +157,36 @@ function getTaggedVMs($vCenterName, $tags){
     return $matchVMs
 }
 
-$vCenters = api get protectionSources/registrationInfo?environments=kVMware
+$vCenters = api get "protectionSources/registrationInfo?environments=kVMware,kAcropolis"
 
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
 
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         $autoprotected = $false
-        $vCenterId = $job.vmwareParams.sourceId
+        # select environment-specific job parameters
+        if($job.environment -eq 'kAcropolis'){
+            $envParams = $job.acropolisParams
+            $sourceQuery = ''
+        }else{
+            $envParams = $job.vmwareParams
+            $sourceQuery = '&includeVMFolders=true'
+        }
+        $vCenterId = $envParams.sourceId
         $vCenterRootNode = $vCenters.rootNodes | Where-Object {$_.rootNode.id -eq $vCenterId}
         $vCenterName = $vCenterRootNode.rootNode.name
+        if(! $vCenterName){
+            $vCenterName = $envParams.sourceName
+        }
+        if(! $vCenterName){
+            $vCenterName = "$($job.environment)-$vCenterId"
+        }
         if($vCenterName -notin $script:vmHierarchy.Keys){
-            $vCenter = api get "protectionSources?id=$vCenterId&includeVMFolders=true"
+            $vCenter = api get "protectionSources?id=$vCenterId$sourceQuery"
             $script:vmHierarchy[$vCenterName] = @()
             indexChildren $vCenterName $vCenter @()
             $script:vmHierarchy[$vCenterName] = $script:vmHierarchy[$vCenterName] | ConvertTo-Json -Depth 99 | ConvertFrom-Json
         }
-        $protectedIds = @($job.vmwareParams.objects.id)
+        $protectedIds = @($envParams.objects.id)
         $selectedVMs = @()
         $excludedVMs = @()
         $inclusionBy = @()
@@ -192,7 +215,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         }
 
         # tag selections
-        foreach($tags in $job.vmwareParams.vmTagIds){
+        foreach($tags in $envParams.vmTagIds){
             $inclusionBy = @($inclusionBy + 'Tag' | Sort-Object -Unique)
             $autoprotected = $True
             $matchVMs = getTaggedVMs $vCenterName $tags
@@ -200,7 +223,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         }
 
         # explicit and folder exclusions
-        foreach($exclusion in $job.vmwareParams.excludeObjectIds){
+        foreach($exclusion in $envParams.excludeObjectIds){
             $excludedEntity = $script:vmHierarchy[$vCenterName] | Where-Object {$_.id -eq $exclusion}
             if($excludedEntity){
                 $exclusionBy = @($exclusionBy + $excludedEntity.type.subString(1) | Sort-Object -Unique)
@@ -223,7 +246,7 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         }
 
         # tag exclusions
-        foreach($tags in $job.vmwareParams.excludeVmTagIds){
+        foreach($tags in $envParams.excludeVmTagIds){
             $exclusionBy = @($exclusionBy + 'Tag' | Sort-Object -Unique)
             $matchVMs = getTaggedVMs $vCenterName $tags
             foreach($matchVM in $matchVMs){
