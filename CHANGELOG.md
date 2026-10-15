@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-10-15`] [objectProtectionDetails.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/objectProtectionDetails) [`Update`] modernized script
 * [`2026-10-15`] [replicationQueue.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/replicationQueue) [`Update`] improved API query
 * [`2026-10-15`] [vmJobSelections.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/vmJobSelections) [`Update`] improved API queries, added support for Acropolis and Hyper-V VMs
 * [`2026-10-13`] [restoreOracle-v2.py](https://github.com/cohesity/community-automation-samples/tree/main/oracle/python/restoreOracle-v2) [`Update`] added TDE support
