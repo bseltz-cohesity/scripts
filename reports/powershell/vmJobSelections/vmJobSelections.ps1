@@ -71,7 +71,7 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 $jobNames = @(gatherList -Param $jobName -FilePath $jobList -Name 'jobs' -Required $false)
 
 Write-Host "Getting protection groups..."
-$jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&environments=kVMware,kAcropolis"
+$jobs = api get -v2 "data-protect/protection-groups?isDeleted=false&isActive=true&environments=kVMware,kAcropolis,kHyperV"
 
 if($jobNames.Count -gt 0){
     $notfoundJobs = $jobNames | Where-Object {$_ -notin $jobs.protectionGroups.name}
@@ -91,6 +91,9 @@ $script:vmHierarchy = @{}
 function getEnvSource($source){
     if($source.protectionSource.PSObject.Properties['vmWareProtectionSource']){
         return $source.protectionSource.vmWareProtectionSource
+    }
+    if($source.protectionSource.PSObject.Properties['hypervProtectionSource']){
+        return $source.protectionSource.hypervProtectionSource
     }
     return $source.protectionSource.acropolisProtectionSource
 }
@@ -157,7 +160,7 @@ function getTaggedVMs($vCenterName, $tags){
     return $matchVMs
 }
 
-$vCenters = api get "protectionSources/registrationInfo?environments=kVMware,kAcropolis"
+$vCenters = api get "protectionSources/registrationInfo?environments=kVMware,kAcropolis,kHyperV"
 
 foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
 
@@ -166,6 +169,9 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         # select environment-specific job parameters
         if($job.environment -eq 'kAcropolis'){
             $envParams = $job.acropolisParams
+            $sourceQuery = ''
+        }elseif($job.environment -eq 'kHyperV'){
+            $envParams = $job.hypervParams
             $sourceQuery = ''
         }else{
             $envParams = $job.vmwareParams
