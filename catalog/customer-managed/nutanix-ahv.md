@@ -2,7 +2,7 @@
 
 [← Back to Customer-Managed](README.md)
 
-Total scripts: **6**
+Total scripts: **7**
 
 ## Protection & Recovery (6)
 
@@ -14,3 +14,9 @@ Total scripts: **6**
 | [recoverAHVVMs-throttledV2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverAHVVMs-throttled) | PowerShell | 2026-02-27 | This powershell script recovers a list of AHV VMs and limits the number of concurrent restores to the specified limit. |
 | [recoverAHVVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverAHVVMs) | PowerShell | 2026-02-27 | This powershell script recovers a list of AHV VMs. (the main powershell script) |
 | [recoverAHVVMsV2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverAHVVMs) | PowerShell | 2026-02-27 | This powershell script recovers a list of AHV VMs. |
+
+## Reporting & Analytics (1)
+
+| Script | Language | Date Last Updated | Use Case |
+| --- | --- | --- | --- |
+| [vmJobSelections.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/vmJobSelections) | PowerShell | 2026-10-15 | This PowerShell script reports on the VMs protected by protection jobs. |

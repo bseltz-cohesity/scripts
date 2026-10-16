@@ -2,7 +2,7 @@
 
 [← Back to Customer-Managed](README.md)
 
-Total scripts: **5**
+Total scripts: **6**
 
 ## Protection & Recovery (5)
 
@@ -13,3 +13,9 @@ Total scripts: **5**
 | [protectHypervVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectHypervVMs) | PowerShell | 2026-07-15 | This powershell script adds Hyper-V VMs to a new or existing protection group. |
 | [recoverHyperVVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverHyperVVMs) | PowerShell | 2024-11-04 | This powershell script recovers a list of Hyper-V VMs. |
 | [tearDownVolumeMount.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/instantVolumeMount) | PowerShell | 2024-11-04 | This script demonstrates how to perform an Instant Volume Mount using PowerShell. |
+
+## Reporting & Analytics (1)
+
+| Script | Language | Date Last Updated | Use Case |
+| --- | --- | --- | --- |
+| [vmJobSelections.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/vmJobSelections) | PowerShell | 2026-10-15 | This PowerShell script reports on the VMs protected by protection jobs. |

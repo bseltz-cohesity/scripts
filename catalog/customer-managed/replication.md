@@ -20,7 +20,7 @@ Total scripts: **14**
 | [replicateOldSnapshots.py](https://github.com/cohesity/community-automation-samples/tree/main/python/replicateOldSnapshots) | Python | 2025-06-15 | This python script replicates old existing snapshots. |
 | [replicateOldSnapshotsV2.py](https://github.com/cohesity/community-automation-samples/tree/main/python/replicateOldSnapshotsV2) | Python | 2026-04-13 | This python script replicates old existing snapshots. |
 | [replicationHistory.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/replicationHistory) | PowerShell | 2024-11-04 | This PowerShell script lists historical replciation tasks. |
-| [replicationQueue.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/replicationQueue) | PowerShell | 2025-12-03 | This PowerShell script lists the currently active replication tasks, sorted oldest to newest |
+| [replicationQueue.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/replicationQueue) | PowerShell | 2026-10-15 | This PowerShell script lists the currently active replication tasks, sorted oldest to newest |
 | [replicationQueue.py](https://github.com/cohesity/community-automation-samples/tree/main/python/replicationQueue) | Python | 2024-11-04 | This python script lists the currently running replication tasks, from oldest to newest. |
 | [throttleReplication.py](https://github.com/cohesity/community-automation-samples/tree/main/python/throttleReplication) | Python | 2024-11-04 | This python script adds/removes replication throttles. |
 
