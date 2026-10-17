@@ -36,6 +36,7 @@ param (
     [Parameter()][string]$targetPath = $null,
     [Parameter()][switch]$dbFolders,
     [Parameter()][switch]$objectView,
+    [Parameter()][switch]$logShipping,
     [Parameter()][switch]$logsOnly,
     [Parameter()][switch]$lastRunOnly,
     [Parameter()][Int64]$daysToKeep = 0,
@@ -437,7 +438,7 @@ foreach($run in $runs){
 
 $backupFolderPath = "\\$vip\$viewName"
 
-if($consolidate -or $dbFolders -or $objectView){
+if($consolidate -or $dbFolders -or $objectView -or $logShipping){
     Write-Host "Consolidating files..."
     if($targetPath){
         $backupFolderPath = "{0}{1}" -f $backupFolderPath, $targetPath
@@ -449,6 +450,7 @@ if($consolidate -or $dbFolders -or $objectView){
         $runDate = $item.runDate
         $runType = $item.runType
         $sourceName = $item.sourceName
+        $serverDir = Join-Path -Path $backupFolderPath -ChildPath $sourceName
         $folders = $null
         $i = 0
         while($i -lt 60){
@@ -458,6 +460,11 @@ if($consolidate -or $dbFolders -or $objectView){
                 break
             }
             Start-Sleep 2
+        }
+        if($logShipping){
+            if($(Test-Path $serverDir) -eq $false){
+                $null = New-Item -Type Directory -Path $serverDir
+            }
         }
         foreach($folder in $folders){
             $files = $null
@@ -494,6 +501,23 @@ if($consolidate -or $dbFolders -or $objectView){
                                 Start-Sleep 1
                             }
                         }
+                    }elseif($logShipping){
+                        if($runType -eq 'kLog'){
+                            $lsRunDate = $runDate -replace '-','' -replace '_',''
+                            $newName = "$($dbname)_$($lsRunDate).trn"
+                            $fileDestination = Join-Path -Path $serverDir -ChildPath $newName
+                            while($True){
+                                if(Test-Path -Path "$($serverDir)$($newName)"){
+                                    break
+                                }
+                                if(Move-Item -Path $file.FullName -Destination $fileDestination -PassThru -Force){
+                                    break
+                                }
+                                Start-Sleep 1
+                                write-host "sleeping"
+                            }
+                        }
+
                     }else{
                         if($runType -eq 'kLog'){
                             $newName = "$($runDate)---$sourceName---$($dbname).trn"
