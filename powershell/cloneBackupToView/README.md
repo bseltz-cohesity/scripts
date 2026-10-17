@@ -152,4 +152,4 @@ To refresh a view (on a schedule):
 * -logsOnly: (optional) only consolidate log files
 * -daysToKeep: (optional) clone the past X days (and delete older files from view)
 * -objectView: (optional) move files to \hostname\dbname\timestamp folders
-* -logShipping: (optional) move log files to \hostname\dbname_YYYYMMDDHHMMSS.trn
+* -logShipping: (optional) move log files to \hostname\instance\dbname_YYYYMMDDHHMMSS.trn

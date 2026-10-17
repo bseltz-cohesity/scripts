@@ -478,6 +478,12 @@ if($consolidate -or $dbFolders -or $objectView -or $logShipping){
             
             $instance, $dbid, $createmsecs, $dbname = $folder.Name.split('_',4)
     
+            if($logShipping){
+                $instanceDir = Join-Path -Path $serverDir -ChildPath $($($instance -split '\.')[1])
+                if($(Test-Path $instanceDir) -eq $false){
+                    $null = New-Item -Type Directory -Path $instanceDir
+                }
+            }
             foreach($file in $files){
                 if(! $dbname){
                     $dbname = $file.Directory.Name.split('---')[0]
@@ -505,7 +511,7 @@ if($consolidate -or $dbFolders -or $objectView -or $logShipping){
                         if($runType -eq 'kLog'){
                             $lsRunDate = $runDate -replace '-','' -replace '_',''
                             $newName = "$($dbname)_$($lsRunDate).trn"
-                            $fileDestination = Join-Path -Path $serverDir -ChildPath $newName
+                            $fileDestination = Join-Path -Path $instanceDir -ChildPath $newName
                             while($True){
                                 if(Test-Path -Path "$($serverDir)$($newName)"){
                                     break
