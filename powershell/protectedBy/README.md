@@ -42,7 +42,7 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 * -password: (optional) will use cached password or will be prompted
 * -noPrompt: (optional) do not prompt for password
 * -tenant: (optional) organization to impersonate
-* -mcm: (optional) connect through MCM
+* -helios: (optional) connect through MCM/Helios OnPrem
 * -mfaCode: (optional) TOTP MFA code
 * -emailMfaCode: (optional) send MFA code via email
 * -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
@@ -52,4 +52,4 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 * -object: name of object to inspect
 * -jobType: (optional) limit jobs returned to matching type, e.g. -jobType sql
 * -returnJobName: (optional) return job name to the pipeline
-* -quickSearch: (optional) search by existing backups instead of job configuration (faster)
+* -exactMatchOnly: (optional) results must exactly match the object name
