@@ -64,6 +64,7 @@ Place the files in a folder together and run the main script like so:
 * -vlan: (optional) vlan ID to choose for restore (cluster interface)
 * -noPrompt: (optional) Don't prompt to confirm
 * -maxConcurrentVMRestores: (optional) default is 10
+* -overwrite: (optional) overwrite existing VMs (use -noPrompt to avoid being prompted for confirmation)
 
 Note: when restoring to a standalone ESXi host, review the object hierarchy of the registered ESXi host under protection sources to determine the following information, but typically:
 

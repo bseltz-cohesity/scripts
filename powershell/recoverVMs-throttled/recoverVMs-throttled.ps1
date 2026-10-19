@@ -30,7 +30,8 @@ param (
     [Parameter()][switch]$poweron, # leave powered off by default
     [Parameter()][switch]$wait, # wait for restore tasks to complete
     [Parameter()][switch]$noPrompt,
-    [Parameter()][int]$maxConcurrentVMRestores = 10
+    [Parameter()][int]$maxConcurrentVMRestores = 10,
+    [Parameter()][switch]$overwrite 
 )
 
 # gather list from command line params and file
@@ -117,7 +118,9 @@ $restoreParams = @{
                 };
                 "powerOnVms"                 = $false;
                 "continueOnError"            = $false;
-                "recoveryProcessType"        = "CopyRecovery"
+                "recoveryProcessType"        = "CopyRecovery";
+                "attemptDifferentialRestore" = $false;
+                "overwriteExistingVm"        = $false
             }
         }
     }
@@ -249,6 +252,10 @@ if($vCenterName){
             "detachNetwork"  = $True;
             "disableNetwork" = $True
         }
+    }
+    if($overwrite){
+        $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.overwriteExistingVm = $True
+        $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.attemptDifferentialRestore = $True
     }
 }
 
