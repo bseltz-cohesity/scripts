@@ -153,3 +153,9 @@ To refresh a view (on a schedule):
 * -daysToKeep: (optional) clone the past X days (and delete older files from view)
 * -objectView: (optional) move files to \hostname\dbname\timestamp folders
 * -logShipping: (optional) move log files to \hostname\instance\dbname_YYYYMMDDHHMMSS.trn
+* -serverName: (optional) limit -logShipping logs to just one server
+* -instanceName: (optional) limit -logShipping logs to just one instance
+
+## Log Shiiping Note
+
+If you include -serverName and -instanceName with -logShipping option, the resulting log backup files will appear in the root of the view, otherwise they will land in \hostname\instance folder structure

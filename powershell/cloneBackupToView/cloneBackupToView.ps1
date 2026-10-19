@@ -37,6 +37,8 @@ param (
     [Parameter()][switch]$dbFolders,
     [Parameter()][switch]$objectView,
     [Parameter()][switch]$logShipping,
+    [Parameter()][string]$serverName,
+    [Parameter()][string]$instanceName,
     [Parameter()][switch]$logsOnly,
     [Parameter()][switch]$lastRunOnly,
     [Parameter()][Int64]$daysToKeep = 0,
@@ -49,6 +51,17 @@ param (
     [Parameter()][switch]$readOnly,                    # grant only read access
     [Parameter()][switch]$dbg
 )
+
+if($serverName -and !$objectName){
+    $objectName = $serverName
+}
+if($objectName -and !$serverName){
+    $serverName = $objectName
+}
+$logShippingFlat = $false
+if($serverName -and $instanceName){
+    $logShippingFlat = $True
+}
 
 if($objectView){
     if(!$objectName){
@@ -462,7 +475,7 @@ if($consolidate -or $dbFolders -or $objectView -or $logShipping){
             Start-Sleep 2
         }
         if($logShipping){
-            if($(Test-Path $serverDir) -eq $false){
+            if($(Test-Path $serverDir) -eq $false -and !$logShippingFlat){
                 $null = New-Item -Type Directory -Path $serverDir
             }
         }
@@ -477,10 +490,13 @@ if($consolidate -or $dbFolders -or $objectView -or $logShipping){
             }
             
             $instance, $dbid, $createmsecs, $dbname = $folder.Name.split('_',4)
-    
+            $thisInstance = $($instance -split '\.')[1]
+            if($instanceName -and $thisInstance -ne $instanceName){
+                continue
+            }
             if($logShipping){
-                $instanceDir = Join-Path -Path $serverDir -ChildPath $($($instance -split '\.')[1])
-                if($(Test-Path $instanceDir) -eq $false){
+                $instanceDir = Join-Path -Path $serverDir -ChildPath $thisInstance
+                if($(Test-Path $instanceDir) -eq $false -and !$logShippingFlat){
                     $null = New-Item -Type Directory -Path $instanceDir
                 }
             }
@@ -511,7 +527,11 @@ if($consolidate -or $dbFolders -or $objectView -or $logShipping){
                         if($runType -eq 'kLog'){
                             $lsRunDate = $runDate -replace '-','' -replace '_',''
                             $newName = "$($dbname)_$($lsRunDate).trn"
-                            $fileDestination = Join-Path -Path $instanceDir -ChildPath $newName
+                            if($logShippingFlat){
+                                $fileDestination = Join-Path -Path $backupFolderPath -ChildPath $newName
+                            }else{
+                                $fileDestination = Join-Path -Path $instanceDir -ChildPath $newName
+                            }             
                             while($True){
                                 if(Test-Path -Path "$($serverDir)$($newName)"){
                                     break
