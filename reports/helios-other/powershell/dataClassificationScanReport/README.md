@@ -56,7 +56,7 @@ To limit the report to files of a certain sensitivity:
 
 * -vip: (optional) defaults to helios.cohesity.com
 * -username: (optional) defaults to helios
-* -clusterNames: (optional) one or more Helios cluster names to include in report (comma separated, default is all clusters)
+* -clusterNames: (optional) limit to one or more cluster names (comma separated, default is all clusters)
 * -days: (optional) defaults to 7
 * -startDate: (optional) start date of report range (e.g. '2026-09-01')
 * -endDate: (optional) end date of report range (e.g. '2026-10-01')
