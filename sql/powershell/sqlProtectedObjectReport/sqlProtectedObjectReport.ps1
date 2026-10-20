@@ -71,7 +71,7 @@ if($myjobs.Length -gt 0){
 }
 
 # $sources = api get protectionSources
-$sources = api get 'protectionSources?environments=kSQL,kPhysical'
+$sources = api get 'protectionSources?environments=kSQL,kPhysical&numLevels=1'
 
 $objects = @{}
 
