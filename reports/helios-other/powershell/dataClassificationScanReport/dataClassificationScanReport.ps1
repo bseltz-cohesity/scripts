@@ -6,6 +6,9 @@ param (
     [Parameter()][string]$scanName,
     [Parameter()][string]$objectName,
     [Parameter()][string]$patternName,
+    [Parameter()][string]$startDate = '',
+    [Parameter()][string]$endDate = '',
+    [Parameter()][array]$clusterNames,
     [Parameter()][ValidateSet('none', 'low', 'medium', 'high')][string[]]$sensitivity,
     [Parameter()][int]$pageSize = 1000
 )
@@ -16,10 +19,25 @@ param (
 ### authenticate
 apiauth -vip $vip -username $username -domain 'local' -helios
 
+if($clusterNames){
+    $heliosClusterNames = @((heliosClusters))
+    $invalidClusterNames = @($clusterNames) | Where-Object {$_ -notin @((heliosClusters).name)}
+    if($invalidClusterNames){
+        Write-Host "Invalid cluster name(s) specified: $($invalidClusterNames -join ', ')" -ForegroundColor Yellow
+        exit 1
+    }
+}
+
 ### determine start and end dates
 $today = Get-Date
 $uStart = timeAgo $days 'days'
 $uEnd = dateToUsecs ($today)
+if($startDate -ne ''){
+    $uStart = dateToUsecs $startDate
+}
+if($endDate -ne ''){
+    $uEnd = dateToUsecs $endDate
+}
 $startTimeMsecs = [int64]($uStart / 1000)
 $endTimeMsecs = [int64]($uEnd / 1000)
 
@@ -92,6 +110,9 @@ foreach($scan in $scans){
             $foundObject = $True
             $snapshotId = $scanObject.localSnapshots[0].snapshotInfo.snapshotId
             $clusterName = $object.clusterName
+            if($clusterNames -and $clusterName -notin @($clusterNames)){
+                continue
+            }
             $envType = $object.environment
             $objType = $object.objectType
             Write-Host "$($scan.name) -> $($object.name) ($runDate)"

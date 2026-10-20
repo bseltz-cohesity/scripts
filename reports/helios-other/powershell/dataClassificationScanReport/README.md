@@ -10,7 +10,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-$scriptName = 'dataClasificationScanReport'
+$scriptName = 'dataClassificationScanReport'
 $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/reports/helios-other/powershell/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/powershell/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
@@ -19,44 +19,47 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 
 ## Components
 
-* dataClasificationScanReport.ps1: the main powershell script
+* dataClassificationScanReport.ps1: the main powershell script
 * cohesity-api.ps1: the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./dataClasificationScanReport.ps1 -username myuser
+./dataClassificationScanReport.ps1 -username myuser
 ```
 
 To get results for a specific scanned object:
 
 ```powershell
-./dataClasificationScanReport.ps1 -username myuser -objectName myobject
+./dataClassificationScanReport.ps1 -username myuser -objectName myobject
 ```
 
 To limit the report to a specific scan:
 
 ```powershell
-./dataClasificationScanReport.ps1 -username myuser -scanName myscan
+./dataClassificationScanReport.ps1 -username myuser -scanName myscan
 ```
 
 To limit the report to files matching a specific pattern (e.g. Social Security Number):
 
 ```powershell
-./dataClasificationScanReport.ps1 -username myuser -patternName 'Social Security'
+./dataClassificationScanReport.ps1 -username myuser -patternName 'Social Security'
 ```
 
 To limit the report to files of a certain sensitivity:
 
 ```powershell
-./dataClasificationScanReport.ps1 -username myuser -sensitivity high, medium
+./dataClassificationScanReport.ps1 -username myuser -sensitivity high, medium
 ```
 
 ## Parameters
 
 * -vip: (optional) defaults to helios.cohesity.com
 * -username: (optional) defaults to helios
+* -clusterNames: (optional) one or more Helios cluster names to include in report (comma separated, default is all clusters)
 * -days: (optional) defaults to 7
+* -startDate: (optional) start date of report range (e.g. '2026-09-01')
+* -endDate: (optional) end date of report range (e.g. '2026-10-01')
 * -scanName: (optional) limit to scans whose name matches this search term
 * -objectName: (optional) limit to just one scanned object name
 * -patternName: (optional) limit to files matching this pattern name (e.g. SSN, credit card)
