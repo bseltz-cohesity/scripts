@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-10-20`] [dataClasificationScanReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/dataClasificationScanReport) [`Update`] added -startDate, -endDate, -clusterNames options
+* [`2026-10-20`] [sqlProtectedObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/sqlProtectedObjectReport) [`Update`] optimized API query
 * [`2026-10-20`] [protectedObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/protectedObjectReport) [`Update`] optimized API query
 * [`2026-10-19`] [recoverVMs-throttled.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverVMs-throttled) [`Update`] added -overwrite option
 * [`2026-10-19`] [protectedBy.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectedBy) [`Update`] modernized script
