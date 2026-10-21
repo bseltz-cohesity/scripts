@@ -1,5 +1,7 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-10-21`] [protectIsilon.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectIsilon) [`Update`] optimized API query
+* [`2026-10-21`] [protectIsilon.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectIsilon) [`Update`]optimized API query
 * [`2026-10-21`] [addObjectToUserAccessList.py](https://github.com/cohesity/community-automation-samples/tree/main/python/addObjectToUserAccessList) [`Update`] optimized API query
 * [`2026-10-20`] [dataClassificationScanReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/dataClassificationScanReport) [`Update`] added -startDate, -endDate, -clusterNames options
 * [`2026-10-20`] [sqlProtectedObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/sqlProtectedObjectReport) [`Update`] optimized API query
