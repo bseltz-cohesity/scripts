@@ -151,13 +151,13 @@ if mcm or vip.lower() == 'helios.cohesity.com':
 # end authentication =====================================================
 
 # get isilon source
-sources = api('get', 'protectionSources?environment=kIsilon')
-source = [s for s in sources if s['protectionSource']['name'].lower() == sourcename.lower()]
-if source is None or len(source) == 0:
+sources = api('get', 'protectionSources/registrationInfo?environments=kIsilon')
+isilonsource = [s for s in sources['rootNodes'] if s['rootNode']['name'].lower() == sourcename.lower()]
+if isilonsource is None or len(isilonsource) == 0:
     print('Isilion %s not found!' % sourcename)
     exit(1)
 else:
-    source = source[0]
+    source = api('get','protectionSources?id=%s' % isilonsource[0]['rootNode']['id'])[0]
 
 # get object IDs to protect
 objectids = []

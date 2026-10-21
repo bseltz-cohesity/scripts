@@ -129,12 +129,14 @@ if($enableIndexing){
 }
 
 # get Isilon Id
-$sources = api get "protectionSources?environments=kIsilon"
-$isilon = $sources | Where-Object {$_.protectionSource.name -eq $sourceName}
-if(! $isilon){
+$sources = api get "protectionSources/registrationInfo?environments=kIsilon"
+$isilonRootNode = $sources.rootNodes | Where-Object {$_.rootNode.name -eq $sourceName}
+if(! $isilonRootNode){
     Write-Host "Isilon $sourceName not a registered source" -ForegroundColor Yellow
     exit
 }
+
+$isilon = api get "protectionSources?id=$($isilonRootNode.rootNode.id)"
 $parentId = $isilon.protectionSource.id
 
 # get object IDs to protect
