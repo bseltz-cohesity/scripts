@@ -40,7 +40,7 @@ $dateString = $now.ToString('yyyy-MM-dd')
 $outfileName = $(Join-Path -Path $outputPath -ChildPath "protectionRunsReport-$dateString.csv")
 
 # headings
-$headings = "Start Time,End Time,Duration,status,slaStatus,snapshotStatus,objectName,sourceName,groupName,policyName,Object Type,backupType,System Name,Logical Size $unit,Data Read $unit,Data Written $unit,Organization Name,DataLock Expiry,Legal Hold,Snapshot Expiry"
+$headings = "Start Time,End Time,Duration,status,slaStatus,snapshotStatus,objectName,sourceName,groupName,policyName,Object Type,backupType,System Name,Logical Size $unit,Data Read $unit,Data Written $unit,Organization Name,DataLock Expiry,Legal Hold,Snapshot Expiry,Failed Attampts"
 
 $headings | Out-File -FilePath $outfileName
 
@@ -131,12 +131,23 @@ function reportRuns(){
                                 }
                             }
                             foreach($object in $run.objects){
+                                $failedAttempts = $null
                                 if($run.PSObject.Properties['localBackupInfo']){
                                     $snapshotInfo = $object.localSnapshotInfo.snapshotInfo
+                                    $failedAttempts = $object.localSnapshotInfo.failedAttempts
                                 }elseif($run.PSObject.Properties['originalBackupInfo']){
                                     $snapshotInfo = $object.originalBackupInfo.snapshotInfo
+                                    $failedAttempts = $object.originalBackupInfo.failedAttempts
                                 }else{
                                     $snapshotInfo = $object.archivalInfo.archivalTargetResults[0]
+                                    if($object.archivalInfo.archivalTargetResults[0].PSObject.Properties['failedAttempts']){
+                                        $failedAttempts = $object.archivalInfo.archivalTargetResults[0].failedAttempts
+                                    }           
+                                }
+                                if($failedAttempts -ne $null){
+                                    $failedAttempts = @($failedAttempts).Count
+                                }else{
+                                    $failedAttempts = 0
                                 }
                                 $expiryTimeUsecs = $snapshotInfo.expiryTimeUsecs
                                 $objectName = $object.object.name
@@ -176,7 +187,7 @@ function reportRuns(){
                                     $objectBytesRead = toUnits $snapshotInfo.stats.bytesRead
                                     # "        {0}" -f $objectName
                                     if(!$onHoldOnly -or $onLegalHold -eq $True){
-                                        $(dateToString $objectStartTime), $(dateToString $objectEndTime), $objectDurationSeconds, $objectStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $cluster.name, $objectLogicalSizeBytes, $objectBytesRead, $objectBytesWritten, $tenant, $lockUntil, $onLegalHold, $(usecsToDate $expiryTimeUsecs) -join "," | Out-File -FilePath $outfileName -Append
+                                        $(dateToString $objectStartTime), $(dateToString $objectEndTime), $objectDurationSeconds, $objectStatus, $slaStatus, 'Active', $objectName, $registeredSourceName, $job.name, $policyName, $environment, $runType, $cluster.name, $objectLogicalSizeBytes, $objectBytesRead, $objectBytesWritten, $tenant, $lockUntil, $onLegalHold, $(usecsToDate $expiryTimeUsecs), $failedAttempts -join "," | Out-File -FilePath $outfileName -Append
                                     }                                    
                                 }
                             }
