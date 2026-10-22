@@ -41,8 +41,9 @@ Place both files in a folder together and run the main script like so:
 * -password: (optional) will use cached password or will be prompted
 * -noPrompt: (optional) do not prompt for password
 * -tenant: (optional) organization to impersonate
-* -mcm: (optional) connect through MCM
+* -helios: (optional) connect through MCM/Helios OnPrem
 * -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
 * -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
 
 ## Other Parameters
