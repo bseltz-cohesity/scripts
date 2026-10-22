@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-10-22`] [copyCerts.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/copyCerts) [`Update`] added Helios authentication
 * [`2026-10-22`] [sqlObjectProtectionStatus.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/sqlObjectProtectionStatus) [`Update`] modernized authentication
 * [`2026-10-22`] [sqlFiles.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/sqlFiles) [`Update`] optimized API query
 * [`2026-10-22`] [unprotectSQL.py](https://github.com/cohesity/community-automation-samples/tree/main/sql/python/unprotectSQL) [`New`] Unprotect SQL servers, instances, databases
