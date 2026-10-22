@@ -47,13 +47,21 @@ To restore a cluster's original certs:
 # end example
 ```
 
-## Parameters
+## Helios Authentication Parameters
+
+* -helios: (optional) use helios authentication
+* -heliosVip: (optional) used if using -helios (default is 'helios.cohesity.com')
+* -heliosUsername: (optional) used when using -helios (defaul is 'helios')
+* -heliosMfaCode: (optional) helios MFA code,
+* -heliosPassword: (optional) API key for Helios authentication (will be prompted if not already cached)
+
+## Other Parameters
 
 * -sourceCluster: (optional) name or IP of source Cohesity cluster
-* -sourceUser: (optional) name of user to connect to source cluster
+* -sourceUser: (optional) name of user to connect to source cluster (defaults to same as targetUser)
 * -sourceDomain: (optional) your AD domain (defaults to local)
 * -targetCluster: name or IP of source Cohesity cluster
-* -targetUser: name of user to connect to source cluster
+* -targetUser: (optional) name of user to connect to source cluster (will be prompted if needed)
 * -targetDomain: (optional) your AD domain (defaults to local)
 * -useApiKeys: (optional) use API keys for authentication
 * -promptForMfaCode: (optional) prompt for MFA codes

@@ -1,24 +1,49 @@
 # process commandline arguments
 [CmdletBinding()]
 param (
+    [Parameter()][string]$heliosVip='helios.cohesity.com',
+    [Parameter()][string]$heliosUsername = 'helios',
+    [Parameter()][string]$heliosPassword,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$helios,
+    [Parameter()][string]$heliosMfaCode,
+    [Parameter()][switch]$emailMfaCode,
     [Parameter(Mandatory = $True)][string]$targetCluster,
-    [Parameter(Mandatory = $True)][string]$targetUser,
+    [Parameter()][string]$targetUser,
     [Parameter()][string]$targetDomain = 'local',
     [Parameter()][string]$sourceCluster,
-    [Parameter()][string]$sourceUser = $targetUser,
+    [Parameter()][string]$sourceUser,
     [Parameter()][string]$sourceDomain = $targetDomain,
     [Parameter()][switch]$useApiKeys,
     [Parameter()][switch]$promptForMfaCode,
     [Parameter()][switch]$restore
 )
 
-if(! $restore -and (! $sourceCluster -or ! $sourceUser)){
+if(!$helios){
+    if(!$targetUser){
+        $targetUser = Read-Host "$targetCluster username"
+        if(!$sourceUser){
+            $sourceUser = $targetUser
+        }
+    }
+}
+
+if(! $restore -and (! $sourceCluster -or (! $sourceUser -and ! $helios))){
     Write-Host "Please specify -restore, or -sourceCluster and -sourceUser" -ForegroundColor Yellow
     exit
 }
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+
+if($helios){
+    apiauth -vip $heliosVip -username $heliosUsername -passwd $heliosPassword -mfaCode $heliosMfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $helios -noPromptForPassword $noPrompt
+    # exit on failed authentication
+    if(!$cohesity_api.authorized){
+        Write-Host "Not authenticated" -ForegroundColor Yellow
+        exit 1
+    }
+}
 
 # functions -----------------------------------------------------
 function checkClusterVersion(){
@@ -89,7 +114,11 @@ if(! $restore){
         if($promptForMfaCode){
             $mfaCode = Read-Host -Prompt 'Please Enter MFA Code'
         }
-        apiauth -vip $sourceCluster -username $sourceUser -domain $sourceDomain -apiKeyAuthentication $useApiKeys -mfaCode $mfaCode -quiet
+        if($helios){
+            heliosCluster $sourceCluster
+        }else{
+            apiauth -vip $sourceCluster -username $sourceUser -domain $sourceDomain -apiKeyAuthentication $useApiKeys -mfaCode $mfaCode -quiet
+        }        
         
         $cluster = api get cluster
         
@@ -109,7 +138,11 @@ $mfaCode = $null
 if($promptForMfaCode){
     $mfaCode = Read-Host -Prompt 'Please Enter MFA Code'
 }
-apiauth -vip $targetCluster -username $targetUser -domain $targetDomain -apiKeyAuthentication $useApiKeys -mfaCode $mfaCode -quiet
+if($helios){
+    heliosCluster $targetCluster
+}else{
+    apiauth -vip $targetCluster -username $targetUser -domain $targetDomain -apiKeyAuthentication $useApiKeys -mfaCode $mfaCode -quiet
+}
 
 $cluster = api get cluster
 
@@ -127,7 +160,7 @@ if($restore){
         Write-Host "Restore completed`n"
         exit
     }else{
-        Write-Host "No backup found for $sourceCluster`n" -ForegroundColor Yellow
+        Write-Host "No backup found for $targetCluster`n" -ForegroundColor Yellow
         exit
     }
 }
