@@ -361,18 +361,20 @@ def showUnprotected(serverSource):
 
 
 # get registered sql servers
-sources = api('get', 'protectionSources?environments=kSQL')
+rootNodes = api('get','protectionSources/registrationInfo?environments=kSQL')
+# sources = api('get', 'protectionSources?environments=kSQL')
 systemDBs = ['master', 'model', 'msdb']
 if len(dbnames) > 0:
     dbnames = [d.lower() for d in dbnames]
 # server source
 for server in servernames:
-    serverSource = [n for n in sources[0]['nodes'] if n['protectionSource']['name'].lower() == server.lower()]
-    if serverSource is None or len(serverSource) == 0:
+    rootNode = [n for n in rootNodes['rootNodes'] if n['rootNode']['name'].lower() == server.lower()]
+    if rootNode is None or len(rootNode) == 0:
         print("Server %s not found!" % server)
         exit(1)
-    else:
-        serverSource = serverSource[0]
+    # serverSource = [n for n in sources[0]['nodes'] if n['protectionSource']['name'].lower() == server.lower()]
+    serverSource = api('get','protectionSources?id=%s' % rootNode[0]['rootNode']['id'])
+    serverSource = serverSource[0]
     if showunprotecteddbs is True:
         showUnprotected(serverSource)
         continue
