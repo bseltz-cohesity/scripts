@@ -121,6 +121,10 @@ if(! $restore){
         }        
         
         $cluster = api get cluster
+        if($cluster.name -ne $sourceCluster){
+            Write-Host "Not connected to $sourceCluster" -ForegroundColor Yellow
+            exit 1
+        }
         
         # check cluster version
         checkClusterVersion
@@ -145,6 +149,10 @@ if($helios){
 }
 
 $cluster = api get cluster
+if($cluster.name -ne $targetCluster){
+    Write-Host "Not connected to $targetCluster" -ForegroundColor Yellow
+    exit 1
+}
 
 # check cluster version
 checkClusterVersion
