@@ -31,7 +31,8 @@ param (
     [Parameter()][switch]$wait, # wait for restore tasks to complete
     [Parameter()][switch]$noPrompt,
     [Parameter()][int]$maxConcurrentVMRestores = 10,
-    [Parameter()][switch]$overwrite 
+    [Parameter()][switch]$overwrite,
+    [Parameter()][switch]$differentialRecovery
 )
 
 # gather list from command line params and file
@@ -255,7 +256,9 @@ if($vCenterName){
     }
     if($overwrite){
         $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.overwriteExistingVm = $True
-        $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.attemptDifferentialRestore = $True
+        if($differentialRecovery){
+            $restoreParams.vmwareParams.recoverVmParams.vmwareTargetParams.attemptDifferentialRestore = $True
+        }
     }
 }
 
