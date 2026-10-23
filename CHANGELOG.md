@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-10-23`] [pulseLogs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/pulseLogs) [`Update`] updated to v2 APIs
 * [`2026-10-22`] [copyCerts.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/copyCerts) [`Update`] added Helios authentication
 * [`2026-10-22`] [sqlObjectProtectionStatus.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/sqlObjectProtectionStatus) [`Update`] modernized authentication
 * [`2026-10-22`] [sqlFiles.ps1](https://github.com/cohesity/community-automation-samples/tree/main/sql/powershell/sqlFiles) [`Update`] optimized API query
