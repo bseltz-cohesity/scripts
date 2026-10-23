@@ -51,34 +51,76 @@ if($USING_HELIOS){
 
 $daysBackUsecs = timeAgo $daysBack days
 
-$jobs = api get protectionJobs
+# v2 protection groups
+$jobs = api get -v2 "data-protect/protection-groups?includeTenants=true"
 
-$lastProgressPath = ''
-foreach($job in $jobs | Where-Object {$_.isActive -ne $False} | Sort-Object -Property name){
+# write events (v2 ProgressTaskEvent: occuredAtUsecs, message) to the log file
+function writeEvents($events, $outFile){
+    foreach($event in $events){
+        "$(usecsToDate $event.occuredAtUsecs): $($event.message)" | Out-File -FilePath $outFile -Append
+    }
+}
+
+foreach($job in $jobs.protectionGroups | Where-Object {$_.isDeleted -ne $True -and $_.isActive -ne $False} | Sort-Object -Property name){
     if(! $jobName -or $job.name -in $jobName){
         "$($job.name)"
-        $runs = api get "protectionRuns?jobId=$($job.id)&startTimeUsecs=$daysBackUsecs" # | Where-Object {$_.backupRun.snapshotsDeleted -eq $false}
+        $runs = Get-Runs -jobId $job.id -startTimeUsecs $daysBackUsecs -includeObjectDetails -includeRunning -includeDeleted
         foreach($run in $runs){
-            $runId = $run.backupRun.jobRunId
-            $runStatus = $run.backupRun.status
-            $runDate = usecsToDate $run.backupRun.stats.startTimeUsecs
+            $runId = $run.id
+            if($run.PSObject.Properties['localBackupInfo']){
+                $backupInfo = $run.localBackupInfo
+            }elseif($run.PSObject.Properties['originalBackupInfo']){
+                $backupInfo = $run.originalBackupInfo
+            }else{
+                continue
+            }
+            $runStatus = $backupInfo.status
+            $runDate = usecsToDate $backupInfo.startTimeUsecs
             $outFile = Join-Path -Path $outPath -ChildPath "$($job.name)-$($runDate.ToString('yyyy-MM-dd-hh-mm-ss'))-$($runStatus)-logs.txt"
             "    $runDate -> $outFile"
+
             if(! (Test-Path -Path $outFile)){
-                foreach($source in $run.backupRun.sourceBackupStatus){
-                    $sourceName = $source.source.name
-                    $sourceStatus = $source.status
-                    "`n$sourceName ($sourceStatus)`n" | Out-File -FilePath $outFile -Append
-                    $progressPath, $taskPath = $source.progressMonitorTaskPath.split('/')
-                    if($lastProgressPath -ne $progressPath){
-                        $taskMon = api get "/progressMonitors?taskPathVec=$progressPath&includeFinishedTasks=true&excludeSubTasks=false"
-                        $lastProgressPath = $progressPath
+                # v2 run progress including event logs
+                $progress = api get -v2 "data-protect/runs/$runId/progress?includeFinishedTasks=true&includeEventLogs=true&includeTenants=true"
+                $progressObjects = @()
+                if($progress.localRun -and $progress.localRun.PSObject.Properties['objects']){
+                    $progressObjects = @($progress.localRun.objects)
+                }
+                foreach($object in $run.objects){
+                    $sourceName = $object.object.name
+                    $sourceStatus = $object.localSnapshotInfo.snapshotInfo.status
+                    if(! $sourceStatus){
+                        $sourceStatus = $object.localSnapshotInfo.status
                     }
-                    $thisTask = $taskMon.resultGroupVec[0].taskVec | Where-Object {$_.taskPath -eq $progressPath}
-                    $thisSubTask = $thisTask.subTaskVec | Where-Object {$_.taskPath -eq $taskPath}
-                    $events = $thisSubTask.progress.eventVec
-                    foreach($event in $events){
-                        "$(usecsToDate ($event.timeStampSecs * 1000000)): $($event.eventMsg)" | Out-File -FilePath $outFile -Append
+                    "`n$sourceName ($sourceStatus)`n" | Out-File -FilePath $outFile -Append
+                    $thisObjectProgress = @($progressObjects | Where-Object {$_.id -eq $object.object.id})
+                    # child objects (e.g. SQL/Oracle databases) are not in the run-level progress: query by task path
+                    $taskId = $object.localSnapshotInfo.snapshotInfo.progressTaskId
+                    if($taskId){ # $thisObjectProgress.Count -eq 0 -and 
+                        $runTaskPath = $taskId.split('/')[0]
+                        $parentId = $object.object.sourceId
+                        if(! $parentId){
+                            $parentId = $object.object.id
+                        }
+                        $encodedTaskPath = [uri]::EscapeDataString($taskId)
+                        $childProgress = api get -v2 "data-protect/runs/$runId/progress?runTaskPath=$runTaskPath&objects=$parentId&objectTaskPaths=$encodedTaskPath&includeFinishedTasks=true&includeEventLogs=true&includeTenants=true"
+                        if($childProgress.localRun){
+                            if($childProgress.localRun.PSObject.Properties['objects']){
+                                $thisObjectProgress = @($childProgress.localRun.objects | Where-Object {$_.id -eq $object.object.id})
+                                if($thisObjectProgress.Count -eq 0){
+                                    $thisObjectProgress = @($childProgress.localRun.objects)
+                                }
+                            }else{
+                                $thisObjectProgress = @($childProgress.localRun)
+                            }
+                        }
+                    }
+                    foreach($objectProgress in $thisObjectProgress){
+                        # events from failed attempts first, then the final attempt
+                        foreach($attempt in $objectProgress.failedAttempts){
+                            writeEvents $attempt.events $outFile
+                        }
+                        writeEvents $objectProgress.events $outFile
                     }
                 }
             }
