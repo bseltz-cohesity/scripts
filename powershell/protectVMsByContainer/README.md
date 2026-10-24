@@ -10,7 +10,7 @@ Run these commands from PowerShell to download the script(s) into your current d
 
 ```powershell
 # Download Commands
-$scriptName = 'autoProtectVMs'
+$scriptName = 'protectVMsByContainer'
 $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell'
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/$scriptName/$scriptName.ps1").content | Out-File "$scriptName.ps1"; (Get-Content "$scriptName.ps1") | Set-Content "$scriptName.ps1"
 (Invoke-WebRequest -UseBasicParsing -Uri "$repoUrl/cohesity-api/cohesity-api.ps1").content | Out-File cohesity-api.ps1; (Get-Content cohesity-api.ps1) | Set-Content cohesity-api.ps1
@@ -19,7 +19,7 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 
 ## Components
 
-* [autoProtectVMs.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/autoProtectVMs/autoProtectVMs.ps1): the main powershell script
+* [protectVMsByContainer.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/protectVMsByContainer/protectVMsByContainer.ps1): the main powershell script
 * [cohesity-api.ps1](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/powershell/cohesity-api/cohesity-api.ps1): the Cohesity REST API helper module
 
 Place both files in a folder together and run the main script like so:
@@ -27,37 +27,37 @@ Place both files in a folder together and run the main script like so:
 To autoprotect a vSphere cluster:
 
 ```powershell
-./autoProtectVMs.ps1 -vip mycluster `
-                     -username myusername `
-                     -domain mydomain.net `
-                     -vCenterName myvcenter.mydomain.net `
-                     -dataCenter myDataCenter `
-                     -jobName 'vm backup' `
-                     -objectName myHACluster1
+./protectVMsByContainer.ps1 -vip mycluster `
+                            -username myusername `
+                            -domain mydomain.net `
+                            -vCenterName myvcenter.mydomain.net `
+                            -dataCenter myDataCenter `
+                            -jobName 'vm backup' `
+                            -objectName myHACluster1
 ```
 
 To autoprotect a folder:
 
 ```powershell
-./autoProtectVMs.ps1 -vip mycluster `
-                     -username myusername `
-                     -domain mydomain.net `
-                     -vCenterName myvcenter.mydomain.net `
-                     -dataCenter myDataCenter `
-                     -jobName 'vm backup' `
-                     -objectName myfolder1
+./protectVMsByContainer.ps1 -vip mycluster `
+                            -username myusername `
+                            -domain mydomain.net `
+                            -vCenterName myvcenter.mydomain.net `
+                            -dataCenter myDataCenter `
+                            -jobName 'vm backup' `
+                            -objectName myfolder1
 ```
 
 If a folder is nested, you can specify the canonical folder path:
 
 ```powershell
-./autoProtectVMs.ps1 -vip mycluster `
-                     -username myusername `
-                     -domain mydomain.net `
-                     -vCenterName myvcenter.mydomain.net `
-                     -dataCenter myDataCenter `
-                     -jobName 'vm backup' `
-                     -objectName 'myfolder1/mysubfolder'
+./protectVMsByContainer.ps1 -vip mycluster `
+                            -username myusername `
+                            -domain mydomain.net `
+                            -vCenterName myvcenter.mydomain.net `
+                            -dataCenter myDataCenter `
+                            -jobName 'vm backup' `
+                            -objectName 'myfolder1/mysubfolder'
 ```
 
 ## Authentication Parameters
@@ -67,21 +67,24 @@ If a folder is nested, you can specify the canonical folder path:
 * -domain: (optional) your AD domain (defaults to local)
 * -useApiKey: (optional) use API key for authentication
 * -password: (optional) will use cached password or will be prompted
-* -mcm: (optional) connect through MCM
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -helios: (optional) connect through MCM/Helios OnPrem
 * -mfaCode: (optional) TOTP MFA code
 * -emailMfaCode: (optional) send MFA code via email
 * -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
 
-## Parameters
+## Other Parameters
 
-* -objectName: one or more containers (comma separated) to add to the proctection job
-* -objectList: file containing list of containers to add
+* -objectName: (optional) one or more containers (comma separated) to add to the proctection job
+* -objectList: (optional) file containing list of containers to add
 * -jobName: name of protection job
 * -dataCenter: name of vSphere data center to search in
+* -listContainers: (optional) list available containers and exit
 
-## Optional Parameters for New Jobs Only
+## Parameters for New Jobs Only
 
-* -vCenterName: name of registered vCenter source
+* -vCenterName: (optional) name of registered vCenter source
 * -policyName: (optional) name of the protection policy to use
 * -startTime: (optional) e.g. '18:30' (defaults to 8PM)
 * -timeZone: (optional) e.g. 'America/New_York' (default is 'America/Los_Angeles')

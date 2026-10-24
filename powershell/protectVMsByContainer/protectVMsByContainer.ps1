@@ -1,15 +1,17 @@
 ### process commandline arguments
 [CmdletBinding()]
 param (
-    [Parameter()][string]$vip = 'helios.cohesity.com',
+    [Parameter()][string]$vip='helios.cohesity.com',
     [Parameter()][string]$username = 'helios',
-    [Parameter()][string]$domain = 'local',  # local or AD domain
+    [Parameter()][string]$domain = 'local',
+    [Parameter()][string]$tenant,
     [Parameter()][switch]$useApiKey,
-    [Parameter()][string]$password = $null,
-    [Parameter()][switch]$mcm,
-    [Parameter()][string]$mfaCode = $null,
+    [Parameter()][string]$password,
+    [Parameter()][switch]$noPrompt,
+    [Parameter()][switch]$helios,
+    [Parameter()][string]$mfaCode,
     [Parameter()][switch]$emailMfaCode,
-    [Parameter()][string]$clusterName = $null,
+    [Parameter()][string]$clusterName,
     [Parameter()][array]$objectName,  # name of container to protect
     [Parameter()][string]$objectList = '',  # text file of containers
     [Parameter(Mandatory = $True)][string]$jobName,  # name of the job to add VM to
@@ -23,7 +25,8 @@ param (
     [Parameter()][string]$policyName,  # protection policy name
     [Parameter()][switch]$paused,  # pause future runs (new job only)
     [Parameter()][ValidateSet('kBackupHDD', 'kBackupSSD')][string]$qosPolicy = 'kBackupHDD',
-    [Parameter()][switch]$disableIndexing
+    [Parameter()][switch]$disableIndexing,
+    [Parameter()][switch]$listContainers
 )
 
 # gather list from command line params and file
@@ -52,26 +55,33 @@ $objectNames = @(gatherList -Param $objectName -FilePath $objectList -Name 'cont
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
 
-# authenticate
-apiauth -vip $vip -username $username -domain $domain -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region
+# authentication =============================================
+# demand clusterName for Helios
+if(($vip -eq 'helios.cohesity.com' -or $mcm) -and ! $clusterName){
+    Write-Host "-clusterName required when connecting to Helios" -ForegroundColor Yellow
+    exit 1
+}
 
-# select helios/mcm managed cluster
+# authenticate
+apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $helios -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
+
+# exit on failed authentication
+if(!$cohesity_api.authorized){
+    Write-Host "Not authenticated" -ForegroundColor Yellow
+    exit 1
+}
+
+# select helios managed cluster
 if($USING_HELIOS){
-    if($clusterName){
-        $thisCluster = heliosCluster $clusterName
-    }else{
-        write-host "Please provide -clusterName when connecting through helios" -ForegroundColor Yellow
+    $thisCluster = heliosCluster $clusterName
+    if(! $thisCluster){
         exit 1
     }
 }
-
-if(!$cohesity_api.authorized){
-    Write-Host "Not authenticated"
-    exit
-}
+# end authentication =========================================
 
 # get the protectionJob
-$job = (api get -v2 "data-protect/protection-groups").protectionGroups | Where-Object {$_.name -eq $jobName}
+$job = (api get -v2 "data-protect/protection-groups?environments=kVMware").protectionGroups | Where-Object {$_.name -eq $jobName}
 
 if($job){
 
@@ -100,12 +110,13 @@ if($job){
         Write-Host "-vCenterName required" -ForegroundColor Yellow
         exit
     }else{
-        $vCenter = api get "protectionSources/rootNodes?environments=kVMware" | Where-Object {$_.protectionSource.name -eq $vCenterName}
-        if(!$vCenter){
+        $vCenters = api get "protectionSources/registrationInfo?environments=kVMware"
+        $vCenterObj = $vCenters.rootNodes | Where-Object {$_.rootNode.name -eq $vCenterName}
+        if(!$vCenterObj){
             Write-Host "vCenter $vCenterName not found!" -ForegroundColor Yellow
-            exit
+            exit 1
         }
-        $vCenter = api get "protectionSources?environments=kVMware&includeVMFolders=true&excludeTypes=kResourcePool,kVirtualMachine,kVirtualApp,kTagCategory,kTag" | Where-Object {$_.protectionSource.name -eq $vCenterName}
+        $vCenter = api get "protectionSources?id=$($vCenterObj.rootNode.id)&environments=kVMware&includeVMFolders=true&excludeTypes=kResourcePool,kVirtualMachine,kVirtualApp,kTagCategory,kTag" | Where-Object {$_.protectionSource.name -eq $vCenterName}
     }
 
     # get policy
@@ -220,15 +231,15 @@ function walkVMFolders($node, $parent=$null, $fullPath=''){
     $relativePath = $fullPath.split($vcRoot, 2)[1]
     if($relativePath){
         if($relativePath -match "$dataCenter/host/"){
-            $relativePath = $relativePath.split("$dataCenter/host/", 2)[1]
+            $relativePath = ($relativePath -split "$dataCenter/host/", 2)[1]
         }
         if($relativePath -match "$dataCenter/vm/"){
-            $relativePath = $relativePath.split("$dataCenter/vm/", 2)[1]
+            $relativePath = ($relativePath -split "$dataCenter/vm/", 2)[1]
         }
         $vmFolderId[$relativePath] = $node.protectionSource.id
-        if($node.protectionSource.name -notin $vmFolderId.Keys){
-            $vmFolderId[$node.protectionSource.name] = $node.protectionSource.id
-        }
+        # if($node.protectionSource.name -notin $vmFolderId.Keys){
+        #     $vmFolderId[$node.protectionSource.name] = $node.protectionSource.id
+        # }
     }
     if($node.PSObject.Properties['nodes']){
         foreach($subnode in $node.nodes){
@@ -238,14 +249,17 @@ function walkVMFolders($node, $parent=$null, $fullPath=''){
 }
 
 walkVMFolders $vCenter
-
+if($listContainers){
+    $vmFolderId.Keys | Sort-Object
+    exit
+}
 $objectsAdded = 0
 foreach($container in $objectNames){
     if(!($container -in $vmFolderId.Keys)){
         Write-Host "$container not found" -ForegroundColor Yellow
     }else{
         $objectId = $vmFolderId[$container]
-        $job.vmwareParams.objects = @(($job.vmwareParams.objects | Where-Object id -ne $objectId) + @{
+        $job.vmwareParams.objects = @(@($job.vmwareParams.objects | Where-Object id -ne $objectId) + @{
             'excludeDisks' = $null;
             'id' = $objectId;
             'name' = ($container -split '/')[-1];
