@@ -50,6 +50,51 @@ $script:unprotectedIndex = @()
 $script:protectedIndex = @()
 $script:notClassic = @()
 $script:protectedCount = 0
+$script:unprotectedIds = @{}
+$script:statusCache = @{}
+
+# determine whether a node itself is protected: returns 'protected', 'unprotected' or 'unknown'
+# leavesCount describes the subtree, so it is only trusted for leaf nodes with a valid summary;
+# otherwise fall back to objectBackupConfiguration from the search API (same signal as indexObject)
+function getNodeProtectionStatus($node){
+    $id = "$($node.protectionSource.id)"
+    if($script:statusCache.ContainsKey($id)){
+        return $script:statusCache[$id]
+    }
+    $status = 'unknown'
+    $isLeaf = -not ($node.PSObject.Properties['nodes'] -and @($node.nodes).Count -gt 0)
+    $summaryProp = $node.PSObject.Properties['protectedSourcesSummary']
+    if($isLeaf -and $summaryProp){
+        $summaries = @($summaryProp.Value)
+        $summary = $summaries | Where-Object {$_.environment -eq 'kO365Sharepoint'} | Select-Object -First 1
+        if(!$summary){
+            $summary = $summaries | Select-Object -First 1
+        }
+        if($summary -and $null -ne $summary.leavesCount){
+            if([int64]$summary.leavesCount -gt 0){
+                $status = 'protected'
+            }else{
+                $status = 'unprotected'
+            }
+        }
+    }
+    if($status -eq 'unknown'){
+        $name = $node.protectionSource.office365ProtectionSource.name
+        $webUrl = $node.protectionSource.office365ProtectionSource.webUrl
+        $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&regionIds=$region&sourceIds=$rootSourceId&count=999&searchString=$([uri]::EscapeDataString($name))"
+        foreach($found in @($search.objects | Where-Object {$_.sharepointParams.siteWebUrl -eq $webUrl})){
+            foreach($info in @($found.objectProtectionInfos | Where-Object {$_.regionId -eq $region -and $_.sourceId -eq $rootSourceId -and "$($_.objectId)" -eq $id})){
+                if($info.objectBackupConfiguration -and @($info.objectBackupConfiguration).Count -gt 0){
+                    $status = 'protected'
+                }else{
+                    $status = 'unprotected'
+                }
+            }
+        }
+    }
+    $script:statusCache[$id] = $status
+    return $status
+}
 
 function unprotectNodes($source){
     if($source -ne $null -and $source.PSObject.Properties['nodes']){
@@ -62,12 +107,15 @@ function unprotectNodes($source){
                     $script:notClassic = @($script:notClassic + $node.protectionSource.id)
                 }
             }
-            if($node.protectedSourcesSummary[0].leavesCount -gt 0){
+            $nodeStatus = getNodeProtectionStatus $node
+            if($nodeStatus -eq 'protected'){
                 $script:protectedIndex = @($script:protectedIndex + $node.protectionSource.id)
                 unprotectObject $node.protectionSource.office365ProtectionSource.webUrl $node.protectionSource.id
-            }else{
+            }elseif($nodeStatus -eq 'unprotected'){
                 Write-Host "Site $($node.protectionSource.office365ProtectionSource.webUrl) not protected" -ForegroundColor Magenta
                 $script:unprotectedIndex = @($script:unprotectedIndex + $node.protectionSource.id)
+            }else{
+                Write-Host "Site $($node.protectionSource.office365ProtectionSource.webUrl) protection status could not be determined, skipping" -ForegroundColor Yellow
             }
             unprotectNodes $node
         }
@@ -97,7 +145,12 @@ function indexObject($obj){
 }
 
 function unprotectObject($objWebUrl, $objId){
+    if($script:unprotectedIds.ContainsKey("$objId")){
+        Write-Host "Skipping $objWebUrl (already unprotected)" -ForegroundColor Magenta
+        return
+    }
     if($objId -in $script:protectedIndex){
+        $script:unprotectedIds["$objId"] = $true
         $unprotectParams = @{
             "action" = "UnProtect";
             "objectActionKey" = "kO365Sharepoint";
