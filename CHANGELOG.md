@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-10-28`] [updateCcsGenericNasCredentials.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/updateCcsGenericNasCredentials) [`New`] update SMB credentials for generic NAS soruces in CCS
 * [`2026-10-28`] [updateCcsGenericNasCredentials.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/updateCcsGenericNasCredentials) [`New`] update SMB credentials for generic NAS soruces in CCS
 * [`2026-10-27`] [unprotectCcsM365SitesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/unprotectCcsM365SitesCSV) [`Update`] process fixes
 * [`2026-10-27`] [protectCcsM365SitesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365SitesCSV) [`Update`] process fixes
