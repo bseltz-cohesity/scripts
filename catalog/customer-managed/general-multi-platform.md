@@ -10,7 +10,7 @@ Total scripts: **35**
 | --- | --- | --- | --- |
 | [addCustomHostMapping.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/addCustomHostMapping) | PowerShell | 2024-11-04 | This script adds a customer host mapping to Cohesity. |
 | [advDiagEnum.py](https://github.com/cohesity/community-automation-samples/tree/main/python/advDiagEnum) | Python | 2026-07-10 | This script enumerates advanced diagnostics schemas and metrics and outputs to a CSV file. |
-| [pulseLogs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/pulseLogs) | PowerShell | 2025-09-23 | This script gathers pulse logs and writes them to text files. |
+| [pulseLogs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/pulseLogs) | PowerShell | 2026-10-23 | This script gathers pulse logs and writes them to text files. |
 | [sslFix.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/sslFix) | PowerShell | 2024-11-04 | This repository contains many examples of how to automate Cohesity using PowerShell. Common to each example is a function library that makes it easy to authenticate and make api calls. Below are details of this library. |
 | [updateJobDescriptionDate.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/updateJobDescriptionDate) | PowerShell | 2024-11-04 | This powershell script adds a date suffix to all job descriptions. |
 

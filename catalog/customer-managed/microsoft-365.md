@@ -2,9 +2,9 @@
 
 [← Back to Customer-Managed](README.md)
 
-Total scripts: **24**
+Total scripts: **22**
 
-## Protection & Recovery (24)
+## Protection & Recovery (22)
 
 | Script | Language | Date Last Updated | Use Case |
 | --- | --- | --- | --- |
@@ -14,7 +14,6 @@ Total scripts: **24**
 | [downloadM365MailboxPST.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/downloadM365MailboxPST) | PowerShell | 2026-04-16 | This PowerShell script downloads an M365 mailbox backup as a PST. |
 | [downloadM365MailboxPST.py](https://github.com/cohesity/community-automation-samples/tree/main/python/downloadM365MailboxPST) | Python | 2024-11-04 | This script downloads an M365 mailbox backup as a PST. |
 | [excludeMailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/excludeMailboxes) | PowerShell | 2024-11-04 | This PowerShell script excludes user mailboxes from an O365 Exchange protection job. It takes as input a list of user names or SMTP addresses. |
-| [excludeProtectedSharepointSites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/excludeProtectedSharepointSites) | PowerShell | 2024-11-04 | This PowerShell script excludes protected Sharepoint sites from an autoprotect (catch-all) protection job. |
 | [includeMailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/includeMailboxes) | PowerShell | 2024-11-04 | This PowerShell script adds user mailboxes to an O365 Exchange protection job. It takes as input a list of user names or SMTP addresses. |
 | [protectO365Mailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectO365Mailboxes) | PowerShell | 2024-11-04 | This PowerShell script adds mailboxes to an O365 protection job. |
 | [protectO365OneDrive.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectO365OneDrive) | PowerShell | 2024-11-04 | This PowerShell script adds Onedrive users to an O365 protection job. |
@@ -30,5 +29,4 @@ Total scripts: **24**
 | [unprotectedO365Objects.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/unprotectedO365Objects) | PowerShell | 2024-11-04 | This PowerShell script lists unproteccted O365 Objects. |
 | [unprotectMailboxes.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/unprotectMailboxes) | PowerShell | 2025-06-10 | This PowerShell script unselects user mailboxes from an O365 Exchange protection job. It takes as input a list of user names or SMTP addresses. |
 | [unprotectMissingO365Objects.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/unprotectMissingO365Objects) | PowerShell | 2024-11-04 | This PowerShell script removes missing objects from O365 protection groups. |
-| [unprotectMissingSharepointSites.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/unprotectMissingSharepointSites) | PowerShell | 2024-11-04 | This PowerShell script removes missing Sharepoint sites from an O365 protection job. |
 | [updateO365Credentials.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/updateO365Credentials) | PowerShell | 2024-11-04 | This PowerShell script sets the O365 username/password and app ID/SecretKey for an O365 protection source. |

@@ -2,12 +2,13 @@
 
 [← Back to Customer-Managed](README.md)
 
-Total scripts: **19**
+Total scripts: **20**
 
-## Reporting & Analytics (19)
+## Reporting & Analytics (20)
 
 | Script | Language | Date Last Updated | Use Case |
 | --- | --- | --- | --- |
+| [dataClassificationScanReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/dataClassificationScanReport) | PowerShell | 2026-10-20 | This script gathers Data Classification (DLP) scan results, drilling down from scans, to scan runs, to the scanned objects within each run, to the individual sensitive files found, and outputs the file-level detail (including which pattern was matched and its sensitivity) to a CSV file. |
 | [heliosAnomalyFileList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/heliosAnomalyFileList) | PowerShell | 2024-11-04 | This script gathers ransomware anomaly affected file lists and outputs to a CSV file. |
 | [heliosClusterConfigBackups.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/heliosClusterConfigBackups) | PowerShell | 2026-03-17 | This script lists Helios cluster configuration backups and outputs to a CSV file. |
 | [heliosClusterInfo.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/heliosClusterInfo) | PowerShell | 2024-11-04 | This script gathers cluster info for clusters connected to Helios |

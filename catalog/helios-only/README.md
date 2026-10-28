@@ -2,7 +2,7 @@
 
 [← Back to catalog index](../README.md)
 
-Total scripts: **15**
+Total scripts: **14**
 
 ## Popular Scripts
 
@@ -21,4 +21,4 @@ Total scripts: **15**
 | Sub-Category | Scripts |
 | --- | --- |
 | [General Reporting](general-reporting.md) | 2 |
-| [Helios Reporting](helios-reporting.md) | 12 |
+| [Helios Reporting](helios-reporting.md) | 11 |

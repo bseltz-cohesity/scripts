@@ -2,7 +2,7 @@
 
 [← Back to Customer-Managed](README.md)
 
-Total scripts: **71**
+Total scripts: **68**
 
 ## Cluster & System Administration (1)
 
@@ -14,11 +14,11 @@ Total scripts: **71**
 
 | Script | Language | Date Last Updated | Use Case |
 | --- | --- | --- | --- |
-| [protectedBy.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectedBy) | PowerShell | 2024-11-04 | This PowerShell script reports which protection job is protecting an object. |
+| [protectedBy.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectedBy) | PowerShell | 2026-10-19 | This PowerShell script reports which protection job is protecting an object. |
 | [validateServerBackup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/validateServerBackup) | PowerShell | 2026-05-15 | This PowerShell script validates backups for physical and virtual servers. The script will generate an html report and send it to email recipients. The validation process instructs the cluster to mount the latest backup volume and retrieve a directory listing. If the directory is readable, the backup is considered valid. |
 | [validateServerBackup.py](https://github.com/cohesity/community-automation-samples/tree/main/python/validateServerBackup) | Python | 2024-12-10 | This python script validates backups for physical and virtual servers. The script will generate an html report and send it to email recipients. The validation process instructs the cluster to mount the latest backup volume and retrieve a directory listing. If the directory is readable, the backup is considered valid. |
 
-## Reporting & Analytics (67)
+## Reporting & Analytics (64)
 
 | Script | Language | Date Last Updated | Use Case |
 | --- | --- | --- | --- |
@@ -32,13 +32,11 @@ Total scripts: **71**
 | [clusterDiskReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterDiskReport) | PowerShell | 2025-10-17 | This PowerShell script creates a report of cluster disks. |
 | [clusterIPs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/clusterIPs) | Python | 2024-11-04 | This script reports what IP addresses are used by a cluster. Output is written to a CSV file |
 | [clusterProtectionActivities.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterProtectionActivities) | PowerShell | 2026-09-18 | This PowerShell script generates a protection activities report. |
-| [clusterProtectionRuns.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterProtectionRuns) | PowerShell | 2026-08-06 | This PowerShell script generates a protection runs report. |
+| [clusterProtectionRuns.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/clusterProtectionRuns) | PowerShell | 2026-10-21 | This PowerShell script generates a protection runs report. |
 | [clusterProtectionRuns.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/clusterProtectionRuns) | Python | 2026-06-16 | This python script lists the active snapshot count for every protected object in Cohesity. |
 | [consumptionTrend.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/consumptionTrend) | PowerShell | 2024-11-04 | This PowerShell script reports per-job and per-view storage consumption trends. Output will be saved to an HTML report. |
 | [crowdstrikeReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/crowdstrikeReport) | PowerShell | 2024-11-04 | This powershell generates a report that shows the most recent C-00000291 file that was backed up for each Windows system (physical or virtual) protected by Cohesity. |
 | [crowdstrikeReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/crowdstrikeReport) | Python | 2024-11-04 | This python script generates a report that shows the most recent C-00000291 file that was backed up for each Windows system (physical or virtual) protected by Cohesity. |
-| [dailyObjectStatus-multi.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/dailyObjectStatus-multi) | PowerShell | 2024-11-04 | This powershell script reports the latest backup status of protected objects across multiple clusters. The output will be written to a CSV file. |
-| [dailyObjectStatus.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/dailyObjectStatus) | PowerShell | 2025-01-22 | This powershell script reports the latest backup status of protected objects. The output will be written to a CSV file. |
 | [datalockJobList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/datalockJobList) | PowerShell | 2024-11-04 | This PowerShell script lists protection jobs. Output will be written to an HTML and a CSV file. |
 | [dataPerObject.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/dataPerObject) | Python | 2024-11-04 | This script collects the logical size, data read and written over time of protected objects. Output is written to a CSV file. |
 | [dataReadByTag.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/dataReadByTag) | PowerShell | 2024-11-04 | This script collects the data read, grouped by VM tag, of VMs in a protection job over the course of days. |
@@ -55,7 +53,6 @@ Total scripts: **71**
 | [jobRunReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/jobRunReport) | Python | 2024-11-04 | This python script reports the status of the last job run of each protection job for the past 24 hours. |
 | [jobRunsReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/jobRunsReport) | Python | 2025-04-21 | This Python script gets the stats for job runs and outputs to a CSV file. |
 | [jobRunStats.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/jobRunStats) | PowerShell | 2024-11-04 | This PowerShell script reports protection job run statistics |
-| [lastRunObjectStats.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/lastRunObjectStats) | PowerShell | 2024-11-04 | This script reports logical size, data read and written per lart run of each object. Output is written to a CSV file. |
 | [lastRunStatus.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/lastRunStatus) | PowerShell | 2024-11-04 | This PowerShell script generates a last run status report in CSV and HTML formats. |
 | [licenseReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/licenseReport) | PowerShell | 2026-06-29 | This script generates a license usage report for a cluster in CSV format |
 | [logicalTrends.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/groot/python/logicalTrends) | Python | 2024-11-04 | This python script collects the logical size of data protected, over time, by environment type, and writes it to a CSV file, where, once brought into Excel, can be charted to analyze growth trends. |
@@ -70,7 +67,7 @@ Total scripts: **71**
 | [objectStatusReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/objectStatusReport) | Python | 2024-11-04 | This Python script gets the latest backup status per object. Output is saved to a CSV file. |
 | [objectSummaryReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/objectSummaryReport) | PowerShell | 2025-04-01 | This script sends an HTML-formatted backup summary report to Email recipients |
 | [protectedObjectInventory.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/protectedObjectInventory) | Python | 2025-08-04 | This script generates a report of protected objects. Output is written to a CSV file. |
-| [protectedObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/protectedObjectReport) | PowerShell | 2024-11-04 | This PowerShell script creates a CSV formatted report of objects protected by Cohesity |
+| [protectedObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/protectedObjectReport) | PowerShell | 2026-10-20 | This PowerShell script creates a CSV formatted report of objects protected by Cohesity |
 | [protectedObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/protectedObjectReport) | Python | 2025-04-21 | This script generates a report of protected objects. Output is written to a CSV file. |
 | [protectionGroupScheduleReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/protectionGroupScheduleReport) | PowerShell | 2025-09-19 | This powershell script generates a protection group inventory and schedule report and outputs to both HTML and CSV formats. |
 | [protectionReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/protectionReport) | PowerShell | 2024-11-04 | This PowerShell script finds errors and warnings for recent job runs. |

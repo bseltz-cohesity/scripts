@@ -24,7 +24,7 @@ Total scripts: **24**
 | --- | --- | --- | --- |
 | [addLocalUser.py](https://github.com/cohesity/community-automation-samples/tree/main/python/addLocalUser) | Python | 2024-11-04 | This script adds a local user. |
 | [addObjectToUserAccessList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/addObjectToUserAccessList) | PowerShell | 2025-08-15 | This script adds registered objects and views to a user/group restricted access list. |
-| [addObjectToUserAccessList.py](https://github.com/cohesity/community-automation-samples/tree/main/python/addObjectToUserAccessList) | Python | 2024-11-04 | This script adds registered objects and views to a user/group restricted access list |
+| [addObjectToUserAccessList.py](https://github.com/cohesity/community-automation-samples/tree/main/python/addObjectToUserAccessList) | Python | 2026-10-21 | This script adds registered objects and views to a user/group restricted access list |
 | [copyRoles.py](https://github.com/cohesity/community-automation-samples/tree/main/python/copyRoles) | Python | 2024-11-04 | This python script copies coles between Cohesity clusters |
 | [ipmiPassword.py](https://github.com/cohesity/community-automation-samples/tree/main/python/ipmiPassword) | Python | 2025-07-18 | This python script will set an IPMI user password. |
 | [onboardSSOUser.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/onboardSSOUser) | PowerShell | 2025-08-20 | This powershell script adds or removes SSO domain Users and Groups from Access Management, and can also generate an API key for a user. |

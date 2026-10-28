@@ -2,7 +2,7 @@
 
 [← Back to Helios-Only](README.md)
 
-Total scripts: **12**
+Total scripts: **11**
 
 ## Monitoring & Alerting (1)
 
@@ -16,11 +16,10 @@ Total scripts: **12**
 | --- | --- | --- | --- |
 | [heliosObjectUuid.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/heliosObjectUuid) | PowerShell | 2025-11-03 | This PowerShell script searches for an object by name and displays its global Uuid. |
 
-## Reporting & Analytics (10)
+## Reporting & Analytics (9)
 
 | Script | Language | Date Last Updated | Use Case |
 | --- | --- | --- | --- |
-| [dataClasificationScanReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/dataClasificationScanReport) | PowerShell | 2026-07-10 | This script gathers Data Classification (DLP) scan results, drilling down from scans, to scan runs, to the scanned objects within each run, to the individual sensitive files found, and outputs the file-level detail (including which pattern was matched and its sensitivity) to a CSV file. |
 | [heliosAnomalyReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/heliosAnomalyReport) | PowerShell | 2024-11-04 | This script gathers ransomware anomalies and outputs to a CSV file. |
 | [heliosAuditLogs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/heliosAuditLogs) | PowerShell | 2026-08-10 | This script gathers audit logs from Helios and saves them to a CSV file |
 | [heliosConsumerTrendReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-reporting/powershell/heliosConsumerTrendReport) | PowerShell | 2026-09-30 | This PowerShell script pulls the Helios **Storage Consumption by Views** and **Storage Consumption by Protection Groups** reports for a run of consecutive calendar months, and pivots the results into a single monthly trend report: one row per view / protection group, with columns for `dataIngestedRetained` and `scRetained` for each month, plus scRetained growth columns. It can also write an HTML report with a chart of scRetained over time per entity. |

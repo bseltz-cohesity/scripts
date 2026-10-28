@@ -15,7 +15,7 @@ Total scripts: **69**
 
 | Script | Language | Date Last Updated | Use Case |
 | --- | --- | --- | --- |
-| [cloneBackupToView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneBackupToView) | PowerShell | 2026-03-23 | This PowerShell script clones backup files to a Cohesity view. |
+| [cloneBackupToView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneBackupToView) | PowerShell | 2026-10-19 | This PowerShell script clones backup files to a Cohesity view. |
 | [cloneBackupToView.py](https://github.com/cohesity/community-automation-samples/tree/main/python/cloneBackupToView) | Python | 2024-11-04 | This script clones backup files to an NFS view. |
 | [cloneSMBView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneSMBView) | PowerShell | 2024-11-04 | This powershell script clones a protected (active or replicated) SMB view. |
 | [cloneView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneView) | PowerShell | 2024-11-04 | This powershell script clones an active or replicated view. |

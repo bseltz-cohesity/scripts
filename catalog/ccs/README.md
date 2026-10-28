@@ -2,7 +2,7 @@
 
 [← Back to catalog index](../README.md)
 
-Total scripts: **64**
+Total scripts: **65**
 
 ## Popular Scripts
 
@@ -43,7 +43,7 @@ Total scripts: **64**
 | Sub-Category | Scripts |
 | --- | --- |
 | [General / Multi-Platform](general-multi-platform.md) | 5 |
-| [Microsoft 365](microsoft-365.md) | 22 |
+| [Microsoft 365](microsoft-365.md) | 21 |
 
 ## Physical & Agents
 
@@ -64,3 +64,9 @@ Total scripts: **64**
 | --- | --- |
 | [General Reporting](general-reporting.md) | 2 |
 | [Helios Reporting](helios-reporting.md) | 2 |
+
+## Storage & NAS
+
+| Sub-Category | Scripts |
+| --- | --- |
+| [Generic NAS](generic-nas.md) | 2 |

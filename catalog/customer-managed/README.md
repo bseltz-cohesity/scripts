@@ -2,7 +2,7 @@
 
 [← Back to catalog index](../README.md)
 
-Total scripts: **813**
+Total scripts: **808**
 
 ## Popular Scripts
 
@@ -61,7 +61,7 @@ Total scripts: **813**
 | [Files & Folders](files-and-folders.md) | 21 |
 | [General / Multi-Platform](general-multi-platform.md) | 35 |
 | [GitHub](github.md) | 4 |
-| [Microsoft 365](microsoft-365.md) | 24 |
+| [Microsoft 365](microsoft-365.md) | 22 |
 | [Remote Adapter](remote-adapter.md) | 13 |
 
 ## Physical & Agents
@@ -87,8 +87,8 @@ Total scripts: **813**
 | --- | --- |
 | [Capacity Reporting](capacity-reporting.md) | 17 |
 | [Custom Reporting DB](custom-reporting-db.md) | 10 |
-| [General Reporting](general-reporting.md) | 71 |
-| [Helios Reporting](helios-reporting.md) | 19 |
+| [General Reporting](general-reporting.md) | 68 |
+| [Helios Reporting](helios-reporting.md) | 20 |
 
 ## Storage & NAS
 
@@ -97,7 +97,7 @@ Total scripts: **813**
 | [Flashblade (NAS)](flashblade-nas.md) | 3 |
 | [Generic NAS](generic-nas.md) | 18 |
 | [GPFS](gpfs.md) | 7 |
-| [Isilon (NAS)](isilon-nas.md) | 10 |
+| [Isilon (NAS)](isilon-nas.md) | 9 |
 | [NetApp (NAS)](netapp-nas.md) | 11 |
 | [Pure Storage](pure-storage.md) | 4 |
 | [Views & Storage](views-and-storage.md) | 69 |

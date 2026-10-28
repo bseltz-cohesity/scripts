@@ -2,7 +2,7 @@
 
 [← Back to Customer-Managed](README.md)
 
-Total scripts: **10**
+Total scripts: **9**
 
 ## Migration (1)
 
@@ -17,14 +17,13 @@ Total scripts: **10**
 | [isilonCFTtest.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/isilonCFTtest) | PowerShell | 2024-11-04 | This powershell script tests Isilon Change File Tracking performance. |
 | [isilonCTFtest.py](https://github.com/cohesity/community-automation-samples/tree/main/python/isilonCFTtest) | Python | 2024-11-04 | This python script tests Isilon Change File Tracking performance. |
 
-## Protection & Recovery (6)
+## Protection & Recovery (5)
 
 | Script | Language | Date Last Updated | Use Case |
 | --- | --- | --- | --- |
 | [isilon-api.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/isilon-api) | PowerShell | 2024-11-04 | This is a function library for Isilon API that uses session cookie authentication with CSRF protection. This is not for the Cohesity API but is useful when connecting to Isilon API. |
-| [protectIsilon-multi.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectIsilon-multi) | Python | 2024-11-04 | This script adds Isilon Volumes to protection jobs (one job per volume). |
-| [protectIsilon.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectIsilon) | PowerShell | 2024-11-04 | This PowerShell script creates a new protection job for Isilon volumes. |
-| [protectIsilon.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectIsilon) | Python | 2024-11-04 | This script adds Isilon Volumes to a protection job. |
+| [protectIsilon.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectIsilon) | PowerShell | 2026-10-21 | This PowerShell script creates a new protection job for Isilon volumes. |
+| [protectIsilon.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectIsilon) | Python | 2026-10-21 | This script adds Isilon Volumes to a protection job. |
 | [registerIsilon.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/registerIsilon) | PowerShell | 2024-11-04 | This powershell script registers an Isilon protection source. |
 | [registerIsilon.py](https://github.com/cohesity/community-automation-samples/tree/main/python/registerIsilon) | Python | 2024-11-04 | This script registers an Isilon as a protection source. |
 
