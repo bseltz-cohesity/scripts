@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-10-28`] [updateCcsGenericNasCredentials.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/updateCcsGenericNasCredentials) [`New`] update SMB credentials for generic NAS soruces in CCS
+* [`2026-10-27`] [unprotectCcsM365SitesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/unprotectCcsM365SitesCSV) [`Update`] process fixes
+* [`2026-10-27`] [protectCcsM365SitesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365SitesCSV) [`Update`] process fixes
 * [`2026-10-24`] [autoProtectVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectVMsByContainer) [`Update`] renamed from autoprotectVMs.ps1, added -listContainers option
 * [`2026-10-23`] [recoverVMs-throttled.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/recoverVMs-throttled) [`Update`] added -differentialREcovery option
 * [`2026-10-23`] [pulseLogs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/pulseLogs) [`Update`] updated to v2 APIs
