@@ -301,7 +301,7 @@ function reportStorage(){
     
     "Job/View Name,Tenant,Environment,Origination,Storage Target,$unit Logical,$unit Ingested,$unit Consumed,$unit Written,$unit Unique,Dedup Ratio,Compression,Reduction,Storage Domain,Resiliency Setting" | Out-File -FilePath $csvFile
     
-    $jobs = api get protectionJobs?allUnderHierarchy=true
+    $jobs = api get "protectionJobs?allUnderHierarchy=true&onlyReturnBasicSummary=true"
     $vaults = api get vaults | Where-Object {$_.usageType -eq 'kArchival'}
     
     $nowMsecs = [int64]((dateToUsecs) / 1000)
