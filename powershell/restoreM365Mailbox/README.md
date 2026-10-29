@@ -56,6 +56,9 @@ Place the files in a folder together and run the main script like so:
 * -folderPrefix: (optional) top-level folder name to restore into when using -targetMailbox (defaults to 'restore'; mailbox contents land in `<folderPrefix>-<sourceUserName>`)
 * -continueOnError: (optional) skip mailboxes that can't be found or have no matching snapshot, instead of exiting
 * -ewsExchangeTarget: (optional) restore mailboxes to on-prem Exchange server
+* -smtpAddressOverride: (optional) restore to mailbox with specified SMTP address
+* -sidOverride: (optional) restore to mailbox with specified SID
+* -mailboxGuidOverride: (optional) restore to mailbox with specified mailbox GUID
 
 ## Examples
 

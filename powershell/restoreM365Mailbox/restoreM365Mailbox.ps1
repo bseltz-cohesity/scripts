@@ -20,7 +20,10 @@ param (
     [Parameter()][string]$targetSource,
     [Parameter()][string]$folderPrefix = 'restore',
     [Parameter()][switch]$continueOnError,
-    [Parameter()][string]$ewsExchangeTarget
+    [Parameter()][string]$ewsExchangeTarget,
+    [Parameter()][string]$smtpAddressOverride,
+    [Parameter()][string]$sidOverride,
+    [Parameter()][string]$mailboxGuidOverride
 )
 
 # source the cohesity-api helper code
@@ -74,6 +77,13 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
 }
 
 $sourceUserNames = @(gatherList -Param $sourceUserName -FilePath $sourceUserList -Name 'sourceUserName' -Required $True)
+
+if(@($sourceUserNames).Count -gt 1){
+    if($smtpAddressOverride -or $sidOverride -or $mailboxGuidOverride){
+        Write-Host "Only one source mailbox can be specified if -smtpAddressOverride, -sidOverride or -mailboxGuidOverride are specified" -ForegroundColor Yellow
+        exit 1
+    }
+}
 
 # resolve target mailbox once (if restoring to an alternate mailbox)
 $targetMailboxName = $null
@@ -171,6 +181,16 @@ foreach($sourceUser in $sourceUserNames){
                     )
                 }
             }
+        }
+
+        if($smtpAddressOverride){
+            $restoreParams.office365Params.recoverMailboxParams.objects[0].mailboxParams['smtpAddressOverride'] = $smtpAddressOverride
+        }
+        if($sidOverride){
+            $restoreParams.office365Params.recoverMailboxParams.objects[0].mailboxParams['sidOverride'] = $sidOverride
+        }
+        if($mailboxGuidOverride){
+            $restoreParams.office365Params.recoverMailboxParams.objects[0].mailboxParams['mailboxGuidOverride'] = $mailboxGuidOverride
         }
 
         if($ewsExchangeTarget){
