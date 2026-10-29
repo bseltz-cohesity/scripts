@@ -14,6 +14,7 @@ param (
     [Parameter()][array]$sourceUserName,
     [Parameter()][string]$sourceUserList,
     [Parameter()][string]$source,
+    [Parameter()][string]$jobName,
     [Parameter()][datetime]$recoverDate,
     [Parameter()][string]$targetMailbox,
     [Parameter()][string]$targetSource,
@@ -121,6 +122,13 @@ foreach($sourceUser in $sourceUserNames){
 
     foreach($userObj in $userObjs){
         $objectId = $userObj.id
+        if($jobName){
+            $userObj.latestSnapshotsInfo = @($userObj.latestSnapshotsInfo | Where-Object {$_.protectionGroupName -eq $jobName})
+            if(@($userObj.latestSnapshotsInfo).Count -lt 1){
+                Write-Host "No backups for $sourceUser in $jobName" -ForegroundColor Yellow
+                continue
+            }
+        }
         $protectionGroupId = $userObj.latestSnapshotsInfo[0].protectionGroupId
         $snapshotId = $userObj.latestSnapshotsInfo[0].localSnapshotInfo.snapshotId
 

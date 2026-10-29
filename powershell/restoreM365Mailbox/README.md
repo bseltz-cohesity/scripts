@@ -49,6 +49,7 @@ Place the files in a folder together and run the main script like so:
 * -sourceUserName: one or more mailbox names or SMTP addresses to restore (comma separated)
 * -sourceUserList: (optional) path to a text file of mailbox names/SMTP addresses, one per line
 * -source: (optional) name of the registered M365 source, used to disambiguate mailboxes protected under more than one source
+* -jobName: (optional) name of protection group to restore from
 * -recoverDate: (optional) restore from the latest snapshot taken before this date/time (defaults to the most recent snapshot)
 * -targetMailbox: (optional) name or SMTP address of a mailbox to restore into, instead of the original mailbox
 * -targetSource: (optional) name of the registered M365 source that owns -targetMailbox, if it differs from -source
