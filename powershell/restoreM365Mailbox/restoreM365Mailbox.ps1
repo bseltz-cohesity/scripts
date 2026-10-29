@@ -18,7 +18,8 @@ param (
     [Parameter()][string]$targetMailbox,
     [Parameter()][string]$targetSource,
     [Parameter()][string]$folderPrefix = 'restore',
-    [Parameter()][switch]$continueOnError
+    [Parameter()][switch]$continueOnError,
+    [Parameter()][string]$ewsExchangeTarget
 )
 
 # source the cohesity-api helper code
@@ -77,6 +78,15 @@ $sourceUserNames = @(gatherList -Param $sourceUserName -FilePath $sourceUserList
 $targetMailboxName = $null
 $targetMailboxId = $null
 $targetParentId = $null
+
+if($ewsExchangeTarget){
+    $ewssources = api get -v2 data-protect/sources/registrations
+    $ewssource = $ewssources.registrations | Where-Object {$_.environment -eq 'kEwsExchange' -and $_.sourceInfo.name -eq $ewsExchangeTarget}
+    if(!$ewssource){
+        Write-Host "EWS Exchange target $ewsExchangeTarget not found" -ForegroundColor Yellow
+        exit 1
+    }
+}
 
 if($targetMailbox){
     $targetSearch = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverMailbox&searchString=$targetMailbox&environments=kO365"
@@ -151,6 +161,13 @@ foreach($sourceUser in $sourceUserNames){
                         }
                     )
                 }
+            }
+        }
+
+        if($ewsExchangeTarget){
+            $restoreParams.office365Params.recoveryAction = "RecoverO365ToExchangeServer"
+            $restoreParams.office365Params.recoverMailboxParams["ewsExchangeTarget"] = @{
+                "ewsExchangeServerEntityId" = $ewssource.id
             }
         }
 

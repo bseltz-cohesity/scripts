@@ -54,6 +54,7 @@ Place the files in a folder together and run the main script like so:
 * -targetSource: (optional) name of the registered M365 source that owns -targetMailbox, if it differs from -source
 * -folderPrefix: (optional) top-level folder name to restore into when using -targetMailbox (defaults to 'restore'; mailbox contents land in `<folderPrefix>-<sourceUserName>`)
 * -continueOnError: (optional) skip mailboxes that can't be found or have no matching snapshot, instead of exiting
+* -ewsExchangeTarget: (optional) restore mailboxes to on-prem Exchange server
 
 ## Examples
 
