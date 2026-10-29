@@ -43,7 +43,8 @@ Place both files in a folder together and run the main script like so:
 * -username: (optional) used for password storage only (default is 'Ccs')
 * -region: specify region (e.g. us-east-2)
 * -sourceName: name of registered M365 protection source
-* -csvFile: name of CSV file to import
+* -csvFile: (optional) name of CSV file to import
+* -objectMatch: (optional) protect sites that start with the specified string
 * -unprotectSubSites: (optional) unprotect any subsites below the specified site
 * -deleteSnapshots: (optional) delete existing snapshots
 

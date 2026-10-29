@@ -4,7 +4,8 @@ param (
     [Parameter()][string]$username = 'DMaaS',
     [Parameter(Mandatory = $True)][string]$region,
     [Parameter(Mandatory = $True)][string]$sourceName,  # name of registered O365 source
-    [Parameter(Mandatory = $True)][string]$csvFile,
+    [Parameter()][string]$csvFile,  # csv with name,webUrl columns (required unless -objectMatch is used)
+    [Parameter()][string]$objectMatch,  # unprotect all sites whose name starts with this string
     [Parameter()][switch]$unprotectSubSites,
     [Parameter()][switch]$deleteSnapshots,
     [Parameter()][switch]$dbg
@@ -16,8 +17,16 @@ if($deleteSnapshots){
     $delSnaps = $false
 }
 
-$objectsToAdd = Import-Csv -Path $csvFile # -Encoding utf8
-if($objectsToAdd.Count -eq 0){
+if(!$csvFile -and !$objectMatch){
+    Write-Host "Please use -csvFile or -objectMatch to specify sites to unprotect" -ForegroundColor Yellow
+    exit
+}
+
+$objectsToAdd = @()
+if($csvFile){
+    $objectsToAdd = @(Import-Csv -Path $csvFile) # -Encoding utf8
+}
+if($objectsToAdd.Count -eq 0 -and !$objectMatch){
     Write-Host "No sites specified" -ForegroundColor Yellow
     exit
 }
@@ -167,6 +176,23 @@ function unprotectObject($objWebUrl, $objId){
         Write-Host "Unprotecting $objWebUrl"
         $null = api post -v2 "data-protect/protected-objects/actions?regionId=$region" $unprotectParams
     }
+}
+
+if($objectMatch){
+    Write-Host "Finding sites with names starting with '$objectMatch'"
+    $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&regionIds=$region&sourceIds=$rootSourceId&count=999&isProtected=true&searchString=$([uri]::EscapeDataString($objectMatch))"
+    $matchedCount = 0
+    foreach($obj in @($search.objects | Where-Object {$_.name -and $_.name.StartsWith($objectMatch, [System.StringComparison]::OrdinalIgnoreCase)})){
+        if($obj.sharepointParams.PSObject.Properties['isGroupSite'] -and $obj.sharepointParams.isGroupSite -eq $True){
+            continue
+        }elseif($obj.sharepointParams.PSObject.Properties['isTeamSite'] -and $obj.sharepointParams.isTeamSite -eq $True){
+            continue
+        }
+        $matchedCount += 1
+        $objectsToAdd = @($objectsToAdd + @{'name' = $obj.name; 'webUrl' = $obj.sharepointParams.siteWebUrl})
+        indexObject($obj)
+    }
+    Write-Host "Found $matchedCount protected site(s) matching '$objectMatch'"
 }
 
 foreach($obj in $objectsToAdd){
