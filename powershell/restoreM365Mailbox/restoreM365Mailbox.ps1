@@ -13,6 +13,7 @@ param (
     [Parameter()][string]$clusterName = $null,
     [Parameter()][array]$sourceUserName,
     [Parameter()][string]$sourceUserList,
+    [Parameter()][string]$csvFile,
     [Parameter()][string]$source,
     [Parameter()][string]$jobName,
     [Parameter()][datetime]$recoverDate,
@@ -23,7 +24,9 @@ param (
     [Parameter()][string]$ewsExchangeTarget,
     [Parameter()][string]$smtpAddressOverride,
     [Parameter()][string]$sidOverride,
-    [Parameter()][string]$mailboxGuidOverride
+    [Parameter()][string]$mailboxGuidOverride,
+    [Parameter()][datetime]$excludeBefore,
+    [Parameter()][datetime]$excludeAfter
 )
 
 # source the cohesity-api helper code
@@ -76,12 +79,51 @@ function gatherList($Param=$null, $FilePath=$null, $Required=$True, $Name='items
     return ($items | Sort-Object -Unique)
 }
 
-$sourceUserNames = @(gatherList -Param $sourceUserName -FilePath $sourceUserList -Name 'sourceUserName' -Required $True)
+$sourceUserNames = @(gatherList -Param $sourceUserName -FilePath $sourceUserList -Name 'sourceUserName' -Required $False)
 
-if(@($sourceUserNames).Count -gt 1){
-    if($smtpAddressOverride -or $sidOverride -or $mailboxGuidOverride){
-        Write-Host "Only one source mailbox can be specified if -smtpAddressOverride, -sidOverride or -mailboxGuidOverride are specified" -ForegroundColor Yellow
+# per-mailbox overrides (from csv file)
+# csv columns: sourceUserName, smtpAddressOverride, sidOverride, mailboxGuidOverride
+$overrides = @{}
+if($csvFile){
+    if(! (Test-Path -Path $csvFile -PathType Leaf)){
+        Write-Host "*** CSV file $csvFile not found! ***" -ForegroundColor Yellow
         exit 1
+    }
+    $csvRows = @(Import-Csv -Path $csvFile)
+    if($csvRows.Count -eq 0 -or -not ($csvRows[0].PSObject.Properties.Name -contains 'sourceUserName')){
+        Write-Host "*** CSV file must have a 'sourceUserName' column (optional columns: smtpAddressOverride, sidOverride, mailboxGuidOverride) ***" -ForegroundColor Yellow
+        exit 1
+    }
+    foreach($row in $csvRows){
+        $csvUser = "$($row.sourceUserName)".Trim()
+        if(! $csvUser){
+            continue
+        }
+        $overrides[$csvUser] = @{
+            'smtpAddressOverride' = "$($row.smtpAddressOverride)".Trim();
+            'sidOverride' = "$($row.sidOverride)".Trim();
+            'mailboxGuidOverride' = "$($row.mailboxGuidOverride)".Trim()
+        }
+        $sourceUserNames += $csvUser
+    }
+}
+$sourceUserNames = @($sourceUserNames | Sort-Object -Unique)
+
+if($sourceUserNames.Count -eq 0){
+    Write-Host "*** No sourceUserName specified ***" -ForegroundColor Yellow
+    exit 1
+}
+
+# command line overrides apply to a single source mailbox only
+if($smtpAddressOverride -or $sidOverride -or $mailboxGuidOverride){
+    if($csvFile -or $sourceUserNames.Count -gt 1){
+        Write-Host "-smtpAddressOverride, -sidOverride and -mailboxGuidOverride can only be used with a single source mailbox (use -csvFile for per-mailbox overrides)" -ForegroundColor Yellow
+        exit 1
+    }
+    $overrides[$sourceUserNames[0]] = @{
+        'smtpAddressOverride' = $smtpAddressOverride;
+        'sidOverride' = $sidOverride;
+        'mailboxGuidOverride' = $mailboxGuidOverride
     }
 }
 
@@ -114,10 +156,15 @@ if($targetMailbox){
     $targetMailboxName = $targetMatches[0].name
 }
 
+# collect all mailboxes into a single restore task
+$restoreObjects = @()
+$restoredNames = @()
+$seenObjectIds = @{}
+
 foreach($sourceUser in $sourceUserNames){
     $userSearch = api get -v2 "data-protect/search/protected-objects?snapshotActions=RecoverMailbox&searchString=$sourceUser&environments=kO365"
     $userObjs = $userSearch.objects | Where-Object {$_.name -eq $sourceUser -or $_.o365Params.primarySMTPAddress -eq $sourceUser}
-    
+
     if($source){
         $userObjs = $userObjs | Where-Object {$_.sourceInfo.name -eq $source}
     }
@@ -132,6 +179,9 @@ foreach($sourceUser in $sourceUserNames){
 
     foreach($userObj in $userObjs){
         $objectId = $userObj.id
+        if($seenObjectIds.ContainsKey("$objectId")){
+            continue
+        }
         if($jobName){
             $userObj.latestSnapshotsInfo = @($userObj.latestSnapshotsInfo | Where-Object {$_.protectionGroupName -eq $jobName})
             if(@($userObj.latestSnapshotsInfo).Count -lt 1){
@@ -160,66 +210,107 @@ foreach($sourceUser in $sourceUserNames){
             }
         }
 
-        $dateString = Get-Date -UFormat '%b_%d_%Y_%H-%M%p'
-        $restoreParams = @{
-            "name" = "Recover_Mailboxes_$dateString";
-            "snapshotEnvironment" = "kO365";
-            "office365Params" = @{
-                "recoveryAction" = "RecoverMailbox";
-                "recoverMailboxParams" = @{
-                    "continueOnError" = $false;
-                    "objects" = @(
-                        @{
-                            "mailboxParams" = @{
-                                "recoverFolders" = $null;
-                                "recoverEntireMailbox" = $true
-                            };
-                            "ownerInfo" = @{
-                                "snapshotId" = $snapshotId
-                            }
-                        }
-                    )
+        $mailboxParams = @{
+            "recoverFolders" = $null;
+            "recoverEntireMailbox" = $true
+        }
+        if($overrides.ContainsKey($sourceUser)){
+            foreach($overrideName in @('smtpAddressOverride', 'sidOverride', 'mailboxGuidOverride')){
+                $overrideValue = $overrides[$sourceUser][$overrideName]
+                if($overrideValue){
+                    $mailboxParams[$overrideName] = $overrideValue
                 }
             }
         }
 
-        if($smtpAddressOverride){
-            $restoreParams.office365Params.recoverMailboxParams.objects[0].mailboxParams['smtpAddressOverride'] = $smtpAddressOverride
-        }
-        if($sidOverride){
-            $restoreParams.office365Params.recoverMailboxParams.objects[0].mailboxParams['sidOverride'] = $sidOverride
-        }
-        if($mailboxGuidOverride){
-            $restoreParams.office365Params.recoverMailboxParams.objects[0].mailboxParams['mailboxGuidOverride'] = $mailboxGuidOverride
-        }
-
-        if($ewsExchangeTarget){
-            $restoreParams.office365Params.recoveryAction = "RecoverO365ToExchangeServer"
-            $restoreParams.office365Params.recoverMailboxParams["ewsExchangeTarget"] = @{
-                "ewsExchangeServerEntityId" = $ewssource.id
+        $restoreObjects += @{
+            "mailboxParams" = $mailboxParams;
+            "ownerInfo" = @{
+                "snapshotId" = $snapshotId
             }
         }
+        $seenObjectIds["$objectId"] = $True
+        $restoredNames += $sourceUser
+    }
+}
 
-        if($targetMailbox){
-            Write-Host "==> Restoring $sourceUser to $targetMailboxName ($($folderPrefix)-$($sourceUser))"
-            $restoreParams.office365Params.recoverMailboxParams['targetMailbox'] = @{
-                "targetFolderPath" = "$($folderPrefix)-$($sourceUser)";
-                "id" = [int64]$targetMailboxId;
-                "name" = "$targetMailboxName";
-                "parentSourceId" = [int64]$targetParentId
-            }
-        }else{
-            Write-Host "==> Restoring $sourceUser"
+if($restoreObjects.Count -eq 0){
+    Write-Host "*** No mailboxes to restore ***" -ForegroundColor Yellow
+    exit 1
+}
+
+$dateString = Get-Date -UFormat '%b_%d_%Y_%H-%M%p'
+$restoreParams = @{
+    "name" = "Recover_Mailboxes_$dateString";
+    "snapshotEnvironment" = "kO365";
+    "office365Params" = @{
+        "recoveryAction" = "RecoverMailbox";
+        "recoverMailboxParams" = @{
+            "continueOnError" = [bool]$continueOnError;
+            "objects" = @($restoreObjects)
         }
+    }
+}
 
-        $recovery = api post -v2 data-protect/recoveries $restoreParams
-        if($recovery.id){
-            Write-Host "    Recovery task ID: $($recovery.id)"
-        }else{
-            Write-Host "*** Failed to start recovery for $sourceUser ***" -ForegroundColor Yellow
-            if(!$continueOnError){
-                exit 1
+if($ewsExchangeTarget){
+    $restoreParams.office365Params.recoveryAction = "RecoverO365ToExchangeServer"
+    $restoreParams.office365Params.recoverMailboxParams["ewsExchangeTarget"] = @{
+        "ewsExchangeServerEntityId" = $ewssource.id
+    }
+}
+
+# incremental restore: exclude items outside a date range
+if($PSBoundParameters.ContainsKey('excludeBefore') -or $PSBoundParameters.ContainsKey('excludeAfter')){
+    $timePolicy = @{
+        "excludeAll" = $false;
+        "exclusionTimeMode" = "Absolute"
+    }
+    if($PSBoundParameters.ContainsKey('excludeBefore')){
+        $timePolicy['excludeBeforeTimeSecs'] = [int64]([DateTimeOffset]$excludeBefore).ToUnixTimeSeconds()
+    }
+    if($PSBoundParameters.ContainsKey('excludeAfter')){
+        $timePolicy['excludeAfterTimeSecs'] = [int64]([DateTimeOffset]$excludeAfter).ToUnixTimeSeconds()
+    }
+    if($timePolicy.ContainsKey('excludeBeforeTimeSecs') -and $timePolicy.ContainsKey('excludeAfterTimeSecs') -and $timePolicy.excludeBeforeTimeSecs -ge $timePolicy.excludeAfterTimeSecs){
+        Write-Host "-excludeBefore must be earlier than -excludeAfter" -ForegroundColor Yellow
+        exit 1
+    }
+    $restoreParams['filterParams'] = @{
+        "filterPolicy" = @{
+            "office365RestoreExclusionPolicy" = @{
+                "calendarItemPolicy" = $timePolicy.Clone();
+                "contactItemPolicy" = $timePolicy.Clone();
+                "mailItemPolicy" = $timePolicy.Clone();
+                "noteItemPolicy" = $timePolicy.Clone();
+                "taskItemPolicy" = $timePolicy.Clone();
             }
         }
     }
+}
+
+if($targetMailbox){
+    # a single target folder is used for the whole task
+    if($restoreObjects.Count -eq 1){
+        $targetFolderPath = "$($folderPrefix)-$($restoredNames[0])"
+    }else{
+        $targetFolderPath = $folderPrefix
+    }
+    Write-Host "==> Restoring $($restoreObjects.Count) mailbox(es) to $targetMailboxName ($targetFolderPath)"
+    $restoreParams.office365Params.recoverMailboxParams['targetMailbox'] = @{
+        "targetFolderPath" = $targetFolderPath;
+        "id" = [int64]$targetMailboxId;
+        "name" = "$targetMailboxName";
+        "parentSourceId" = [int64]$targetParentId
+    }
+}else{
+    Write-Host "==> Restoring $($restoreObjects.Count) mailbox(es)"
+}
+$restoredNames | ForEach-Object {Write-Host "    $_"}
+
+$recovery = api post -v2 data-protect/recoveries $restoreParams
+if($recovery.id){
+    Write-Host "    Recovery task ID: $($recovery.id)"
+}else{
+    Write-Host "*** Failed to start recovery ***" -ForegroundColor Yellow
+    exit 1
 }
