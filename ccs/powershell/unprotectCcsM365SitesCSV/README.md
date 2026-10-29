@@ -33,9 +33,17 @@ cht-az-o365-15-ComSite,https://myorg.sharepoint.com/sites/myuser-01-site
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./unprotectCcsM365SitesCSV.ps1 -policyName Gold `
-                             -sourceName mydomain.onmicrosoft.com `
-                             -csvFile ./sites.csv
+./unprotectCcsM365SitesCSV.ps1 -region us-east-2 `
+                               -sourceName mydomain.onmicrosoft.com `
+                               -csvFile ./sites.csv
+```
+
+Or you can use -objectMatch, protect any sites with a name that start with the specified string:
+
+```powershell
+./unprotectCcsM365SitesCSV.ps1 -region us-east-2 `
+                               -sourceName mydomain.onmicrosoft.com `
+                               -objectMatch sales
 ```
 
 ## Parameters

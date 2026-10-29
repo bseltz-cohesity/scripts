@@ -34,8 +34,18 @@ Place both files in a folder together and run the main script like so:
 
 ```powershell
 ./protectCcsM365SitesCSV.ps1 -policyName Gold `
+                             -region us-east-2 `
                              -sourceName mydomain.onmicrosoft.com `
                              -csvFile ./sites.csv
+```
+
+Or you can use -objectMatch, protect any sites with a name that start with the specified string:
+
+```powershell
+./protectCcsM365SitesCSV.ps1 -policyName Gold `
+                             -region us-east-2 `
+                             -sourceName mydomain.onmicrosoft.com `
+                             -objectMatch sales
 ```
 
 ## Parameters
