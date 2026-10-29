@@ -45,6 +45,7 @@ Place both files in a folder together and run the main script like so:
 * -sourceName: name of registered M365 protection source
 * -policyName: name of protection policy to use
 * -csvFile: (optional) name of CSV file to import
+* -objectMatch: (optional) protect sites that start with the specified string
 * -autoprotectCount: (optional) number of sites to auto select for protection
 * -startTime: (optional) e.g. '18:30' (defaults to 8PM)
 * -timeZone: (optional) e.g. 'America/New_York' (default is 'America/New_York')

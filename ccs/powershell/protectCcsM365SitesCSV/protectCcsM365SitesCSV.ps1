@@ -5,7 +5,8 @@ param (
     [Parameter(Mandatory = $True)][string]$region,
     [Parameter()][string]$policyName = '',  # protection policy name
     [Parameter(Mandatory = $True)][string]$sourceName,  # name of registered O365 source
-    [Parameter()][string]$csvFile,
+    [Parameter()][string]$csvFile,  # csv with name,webUrl columns (required unless -objectMatch is used)
+    [Parameter()][string]$objectMatch,  # protect all sites whose name starts with this string
     [Parameter()][string]$startTime = '20:00',  # e.g. 23:30 for 11:30 PM
     [Parameter()][string]$timeZone = 'America/New_York', # e.g. 'America/New_York'
     [Parameter()][int]$incrementalSlaMinutes = 1440,  # incremental SLA minutes
@@ -17,11 +18,16 @@ param (
     [Parameter()][int]$batchSize = 50  # number of sites to include per protection API call
 )
 
+if(!$csvFile -and !$objectMatch){
+    Write-Host "Please use -csvFile or -objectMatch to specify sites to protect" -ForegroundColor Yellow
+    exit
+}
+
 $objectsToAdd = @()
 if($csvFile){
-    $objectsToAdd = Import-Csv -Path $csvFile # -Encoding utf8
+    $objectsToAdd = @(Import-Csv -Path $csvFile) # -Encoding utf8
 }
-if($objectsToAdd.Count -eq 0 -and $autoprotectCount -eq 0){
+if($objectsToAdd.Count -eq 0 -and !$objectMatch){
     Write-Host "No sites specified" -ForegroundColor Yellow
     exit
 }
@@ -252,7 +258,22 @@ function queueObject($objWebUrl, $objId){
     }
 }
 
-if(!$csvFile -and $autoprotectCount -gt 0){
+if($objectMatch){
+    Write-Host "Finding sites with names starting with '$objectMatch'"
+    $search = api get -v2 "data-protect/search/objects?environments=kO365&o365ObjectTypes=kSite&regionIds=$region&sourceIds=$rootSourceId&count=999&isProtected=false&searchString=$([uri]::EscapeDataString($objectMatch))"
+    $matchedCount = 0
+    foreach($obj in @($search.objects | Where-Object {$_.name -and $_.name.StartsWith($objectMatch, [System.StringComparison]::OrdinalIgnoreCase)})){
+        if($obj.sharepointParams.PSObject.Properties['isGroupSite'] -and $obj.sharepointParams.isGroupSite -eq $True){
+            continue
+        }elseif($obj.sharepointParams.PSObject.Properties['isTeamSite'] -and $obj.sharepointParams.isTeamSite -eq $True){
+            continue
+        }
+        $matchedCount += 1
+        $objectsToAdd = @($objectsToAdd + @{'name' = $obj.name; 'webUrl' = $obj.sharepointParams.siteWebUrl})
+        indexObject($obj)
+    }
+    Write-Host "Found $matchedCount unprotected site(s) matching '$objectMatch'"
+}elseif(!$csvFile -and $autoprotectCount -gt 0){
     Write-Host "Finding sites to autoprotect"
     $foundObjects = 0
     $searchCount = $autoprotectCount
