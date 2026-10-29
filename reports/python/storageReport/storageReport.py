@@ -12,35 +12,55 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-v', '--vip', action='append', type=str)
 parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
+parser.add_argument('-t', '--tenant', type=str, default=None)
 parser.add_argument('-c', '--clustername', action='append', type=str)
 parser.add_argument('-mcm', '--mcm', action='store_true')
 parser.add_argument('-i', '--useApiKey', action='store_true')
 parser.add_argument('-pwd', '--password', type=str, default=None)
 parser.add_argument('-np', '--noprompt', action='store_true')
 parser.add_argument('-m', '--mfacode', type=str, default=None)
+parser.add_argument('-e', '--emailmfacode', action='store_true')
 parser.add_argument('-of', '--outfolder', type=str, default='.')
+parser.add_argument('-x', '--unit', type=str, choices=['KiB', 'MiB', 'GiB', 'TiB', 'MB', 'GB', 'TB'], default='GiB')
 
 args = parser.parse_args()
 
 vips = args.vip
 username = args.username
 domain = args.domain
+tenant = args.tenant
 clusternames = args.clustername
 mcm = args.mcm
 useApiKey = args.useApiKey
 password = args.password
 noprompt = args.noprompt
 mfacode = args.mfacode
+emailmfacode = args.emailmfacode
 folder = args.outfolder
+unit = args.unit
+
+conversion = {'KiB': 1024, 'MiB': 1024**2, 'GiB': 1024**3, 'TiB': 1024**4, 'MB': 1000**2, 'GB': 1000**3, 'TB': 1000**4}
+
+
+def toUnits(val):
+    return round(float(val) / conversion[unit], 1)
+
 
 if vips is None or len(vips) == 0:
     vips = ['helios.cohesity.com']
 
 print('Collecting report data...')
 
+def getTenant(obj):
+    tenantId = obj.get('tenantId')
+    if tenantId:
+        return tenantId[:-1]
+    return ''
+
+
 def report():
 
-    def processStats(stats, name, environment, location):
+    def processStats(stats, name, environment, location, tenant=''):
         if location == 'Replicated':
             jobId = stats['id']
             job = [j for j in jobs if j['id'] == jobId]
@@ -72,11 +92,11 @@ def report():
             reduction = round(float(dataIn) / dataWritten, 1)
         else:
             reduction = 0
-        consumption = round(float(consumedBytes) / (1024 * 1024 * 1024), 1)
-        logical = round(float(logicalBytes) / (1024 * 1024 * 1024), 1)
-        dataInGiB = round(float(dataIn) / (1024 * 1024 * 1024), 1)
-        print('%30s: %11s %s' % (name, consumption, 'GiB'))
-        csv.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (name, environment, location, sourcecluster, logical, dataInGiB, consumption, dedup, compression, reduction))
+        consumption = toUnits(consumedBytes)
+        logical = toUnits(logicalBytes)
+        dataInUnits = toUnits(dataIn)
+        print('%30s: %11s %s' % (name, consumption, unit))
+        csv.write('%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n' % (name, tenant, environment, location, sourcecluster, logical, dataInUnits, consumption, dedup, compression, reduction))
         return '''<tr>
 <td>%s</td>
 <td>%s</td>
@@ -88,11 +108,12 @@ def report():
 <td>%s</td>
 <td>%s</td>
 <td>%s</td>
-</tr>''' % (name, environment, location, sourcecluster, logical, dataInGiB, consumption, dedup, compression, reduction)
+<td>%s</td>
+</tr>''' % (name, tenant, environment, location, sourcecluster, logical, dataInUnits, consumption, dedup, compression, reduction)
 
     cluster = api('get', 'cluster')
     remotes = api('get', 'remoteClusters')
-    jobs = api('get', 'protectionJobs')
+    jobs = api('get', 'protectionJobs?allUnderHierarchy=true&onlyReturnBasicSummary=true')
     title = 'Storage Report for %s' % cluster['name']
 
     now = datetime.now()
@@ -100,7 +121,7 @@ def report():
     htmlfileName = '%s/storageReport-%s-%s.html' % (folder, cluster['name'], datestring)
     csvfileName = '%s/storageReport-%s-%s.csv' % (folder, cluster['name'], datestring)
     csv = codecs.open(csvfileName, 'w', 'utf-8')
-    csv.write("Job/View Name,Environment,Local/Replicated,Source Cluster,GiB Logical,GiB Ingested,GiB Consumed,Dedup Ratio,Compression,Reduction\n")
+    csv.write("Job/View Name,Tenant,Environment,Local/Replicated,Source Cluster,%s Logical,%s Ingested,%s Consumed,Dedup Ratio,Compression,Reduction\n" % (unit, unit, unit))
 
     html = '''<html>
 <head>
@@ -269,16 +290,17 @@ def report():
 <table>
 <tr>
     <th>Job/View Name</th>
+    <th>Tenant</th>
     <th>Environment</th>
     <th>Local/Replicated</th>
     <th>Source Cluster</th>
-    <th>GiB Logical</th>
-    <th>GiB Ingested</th>
-    <th>GiB Consumed</th>
+    <th>%s Logical</th>
+    <th>%s Ingested</th>
+    <th>%s Consumed</th>
     <th>Dedup Ratio</th>
     <th>Compression</th>
     <th>Reduction</th>
-</tr>'''
+</tr>''' % (unit, unit, unit)
 
     jobs = api('get', 'protectionJobs?allUnderHierarchy=true')
 
@@ -317,7 +339,7 @@ def report():
         if job['policyId'].split(':')[0] == str(cluster['id']):
             stats = [s for s in localStats['statsList'] if s['id'] == job['id'] or s['name'].lower() == job['name'].lower()]
             for stat in stats:
-                html += processStats(stat, job['name'], job['environment'][1:], 'Local')
+                html += processStats(stat, job['name'], job['environment'][1:], 'Local', getTenant(job))
 
     print("\n  Replicated ProtectionJobs...")
 
@@ -339,7 +361,7 @@ def report():
         if job['policyId'].split(':')[0] != str(cluster['id']):
             stats = [s for s in replicaStats['statsList'] if s['id'] == job['id'] or s['name'].lower() == job['name'].lower()]
             for stat in stats:
-                html += processStats(stat, job['name'], job['environment'][1:], 'Replicated')
+                html += processStats(stat, job['name'], job['environment'][1:], 'Replicated', getTenant(job))
 
     print("\n  Unprotected Views...")
     views = api('get', 'file-services/views?includeTenants=true&includeStats=false&includeProtectionGroups=true', v=2)
@@ -348,7 +370,7 @@ def report():
             stats = api('get', 'stats/consumers?consumerType=kViews&consumerIdList=%s' % view['viewId'])
             if 'statsList' in stats and stats['statsList'] is not None:
                 for stat in stats['statsList']:
-                    html += processStats(stat, view['name'], 'View', 'Local')
+                    html += processStats(stat, view['name'], 'View', 'Local', getTenant(view))
 
     html += '''</table>
 </div>
@@ -367,7 +389,7 @@ def report():
 for vip in vips:
 
     # authentication =========================================================
-    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, quiet=True)
+    apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, emailMfaCode=emailmfacode, tenantId=tenant, quiet=True)
 
     # exit if not authenticated
     if apiconnected() is False:
