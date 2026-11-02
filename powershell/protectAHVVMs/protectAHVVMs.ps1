@@ -24,7 +24,8 @@ param (
     [Parameter()][string]$policyName,
     [Parameter()][switch]$paused,
     [Parameter()][ValidateSet('kBackupHDD', 'kBackupSSD')][string]$qosPolicy = 'kBackupHDD',
-    [Parameter()][array]$excludeDisk
+    [Parameter()][array]$excludeDisk,
+    [Parameter()][array]$includeDisk
 )
 
 # source the cohesity-api helper code
@@ -247,14 +248,23 @@ foreach($vm in $vmnames){
         $newObject = @{
             "id" = $vmid;
             "name" = $vm;
-            "isAutoprotected" = $False;
-            "excludeDisks" = $null
-        }
+            "isAutoprotected" = $False
+        } # "excludeDisks" = $null
         if(@($excludeDisk).Count -gt 0){
             $newObject.excludeDisks = @()
             foreach($disk in $excludeDisk){
                 $controllerType, $unitNumber = $disk -split ':'
                 $newObject.excludeDisks = @($newObject.excludeDisks + @{
+                    "controllerType" = $controllerType;
+                    "unitNumber" = [int]$unitNumber
+                })
+            }
+        }
+        if(@($includeDisk).Count -gt 0){
+            $newObject['includeDisks'] = @()
+            foreach($disk in $includeDisk){
+                $controllerType, $unitNumber = $disk -split ':'
+                $newObject.includeDisks = @($newObject.includeDisks + @{
                     "controllerType" = $controllerType;
                     "unitNumber" = [int]$unitNumber
                 })

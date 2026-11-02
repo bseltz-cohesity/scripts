@@ -66,6 +66,7 @@ or provide a text file with a list of VMs to protect:
 * -vmName: (optional) one or more VM names to protect (comma separated)
 * -vmList: (optional) text file of VM names to protect (one per line)
 * -excludeDisk: (optional) comma separated list of disks to exclude , e.g. ide:0, scsi:1
+* -includeDisk: (optional) comma separated list of disks to include , e.g. ide:0, scsi:1
 
 ## Optional New Job Parameters
 
