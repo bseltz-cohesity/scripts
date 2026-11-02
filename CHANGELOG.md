@@ -7,8 +7,8 @@
 * [`2026-10-29`] [storageReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storageReport) [`Update`] optimized API query
 * [`2026-10-29`] [storageReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storageReport) [`Update`] optimized API query
 * [`2026-10-29`] [restoreM365Mailbox.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/restoreM365Mailbox) [`Update`] added support for restore to on-prem Exchange server
-* [`2026-10-28`] [updateCcsGenericNasCredentials.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/updateCcsGenericNasCredentials) [`New`] update SMB credentials for generic NAS soruces in CCS
-* [`2026-10-28`] [updateCcsGenericNasCredentials.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/updateCcsGenericNasCredentials) [`New`] update SMB credentials for generic NAS soruces in CCS
+* [`2026-10-28`] [updateCcsGenericNasCredentials.py](https://github.com/cohesity/community-automation-samples/tree/main/ccs/python/updateCcsGenericNasCredentials) [`New`] update SMB credentials for generic NAS sources in CCS
+* [`2026-10-28`] [updateCcsGenericNasCredentials.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/updateCcsGenericNasCredentials) [`New`] update SMB credentials for generic NAS sources in CCS
 * [`2026-10-27`] [unprotectCcsM365SitesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/unprotectCcsM365SitesCSV) [`Update`] process fixes
 * [`2026-10-27`] [protectCcsM365SitesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/protectCcsM365SitesCSV) [`Update`] process fixes
 * [`2026-10-24`] [autoProtectVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectVMsByContainer) [`Update`] renamed from autoprotectVMs.ps1, added -listContainers option
