@@ -31,6 +31,7 @@ parser.add_argument('-fs', '--fullsla', type=int, default=120)          # full S
 parser.add_argument('-z', '--pause', action='store_true')
 parser.add_argument('-ei', '--enableindexing', action='store_true')
 parser.add_argument('-ed', '--excludedisk', action='append', type=str)
+parser.add_argument('-id', '--includedisk', action='append', type=str)
 parser.add_argument('-it', '--includetag', action='append', type=str)
 parser.add_argument('-et', '--excludetag', action='append', type=str)
 args = parser.parse_args()
@@ -59,6 +60,7 @@ fullsla = args.fullsla
 pause = args.pause
 enableindexing = args.enableindexing
 excludedisks = args.excludedisk
+includedisks = args.includedisk
 includetags = args.includetag
 excludetags = args.excludetag
 
@@ -278,16 +280,23 @@ for thisvmname in vmnames:
     if vm is not None:
         # if vm['id'] not in [o['id'] for o in job['acropolisParams']['objects']]:
         newobject = {
-            "excludeDisks": None,
             "id": vm['id'],
             "name": vm['name'],
             "isAutoprotected": False
-        }
+        } # "excludeDisks": None,
         if excludedisks is not None and len(excludedisks) > 0:
             newobject['excludeDisks'] = []
             for x in excludedisks:
                 (controllerType, unitNumber) = x.split(':')
                 newobject['excludeDisks'].append({
+                    "controllerType": controllerType,
+                    "unitNumber": int(unitNumber)
+                })
+        if includedisks is not None and len(includedisks) > 0:
+            newobject['includeDisks'] = []
+            for x in includedisks:
+                (controllerType, unitNumber) = x.split(':')
+                newobject['includeDisks'].append({
                     "controllerType": controllerType,
                     "unitNumber": int(unitNumber)
                 })

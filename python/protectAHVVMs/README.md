@@ -55,6 +55,7 @@ Place both files in a folder together and run the main script like so:
 * -it, --includetag: include tag (repeat for multiple tags)
 * -et, --excludetag: exclude tag (repeat for multiple tags)
 * -ed, --excludedisk: (optional) exclude disk by controller type and unit number, e.g. ide:1 (repeat for multiple)
+* -id, --includedisk: (optional) exclude disk by controller type and unit number, e.g. ide:1 (repeat for multiple)
 
 ## New Job Parameters
 
