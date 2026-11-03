@@ -1,5 +1,8 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-11-03`] [validateServerBackup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/validateServerBackup) [`Update`] HTML restyle
+* [`2026-11-03`] [storageReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storageReport) [`Update`] HTML restyle
+* [`2026-11-03`] [storageChart.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storageChart) [`Update`] HTML restyle
 * [`2026-11-02`] [protectAHVVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/protectAHVVMs) [`Update`] added -includeDisk option
 * [`2026-11-02`] [protectAHVVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/protectAHVVMs) [`Update`] added -id, --includedisk option
 * [`2026-10-29`] [unprotectCcsM365SitesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/unprotectCcsM365SitesCSV) [`Update`] added -objectMatch option
