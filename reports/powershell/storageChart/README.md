@@ -37,9 +37,22 @@ Writing Output to /scripts/powershell/storageGrowth.html
 
 Your browser should open and display the chart of storage growth.
 
-## Parameters
+## Authentication Parameters
 
-* -vip: the Cohesity cluster to connect to
-* -username: the cohesity user to login with
-* -domain: domain of the Cohesity user (defaults to local)
-* -days: number of days of storage statistics to display
+* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -username: (optional) name of user to connect to Cohesity (defaults to helios)
+* -domain: (optional) your AD domain (defaults to local)
+* -useApiKey: (optional) use API key for authentication
+* -password: (optional) will use cached password or will be prompted
+* -noPrompt: (optional) do not prompt for password
+* -tenant: (optional) organization to impersonate
+* -helios: (optional) connect through MCM/Helios OnPrem
+* -mfaCode: (optional) TOTP MFA code
+* -emailMfaCode: (optional) send MFA code via email
+* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+
+## Other Parameters
+
+* -days: (optional) number of days of storage statistics to display (default is 60)
+* -outputPath:: (optional) output file path (default is ./storageChart.html)
+* -theme: (optional) light or dark (default is dark)

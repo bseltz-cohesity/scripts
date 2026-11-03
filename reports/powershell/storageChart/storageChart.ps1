@@ -292,7 +292,7 @@ $htmlTemplate = $htmlTemplate.Replace('__USED_DATA__', (toJson $usedValues))
 $htmlTemplate = $htmlTemplate.Replace('__CAPACITY_DATA__', (toJson $capacityValues))
 
 if(! $outputPath){
-    $outputPath = Join-Path -Path $PSScriptRoot -ChildPath 'storageGrowth.html'
+    $outputPath = Join-Path -Path $PSScriptRoot -ChildPath 'storageChart.html'
 }
 
 write-host "Writing Output to $outputPath" -ForegroundColor Green
