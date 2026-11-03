@@ -216,7 +216,7 @@ function reportStorage(){
                 $stats = $viewRunStats
             }
             if($stats){
-                $thisStat = $stats.statsList | Where-Object {$_.id -eq $primaryJobId -or $_.name -eq $job.name}
+                $thisStat = @($stats.statsList | Where-Object {$_.id -eq $primaryJobId -or $_.name -eq $job.name})[0]
             }
             if($stats -and $thisStat){
                 try{
@@ -894,7 +894,11 @@ function reportStorage(){
     $unaccounted = $clusterUsedBytes - $bookKeeperBytes
     $unaccountedPercent = 0
     $garbageStats = api get "statistics/timeSeriesStats?endTimeMsecs=$bookKeeperEnd&entityId=$($cluster.id)&metricName=kMorphedGarbageBytes&metricUnitType=0&range=day&rollupFunction=average&rollupIntervalSecs=360&schemaName=kBridgeClusterStats&startTimeMsecs=$garbageStart"
-    $garbageBytes = $garbageStats.dataPointVec[-1].data.int64Value
+    $garbageBytes = 0
+    if($garbageStats -and $garbageStats.PSObject.Properties['dataPointVec'] -and $garbageStats.dataPointVec){
+        $garbageBytes = $garbageStats.dataPointVec[-1].data.int64Value
+    }
+    # $garbageBytes = $garbageStats.dataPointVec[-1].data.int64Value
     $garbagePercent = 0
     $otherUnaccountedBytes = $unaccounted - $garbageBytes
     $otherUnaccountedPercent = 0
