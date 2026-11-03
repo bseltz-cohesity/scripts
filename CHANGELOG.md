@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-11-03`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] fix for duplicate protection group names
 * [`2026-11-03`] [validateServerBackup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/validateServerBackup) [`Update`] HTML restyle
 * [`2026-11-03`] [storageReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storageReport) [`Update`] HTML restyle
 * [`2026-11-03`] [storageChart.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storageChart) [`Update`] HTML restyle
