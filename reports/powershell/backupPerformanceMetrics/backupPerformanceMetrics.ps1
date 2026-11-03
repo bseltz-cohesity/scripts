@@ -263,6 +263,26 @@ __CHARTJS_SOURCE__
 var chartTextColor = '__CHART_TEXT_COLOR__';
 var chartGridColor = '__CHART_GRID_COLOR__';
 
+// custom hover mode: of the points within +/- hoverRadiusPx of the cursor, pick the highest,
+// so hovering near a spike snaps to its peak instead of a neighboring zero point
+var hoverRadiusPx = 25;
+Chart.Interaction.modes.peakNearby = function(chart, e, options, useFinalPosition){
+  var pos = Chart.helpers.getRelativePosition(e, chart);
+  var items = [];
+  chart.getSortedVisibleDatasetMetas().forEach(function(meta){
+    var best = null;
+    meta.data.forEach(function(el, i){
+      if(el.skip || Math.abs(el.x - pos.x) > hoverRadiusPx){ return; }
+      var v = chart.data.datasets[meta.index].data[i];
+      if(best === null || v > best.v){
+        best = { element: el, datasetIndex: meta.index, index: i, v: v };
+      }
+    });
+    if(best){ items.push({ element: best.element, datasetIndex: best.datasetIndex, index: best.index }); }
+  });
+  return items;
+};
+
 function makeLineChart(canvasId, labels, data, color, yLabel){
   var ctx = document.getElementById(canvasId).getContext('2d');
   new Chart(ctx, {
@@ -276,12 +296,13 @@ function makeLineChart(canvasId, labels, data, color, yLabel){
         backgroundColor: color + '33',
         fill: true,
         tension: 0.3,
-        pointRadius: 2
+        pointRadius: 2,
+        pointHoverRadius: 6
       }]
     },
     options: {
       responsive: true,
-      interaction: { mode: 'index', intersect: false },
+      interaction: { mode: 'peakNearby', intersect: false },
       scales: {
         y: {
           beginAtZero: true,
