@@ -28,7 +28,9 @@ param (
     [Parameter()][string]$smtpServer, # outbound smtp server '192.168.1.95'
     [Parameter()][string]$smtpPort = 25, # outbound smtp port
     [Parameter()][array]$sendTo, # send to address
-    [Parameter()][string]$sendFrom # send from address
+    [Parameter()][string]$sendFrom, # send from address
+    [Parameter()][ValidateSet('light', 'dark')][string]$theme = 'dark',
+    [Parameter()][switch]$show # open the html report when done
 )
 
 # gather volume list from command-line and/or text file
@@ -50,6 +52,31 @@ if ($objectList){
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+
+# report colors (same palette as the other chart/report scripts)
+if($theme -eq 'dark'){
+    $uiBg = '#0f1115'
+    $uiCard = '#1a1d24'
+    $uiBorder = '#2a2e37'
+    $uiText = '#c3c7cc'
+    $uiMuted = '#9aa1a9'
+    $uiHeading = '#d3d6da'
+    $uiHeaderRow = '#20242c'
+    $uiZebra = '#1e222a'
+    $uiLogoBg = '#ffffff'
+    $uiFail = '#e0735a'
+}else{
+    $uiBg = '#e8ebef'
+    $uiCard = '#f3f4f6'
+    $uiBorder = '#d3d7dd'
+    $uiText = '#1b1f24'
+    $uiMuted = '#5b6470'
+    $uiHeading = '#30363d'
+    $uiHeaderRow = '#e4e7ec'
+    $uiZebra = '#eaedf1'
+    $uiLogoBg = 'transparent'
+    $uiFail = '#ba3415'
+}
 
 # authentication =============================================
 # demand clusterName for Helios/MCM
@@ -80,46 +107,24 @@ $date = (get-date).ToString()
 
 $title = "Backup Validation Report"
 
-$script:html = '<html>
+$script:html = @"
+<html>
 <head>
-    <style>
-        p {
-            color: #555555;
-            font-family:Arial, Helvetica, sans-serif;
-        }
-        span {
-            color: #555555;
-            font-family:Arial, Helvetica, sans-serif;
-        }
-        
-
-        table {
-            font-family: Arial, Helvetica, sans-serif;
-            color: #333333;
-            font-size: 0.75em;
-            border-collapse: collapse;
-            width: 100%;
-        }
-
-        tr {
-            border: 1px solid #F1F1F1;
-        }
-
-        td,
-        th {
-            width: 20%;
-            text-align: left;
-            padding: 6px;
-        }
-
-        tr:nth-child(even) {
-            background-color: #F1F1F1;
-        }
-    </style>
+<meta charset="utf-8">
+<style>
+    body { margin: 0; background: $uiBg; }
+    table { font-family: Arial, Helvetica, sans-serif; color: $uiText; font-size: 0.75em; border-collapse: collapse; width: 100%; }
+    th { text-align: left; vertical-align: bottom; padding: 8px 6px; background: $uiHeaderRow; color: $uiHeading; font-weight: 600; border-bottom: 1px solid $uiBorder; }
+    td { text-align: left; vertical-align: top; padding: 6px; border-bottom: 1px solid $uiBorder; }
+    td:first-child { word-break: break-word; overflow-wrap: anywhere; }
+    tr:nth-child(even) td { background: $uiZebra; }
+</style>
 </head>
-<body>
-    
-    <div style="margin:15px;">
+<body style="margin:0; background:$uiBg;">
+<div style="background:$uiBg; padding:16px; font-family:Arial, Helvetica, sans-serif; color:$uiText;">
+<div style="display:inline-block; background:$uiLogoBg; padding:8px 12px; border-radius:6px;">
+"@
+$script:html += '
             <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARgAAAAoCAMAAAASXRWnAAAC8VBMVE
             WXyTz///+XyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyT
             yXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyT
@@ -179,25 +184,22 @@ $script:html = '<html>
             5n+x+8Tu9wg3Yt6yyrqFH6Ea6LXyQJFFjlMiW5S93+YlPsl5TDPkbHGLxfGi7J58ehtdO9MzQBcN
             HXXaEIRZB+GCvgv9sL/7UZNGjhzlMlLtefhdsXDG6kqRCd9tnh8y5X6dmC3NHS83a73LX2/4lATN
             64iLlEjZk8aaIETyZb3Rw9Y3oah/Rp42KDhHqj3v18hKy9AZ+u6Sjzs6g/e1NGbd5Vo8a/916SKO
-            8LK0YAAAAASUVORK5CYII=" style="width:180px">
-        <p style="margin-top: 15px; margin-bottom: 15px;">
-            <span style="font-size:1.3em;">'
-
-$script:html += $title
-$script:html += '</span>
-<span style="font-size:1em; text-align: right; padding-right: 2px; float: right;">'
-$script:html += $date
-$script:html += '</span>
-</p>
+            8LK0YAAAAASUVORK5CYII=" style="width:180px; display:block;">'
+$script:html += @"
+</div>
+<h1 style="font-size:20px; font-weight:600; margin:16px 0 4px 0; color:$uiHeading; font-family:Arial, Helvetica, sans-serif;">$title</h1>
+<div style="color:$uiMuted; font-size:13px; margin-bottom:20px; font-family:Arial, Helvetica, sans-serif;">$date</div>
+<div style="background:$uiCard; border:1px solid $uiBorder; border-radius:8px; overflow-x:auto;">
 <table>
 <tr>
-    <th>ObjectName</th>
-    <th>JobName</th>
-    <th>OrgName</th>
-    <th>Last Run Date</th>
-    <th>Status</th>
-    <th>Validated</th>
-</tr>'
+<th>ObjectName</th>
+<th>JobName</th>
+<th>OrgName</th>
+<th>Last Run Date</th>
+<th>Status</th>
+<th>Validated</th>
+</tr>
+"@
 
 $volumeTypes = @(1, 2, 6, 8, 12, 18, 28, 29, 36)
 $finishedStates = @('kCanceled', 'kSuccess', 'kFailure', 'kWarning')
@@ -260,7 +262,7 @@ function validateServer($object, $vm){
     }
     $lastBackupReadable = (($lastRecoveryPoint -eq $lastRunUsecs) -and $readableBackup)
     if($status -eq 'Failure' -or $False -eq $lastBackupReadable){
-        $script:html += "<tr style='color:BA3415;'>"
+        $script:html += "<tr style='color:$uiFail;'>"
     }else{
         $script:html += "<tr>"
     }
@@ -321,13 +323,27 @@ if($objects.Count -eq 0){
     }
 }
 
-$script:html += "</table>                
+$script:html += "</table>
+</div>
 </div>
 </body>
 </html>"
 
 $fileDate = $date.Replace('/','-').Replace(':','-').Replace(' ','_')
 $script:html | Out-File -FilePath "validationReport_$fileDate.html"
+
+if($show){
+    $htmlPath = (Resolve-Path -Path "validationReport_$fileDate.html").Path
+    try{
+        Invoke-Item -Path $htmlPath
+    }catch{
+        try{
+            Start-Process -FilePath $htmlPath
+        }catch{
+            Write-Host "unable to automatically open $htmlPath - please open it manually" -ForegroundColor Yellow
+        }
+    }
+}
 
 if($smtpServer -and $sendTo -and $sendFrom){
     write-host "`nsending report to $([string]::Join(", ", $sendTo))`n"

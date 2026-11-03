@@ -52,6 +52,8 @@ Place the files in a folder together and run the script like so:
 * -sendTo: (optional) email addresses to send report to (comma separated)
 * -sendFrom: (optional) email address to show in the from field
 * -includeArchives: (optional) include storage consumption in archive targets
+* -theme: (optional) dark or light (default is dark)
+* -show: (optional) open HTML output in browser
 
 ## Column Descriptions for the Output File (`storageReport_<clusterName>_<datetime>.csv`)
 

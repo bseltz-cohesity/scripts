@@ -57,6 +57,8 @@ Place the files in a folder together and run the script like so:
 * -smtpPort: SMTP port to use (default is 25)
 * -sendTo: email addresses to send report to (comma separated)
 * -sendFrom: email address to show in the from field
+* -theme: (optional) dark or light (default is dark)
+* -show: (optional) open HTML output in browser
 
 ## Note
 
