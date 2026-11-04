@@ -783,8 +783,11 @@ function reportStorage(){
                 }
             }
             if($jobName -notin $viewJobStats.Keys){
-                $viewJobStats[$jobName] = $viewHistory[$view.name]['stats']
+                $viewJobStats[$jobName] = @($viewHistory[$view.name]['stats'])[0]
             }
+            # if($jobName -notin $viewJobStats.Keys){
+            #     $viewJobStats[$jobName] = $viewHistory[$view.name]['stats']
+            # }
             # Write-Host ($viewHistory[$view.name] | toJson)
         }catch{
             $jobName = '-'
