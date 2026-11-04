@@ -20,11 +20,40 @@ param (
     [Parameter()][string]$smtpPort = 25, #outbound smtp port
     [Parameter()][array]$sendTo, #send to address
     [Parameter()][string]$sendFrom, #send from address
-    [Parameter()][switch]$destroyable
+    [Parameter()][switch]$destroyable,
+    [Parameter()][ValidateSet('light', 'dark')][string]$theme = 'dark',
+    [Parameter()][switch]$show # open the html report when done
 )
 
 # source the cohesity-api helper code
 . $(Join-Path -Path $PSScriptRoot -ChildPath cohesity-api.ps1)
+
+# report colors
+if($theme -eq 'dark'){
+    $uiBg = '#0f1115'
+    $uiCard = '#1a1d24'
+    $uiBorder = '#2a2e37'
+    $uiText = '#c3c7cc'
+    $uiMuted = '#9aa1a9'
+    $uiHeading = '#d3d6da'
+    $uiHeaderRow = '#20242c'
+    $uiZebra = '#1e222a'
+    $uiLogoBg = '#ffffff'
+    $uiFail = '#e0735a'
+    $uiLink = '#7aa7e8'
+}else{
+    $uiBg = '#e8ebef'
+    $uiCard = '#f3f4f6'
+    $uiBorder = '#d3d7dd'
+    $uiText = '#1b1f24'
+    $uiMuted = '#5b6470'
+    $uiHeading = '#30363d'
+    $uiHeaderRow = '#e4e7ec'
+    $uiZebra = '#eaedf1'
+    $uiLogoBg = 'transparent'
+    $uiFail = '#ba3415'
+    $uiLink = '#1f5fbf'
+}
 
 # authenticate
 apiauth -vip $vip -username $username -domain $domain -passwd $password -apiKeyAuthentication $useApiKey -mfaCode $mfaCode -sendMfaCode $emailMfaCode -heliosAuthentication $mcm -regionid $region -tenant $tenant -noPromptForPassword $noPrompt
@@ -74,46 +103,25 @@ $csvFile = "restoreReport-$($cluster.name)-$now.csv"
 
 "Date,Task,Object,Type,Target,Status,Duration (Min),Restore Point,User" | Out-File $csvFile
 
-$html = '<html>
+$html = @"
+<html>
 <head>
-    <style>
-        p {
-            color: #555555;
-            font-family:Arial, Helvetica, sans-serif;
-        }
-        span {
-            color: #555555;
-            font-family:Arial, Helvetica, sans-serif;
-        }
-        
-
-        table {
-            font-family: Arial, Helvetica, sans-serif;
-            color: #333333;
-            font-size: 0.75em;
-            border-collapse: collapse;
-            width: 100%;
-        }
-
-        tr {
-            border: 1px solid #F1F1F1;
-        }
-
-        td,
-        th {
-            width: 33%;
-            text-align: left;
-            padding: 6px;
-        }
-
-        tr:nth-child(even) {
-            background-color: #F1F1F1;
-        }
-    </style>
+<meta charset="utf-8">
+<style>
+    body { margin: 0; background: $uiBg; }
+    table { font-family: Arial, Helvetica, sans-serif; color: $uiText; font-size: 0.75em; border-collapse: collapse; width: 100%; }
+    th { text-align: left; vertical-align: bottom; padding: 8px 6px; background: $uiHeaderRow; color: $uiHeading; font-weight: 600; border-bottom: 1px solid $uiBorder; }
+    td { text-align: left; vertical-align: top; padding: 6px; border-bottom: 1px solid $uiBorder; }
+    td:nth-child(2), td:nth-child(3), td:nth-child(5) { word-break: break-word; overflow-wrap: anywhere; }
+    tr:nth-child(even) td { background: $uiZebra; }
+    a { color: $uiLink; }
+</style>
 </head>
-<body>
-    
-    <div style="margin:15px;">
+<body style="margin:0; background:$uiBg;">
+<div style="background:$uiBg; padding:16px; font-family:Arial, Helvetica, sans-serif; color:$uiText;">
+<div style="display:inline-block; background:$uiLogoBg; padding:8px 12px; border-radius:6px;">
+"@
+$html += '
             <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARgAAAAoCAMAAAASXRWnAAAC8VBMVE
             WXyTz///+XyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyT
             yXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyTyXyT
@@ -173,28 +181,25 @@ $html = '<html>
             5n+x+8Tu9wg3Yt6yyrqFH6Ea6LXyQJFFjlMiW5S93+YlPsl5TDPkbHGLxfGi7J58ehtdO9MzQBcN
             HXXaEIRZB+GCvgv9sL/7UZNGjhzlMlLtefhdsXDG6kqRCd9tnh8y5X6dmC3NHS83a73LX2/4lATN
             64iLlEjZk8aaIETyZb3Rw9Y3oah/Rp42KDhHqj3v18hKy9AZ+u6Sjzs6g/e1NGbd5Vo8a/916SKO
-            8LK0YAAAAASUVORK5CYII=" style="width:180px">
-        <p style="margin-top: 15px; margin-bottom: 15px;">
-            <span style="font-size:1.3em;">'
-
-$html += $title
-$html += '</span>
-<span style="font-size:0.75em; text-align: right; padding-top: 8px; padding-right: 2px; float: right;">'
-$html += $date
-$html += '</span>
-</p>
+            8LK0YAAAAASUVORK5CYII=" style="width:180px; display:block;">'
+$html += @"
+</div>
+<h1 style="font-size:20px; font-weight:600; margin:16px 0 4px 0; color:$uiHeading; font-family:Arial, Helvetica, sans-serif;">$title</h1>
+<div style="color:$uiMuted; font-size:13px; margin-bottom:20px; font-family:Arial, Helvetica, sans-serif;">$date</div>
+<div style="background:$uiCard; border:1px solid $uiBorder; border-radius:8px; overflow-x:auto;">
 <table>
 <tr>
-        <th>Date</th>
-        <th>Task</th>
-        <th>Object</th>
-        <th>Type</th>
-        <th>Target</th>
-        <th>Status</th>
-        <th>Duration (Min)</th>
-        <th>Restore Point</th>
-        <th>User</th>
-      </tr>'
+<th>Date</th>
+<th>Task</th>
+<th>Object</th>
+<th>Type</th>
+<th>Target</th>
+<th>Status</th>
+<th>Duration (Min)</th>
+<th>Restore Point</th>
+<th>User</th>
+</tr>
+"@
 
 $entityType=@('Unknown', 'VMware', 'HyperV', 'SQL', 'View', 'Puppeteer',
               'Physical', 'Pure', 'Azure', 'Netapp', 'Agent', 'GenericNas',
@@ -214,7 +219,7 @@ $lastTaskId = 0
 
 function output($startTime, $taskName, $objectName, $objectType, $targetObject, $status, $duration, $restorePoint, $baseuser, $link){
     if($status -eq 'Failure'){
-        $script:html += "<tr style='color:BA3415;'>"
+        $script:html += "<tr style='color:$uiFail;'>"
     }else{
         $script:html += "<tr>"
     }
@@ -342,7 +347,8 @@ while(1){
     }
 }
 
-$html += "</table>                
+$html += "</table>
+</div>
 </div>
 </body>
 </html>"
@@ -350,6 +356,19 @@ $html += "</table>
 $html | out-file "restoreReport-$($cluster.name)-$($now).html"
 
 "Saving output to restoreReport-$($cluster.name)-$now.html and restoreReport-$($cluster.name)-$now.csv"
+
+if($show){
+    $htmlPath = (Resolve-Path -Path "restoreReport-$($cluster.name)-$($now).html").Path
+    try{
+        Invoke-Item -Path $htmlPath
+    }catch{
+        try{
+            Start-Process -FilePath $htmlPath
+        }catch{
+            Write-Host "unable to automatically open $htmlPath - please open it manually" -ForegroundColor Yellow
+        }
+    }
+}
 
 if($smtpServer -and $sendFrom -and $sendTo){
     write-host "sending report to $([string]::Join(", ", $sendTo))"
