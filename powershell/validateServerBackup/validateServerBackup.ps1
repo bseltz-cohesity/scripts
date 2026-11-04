@@ -261,7 +261,7 @@ function validateServer($object, $vm){
         }
     }
     $lastBackupReadable = (($lastRecoveryPoint -eq $lastRunUsecs) -and $readableBackup)
-    if($status -eq 'Failure' -or $False -eq $lastBackupReadable){
+    if($lastStatus -eq 'kFailure' -or $False -eq $lastBackupReadable){
         $script:html += "<tr style='color:$uiFail;'>"
     }else{
         $script:html += "<tr>"
