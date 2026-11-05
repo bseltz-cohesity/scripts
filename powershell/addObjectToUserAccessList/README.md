@@ -53,7 +53,7 @@ Place the files in a folder together and run the main script like so:
 
 ## Authentication Parameters
 
-* -vip: (optional) name or IP of Cohesity cluster (defaults to helios.cohesity.com)
+* -vip: (optional) one or more names or IPs of Cohesity clusters, comma separated (defaults to helios.cohesity.com)
 * -username: (optional) name of user to connect to Cohesity (defaults to helios)
 * -domain: (optional) your AD domain (defaults to local)
 * -useApiKey: (optional) use API key for authentication
@@ -61,7 +61,7 @@ Place the files in a folder together and run the main script like so:
 * -mcm: (optional) connect through MCM
 * -mfaCode: (optional) TOTP MFA code
 * -emailMfaCode: (optional) send MFA code via email
-* -clusterName: (optional) cluster to connect to when connecting through Helios or MCM
+* -clusterName: (optional) one or more clusters, comma separated, to connect to when connecting through Helios or MCM
 
 ## Parameters
 
@@ -70,6 +70,7 @@ Place the files in a folder together and run the main script like so:
 * -sourceName: (optional) name of protection source that owns the objects (e.g. VMs) to be added
 * -objectName: (optional) registered objects to add/remove from access list (comma separated)
 * -objectList: (optional) text file of registered objects to add/remove from access list (one per line)
+* -allOfType: (optional) add/remove all sources of the type specified (e.g. kSQL)
 * -environment: (optional) find object of type (e.g. kPhysical, kVMware)
 * -viewName: (optional) views to add/remove from access list (comma separated)
 * -viewList: (optional) text file of views to add/remove from access list (one per line)
