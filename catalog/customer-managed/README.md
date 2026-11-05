@@ -2,7 +2,7 @@
 
 [← Back to catalog index](../README.md)
 
-Total scripts: **808**
+Total scripts: **806**
 
 ## Popular Scripts
 
@@ -85,7 +85,7 @@ Total scripts: **808**
 
 | Sub-Category | Scripts |
 | --- | --- |
-| [Capacity Reporting](capacity-reporting.md) | 17 |
+| [Capacity Reporting](capacity-reporting.md) | 15 |
 | [Custom Reporting DB](custom-reporting-db.md) | 10 |
 | [General Reporting](general-reporting.md) | 68 |
 | [Helios Reporting](helios-reporting.md) | 20 |
