@@ -1,4 +1,4 @@
-### usage: ./storageChart.ps1 -vip 192.168.1.198 -username admin [ -domain local ] [ -days 60 ]
+### usage: ./storageGrowth.ps1 -vip 192.168.1.198 -username admin [ -domain local ] [ -days 60 ]
 
 ### process commandline arguments
 [CmdletBinding()]
@@ -40,8 +40,17 @@ function reportStorage(){
 
     ### collect $days of write throughput stats
     write-host "Gathering Storage Statistics..." -ForegroundColor Green
+        if($cluster.clusterSize -eq 'kNextGen'){
+        ### next gen clusters save data to a cloud target and use the local disks as cache only
+        ### report the data saved to the cloud target (CloudChunkFileBytes), there is no fixed capacity to report against
+        write-host "Next gen cluster detected, reporting cloud target usage" -ForegroundColor Green
+        $endTimeMsecs = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $consumptionStats = api get "statistics/timeSeriesStats?schemaName=MRCounters&metricName=bytes_value&entityId=CloudChunkFileBytes&startTimeMsecs=$startTimeMsecs&endTimeMsecs=$endTimeMsecs&rollupFunction=latest&rollupIntervalSecs=86400"
+        $capacityStats = $null
+    }else{
     $consumptionStats = api get statistics/timeSeriesStats?schemaName=kBridgeClusterStats`&entityId=$clusterId`&metricName=kMorphedUsageBytes`&startTimeMsecs=$startTimeMsecs`&rollupFunction=average`&rollupIntervalSecs=86400
     $capacityStats = api get statistics/timeSeriesStats?schemaName=kBridgeClusterStats`&entityId=$clusterId`&metricName=kCapacityBytes`&startTimeMsecs=$startTimeMsecs`&rollupFunction=average`&rollupIntervalSecs=86400
+    }
 
     $statsConsumed = @{}
     foreach ($stat in $consumptionStats.dataPointVec){
@@ -58,7 +67,11 @@ function reportStorage(){
     }
 
     foreach($dt in $statsConsumed.Keys | Sort-Object -Descending){
+        if($statsCapacity[$dt]){
         $pctFull = ([math]::Round(100 * $statsConsumed[$dt] / $statsCapacity[$dt]))
+                }else{
+            $pctFull = $null
+        }
         """{0}"",""{1}"",""{2}"",""{3}"",""{4}""" -f $cluster.name, $dt, $statsConsumed[$dt], $statsCapacity[$dt], $pctFull | Tee-Object -FilePath $outFile -Append
     }
 
