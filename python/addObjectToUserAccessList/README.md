@@ -34,6 +34,96 @@ Place both files in a folder together and run the main script like so:
 # end example
 ```
 
+Add all registered SQL sources to a user's access list:
+
+```bash
+# example: all sources of a type
+./addObjectsToUserAccessList.py -v mycluster \
+                                -u myuser \
+                                -d mydomain.net \
+                                -pn myaddomain.net/myaduser \
+                                -a kSQL
+# end example
+```
+
+Remove all registered VMware sources from a group's access list:
+
+```bash
+# example: remove all sources of a type
+./addObjectsToUserAccessList.py -v mycluster \
+                                -u myuser \
+                                -d mydomain.net \
+                                -pn myaddomain.net/mygroup \
+                                -a kVMware \
+                                -r
+# end example
+```
+
+Use text files to specify principals and objects:
+
+```bash
+# example: lists from files
+./addObjectsToUserAccessList.py -v mycluster \
+                                -u myuser \
+                                -d mydomain.net \
+                                -pl ./principals.txt \
+                                -ol ./objects.txt \
+                                -vl ./views.txt
+# end example
+```
+
+Apply the same change to multiple clusters by repeating `-v`:
+
+```bash
+# example: multiple clusters
+./addObjectsToUserAccessList.py -v mycluster1 \
+                                -v mycluster2 \
+                                -v mycluster3 \
+                                -u myuser \
+                                -d mydomain.net \
+                                -pn myaddomain.net/myaduser \
+                                -a kSQL
+# end example
+```
+
+Connect to Helios (the default when `-v` is omitted) and apply the change to every connected cluster:
+
+```bash
+# example: all Helios clusters
+./addObjectsToUserAccessList.py -u myuser@mydomain.net \
+                                -i \
+                                -pn myaddomain.net/myaduser \
+                                -a kSQL
+# end example
+```
+
+Limit the change to specific Helios clusters by repeating `-c`:
+
+```bash
+# example: selected Helios clusters
+./addObjectsToUserAccessList.py -mcm \
+                                -v helios.cohesity.com \
+                                -i \
+                                -c mycluster1 \
+                                -c mycluster2 \
+                                -pn myaddomain.net/myaduser \
+                                -a kSQL
+# end example
+```
+
+Remove all sources of a type from a user's access list on selected Helios clusters:
+
+```bash
+# example: remove across selected Helios clusters
+./addObjectsToUserAccessList.py -c mycluster1 \
+                                -c mycluster2 \
+                                -i \
+                                -pn myaddomain.net/myaduser \
+                                -a kSQL \
+                                -r
+# end example
+```
+
 ## Authentication Parameters
 
 * -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to, repeat for multiple (default is helios.cohesity.com)
