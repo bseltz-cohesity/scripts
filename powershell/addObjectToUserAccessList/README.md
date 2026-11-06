@@ -1,4 +1,4 @@
-# List Cohesity Users and Groups Using PowerShell
+# Add Objects and Views to User Access List Using PowerShell
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
@@ -48,6 +48,79 @@ Place the files in a folder together and run the main script like so:
                                 -domain mydomain.net `
                                 -principalName mydomain.net/myuser `
                                 -viewName view1, view2
+# End example
+```
+
+Add all registered SQL sources to a user's access list:
+
+```powershell
+# Command line example: all sources of a type
+./addObjectToUserAccessList.ps1 -vip mycluster `
+                                -username myuser `
+                                -domain mydomain.net `
+                                -principalName mydomain.net/myuser `
+                                -allOfType kSQL
+# End example
+```
+
+Use text files to specify principals, objects and views:
+
+```powershell
+# Command line example: lists from files
+./addObjectToUserAccessList.ps1 -vip mycluster `
+                                -username myuser `
+                                -domain mydomain.net `
+                                -principalList ./principals.txt `
+                                -objectList ./objects.txt `
+                                -viewList ./views.txt
+# End example
+```
+
+Apply the same change to multiple clusters by listing them in `-vip`:
+
+```powershell
+# Command line example: multiple clusters
+./addObjectToUserAccessList.ps1 -vip mycluster1, mycluster2, mycluster3 `
+                                -username myuser `
+                                -domain mydomain.net `
+                                -principalName mydomain.net/myuser `
+                                -allOfType kSQL
+# End example
+```
+
+Connect to Helios (the default when `-vip` is omitted) and apply the change to every connected cluster:
+
+```powershell
+# Command line example: all Helios clusters
+./addObjectToUserAccessList.ps1 -username myuser@mydomain.net `
+                                -useApiKey `
+                                -principalName mydomain.net/myuser `
+                                -allOfType kSQL
+# End example
+```
+
+Limit the change to specific Helios clusters with `-clusterName`:
+
+```powershell
+# Command line example: selected Helios clusters
+./addObjectToUserAccessList.ps1 -clusterName mycluster1, mycluster2 `
+                                -username myuser@mydomain.net `
+                                -useApiKey `
+                                -principalName mydomain.net/myuser `
+                                -allOfType kSQL
+# End example
+```
+
+Remove all sources of a type from a user's access list on selected Helios clusters:
+
+```powershell
+# Command line example: remove across selected Helios clusters
+./addObjectToUserAccessList.ps1 -clusterName mycluster1, mycluster2 `
+                                -username myuser@mydomain.net `
+                                -useApiKey `
+                                -principalName mydomain.net/myuser `
+                                -allOfType kSQL `
+                                -remove
 # End example
 ```
 
