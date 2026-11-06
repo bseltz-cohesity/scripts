@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-11-06`] [addObjectToUserAccessList.py](https://github.com/cohesity/community-automation-samples/tree/main/python/addObjectToUserAccessList) [`Update`] added multi-cluster support and -a, --allfftype option
 * [`2026-11-05`] [addObjectToUserAccessList.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/addObjectToUserAccessList) [`Update`] added multi-cluster support and -allOfType option
 * [`2026-11-04`] [restoreReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/restoreReport) [`Update`] HTML restyle
 * [`2026-11-03`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] fix for duplicate protection group names
