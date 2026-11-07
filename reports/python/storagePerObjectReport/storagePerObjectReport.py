@@ -260,6 +260,8 @@ def reportStorage():
                                             runInfo = run['archivalInfo']['archivalTargetResults'][0]
                                         except Exception:
                                             archivalInfo = None
+                                if snap is not None and 'isManuallyDeleted' in snap['snapshotInfo'] and snap['snapshotInfo']['isManuallyDeleted'] == True:
+                                    continue
                                 if runInfo is not None and lastDataLock == '-' and 'dataLockConstraints' in runInfo and 'expiryTimeUsecs' in runInfo['dataLockConstraints'] and runInfo['dataLockConstraints']['expiryTimeUsecs'] > 0:
                                     if runInfo['dataLockConstraints']['expiryTimeUsecs'] > nowUsecs:
                                         lastDataLock = usecsToDate(runInfo['dataLockConstraints']['expiryTimeUsecs'])
@@ -281,6 +283,8 @@ def reportStorage():
                                         objects[objId]['lastDataLock'] = lastDataLock
                                         if 'sourceId' in object['object']:
                                             objects[objId]['sourceId'] = object['object']['sourceId']
+                                        else:
+                                            sourceNames[object['object']['id']] = object['object']['name']
                                         if snap is not None:
                                             objects[objId]['newestBackup'] = snap['snapshotInfo']['startTimeUsecs']
                                             objects[objId]['oldestBackup'] = snap['snapshotInfo']['startTimeUsecs']

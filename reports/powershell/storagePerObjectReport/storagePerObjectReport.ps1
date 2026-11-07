@@ -308,6 +308,9 @@ function reportStorage(){
                                     $archivalInfo = $object.archivalInfo.archivalTargetResults[0]
                                 }
                             }
+                            if($snap -and $snap.snapshotInfo.PSObject.Properties['isManuallyDeleted'] -and $snap.snapshotInfo.isManuallyDeleted -eq $True){
+                                continue
+                            }
                             if($objId -notin $objects.Keys -and !($job.environment -eq 'kAD' -and $object.object.environment -eq 'kAD') -and !($job.environment -in @('kSQL', 'kOracle', 'kExchange') -and $object.object.objectType -in @('kHost', 'kVMware'))){
                                 $objects[$objId] = @{}
                                 $objects[$objId]['name'] = $object.object.name
@@ -334,6 +337,8 @@ function reportStorage(){
                                 $objects[$objId]['lastDataLock'] = $lastDataLock
                                 if($object.object.PSObject.Properties['sourceId']){
                                     $objects[$objId]['sourceId'] = $object.object.sourceId
+                                }else{
+                                    $sourceNames["$objId"] = $object.object.name
                                 }
                                 if($snap -and ! $snap.snapshotInfo.stats.PSObject.Properties['logicalSizeBytes']){
                                     if($dbg){
