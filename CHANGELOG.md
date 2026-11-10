@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-11-10`] [threatScanReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/threatScanReport) [`New`] generates a threat scan affected files report
 * [`2026-11-10`] [resolveAlerts.py](https://github.com/cohesity/community-automation-samples/tree/main/python/resolveAlerts) [`Update`] modernized script
 * [`2026-11-07`] [storagePerObjectReport.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/python/storagePerObjectReport) [`Update`] fixed manually deleted snapshots and AAG source name
 * [`2026-11-07`] [storagePerObjectReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/storagePerObjectReport) [`Update`] fixed manually deleted snapshots and AAG source name
