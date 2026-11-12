@@ -8,7 +8,7 @@ This Grafana dashboard displays a Helios cluster health and status table. It sho
 
 Go here to get the raw JSON file and save it to your local machine.
 
-<https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/grafana/JSON-API/HeliosDashboard/heliosDashboard.json>
+<https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/grafana/JSON-API/heliosDashboard/heliosDashboard.json>
 
 ## Create a JSON API Data Source in Grafana
 
