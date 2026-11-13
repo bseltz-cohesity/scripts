@@ -3,12 +3,17 @@
 
 # usage: ./excludeVMs.py -v mycluster -u myuser -d mydomain.net -j 'vm backup' -n mongodb
 #        ./excludeVMs.py -v mycluster -u myuser -j 'vm backup' -xt -xp -vu vcuser -vp vcpassword
+#
+# VMs selected by -mt, -x, -xt and -xp are only excluded if they are in scope of the
+# protection group (selected by name, container or tag, and not already excluded).
+# VMs named explicitly with -n or -l are always excluded.
 
 # import pyhesity wrapper module
 from pyhesity import *
 from pyVim import connect
 import os
 import re
+import ssl
 
 # command line arguments
 import argparse
@@ -103,7 +108,9 @@ if vmlist != '':
         print("VM list %s not found!" % vmlist)
         exit(1)
 
-if len(vmsToExclude) == 0 and vmmatch is None and len(excludeRules) == 0 and excludeTemplates is False and excludePoweredOff is False:
+useRules = vmmatch is not None or len(excludeRules) > 0 or excludeTemplates is True or excludePoweredOff is True
+
+if len(vmsToExclude) == 0 and useRules is False:
     print("No VMs to add")
     exit(0)
 
@@ -131,43 +138,141 @@ for j in jobnames:
     if j.lower() not in [job['name'].lower() for job in jobs]:
         print("Job '%s' not found" % j)
 
-vCenterCache = {}      # vCenter id -> list of VMs
-poweredOffCache = {}   # vCenter id -> set of ids of powered off VMs
+hierarchyCache = {}        # vCenter id -> {'name': vCenter name, 'index': {object id: node}}
+vCenterConnections = {}    # vCenter id -> vCenter search index
+poweredOffCache = {}       # VM id -> True if powered off
 exitCode = 0
 
 
-def getVMs(vCenterId):
-    """get VMs for a vCenter (cached)"""
-    if vCenterId not in vCenterCache:
-        vms = api('get', 'protectionSources/virtualMachines?vCenterId=%s' % vCenterId)
-        if vms is None or isinstance(vms, (str, dict)):
-            print("failed to get VMs for vCenter %s" % vCenterId)
-            exit(1)
-        vCenterCache[vCenterId] = vms
-    return vCenterCache[vCenterId]
+# VM hierarchy and scope evaluation =====================================
 
+def indexChildren(index, source, parents=None):
+    """index a protection source and its children, tracking all ancestors (containers and tags)"""
+    parents = set(parents or [])
+    protectionSource = source['protectionSource']
+    envSource = protectionSource.get('vmWareProtectionSource', None) or {}
+    # tag nodes add their tag id to the parents of their children
+    tagAttributes = envSource.get('tagAttributes', None) or []
+    if isinstance(tagAttributes, dict):
+        tagAttributes = [tagAttributes]
+    for tagAttribute in tagAttributes:
+        if tagAttribute.get('id', None) is not None:
+            parents.add(tagAttribute['id'])
+    node = index.get(protectionSource['id'], None)
+    if node is None:
+        node = {
+            'id': protectionSource['id'],
+            'name': protectionSource['name'],
+            'type': envSource.get('type', None),
+            'parents': set(parents),
+            'indexed': False,
+            'source': envSource
+        }
+        index[protectionSource['id']] = node
+    node['parents'] |= parents
+    children = source.get('nodes', None) or []
+    if len(children) > 0 and node['indexed'] is False:
+        node['indexed'] = True
+        childParents = node['parents'] | set([protectionSource['id']])
+        for child in children:
+            indexChildren(index, child, childParents)
+
+
+def getHierarchy(vCenterId):
+    """get (and cache) the hierarchy of a vCenter"""
+    if vCenterId not in hierarchyCache:
+        result = api('get', 'protectionSources?id=%s&includeVMFolders=true' % vCenterId)
+        if failed(result):
+            print("failed to get hierarchy for vCenter %s" % vCenterId)
+            exit(1)
+        roots = result if isinstance(result, list) else [result]
+        index = {}
+        vCenterName = None
+        for root in roots:
+            if vCenterName is None and root['protectionSource']['id'] == vCenterId:
+                vCenterName = root['protectionSource']['name']
+            indexChildren(index, root)
+        hierarchyCache[vCenterId] = {'name': vCenterName, 'index': index}
+    return hierarchyCache[vCenterId]
+
+
+def getChildren(index, objectId):
+    """get VMs that are, or are under, an object (container, tag or VM)"""
+    return [n for n in index.values() if n['type'] == 'kVirtualMachine' and (objectId in n['parents'] or objectId == n['id'])]
+
+
+def getTaggedVMs(index, tagIds):
+    """get VMs that have all of the specified tags"""
+    matchIds = None
+    for tagId in tagIds:
+        tagVMIds = set([n['id'] for n in getChildren(index, tagId)])
+        matchIds = tagVMIds if matchIds is None else matchIds & tagVMIds
+    return [index[i] for i in (matchIds or [])]
+
+
+def getScope(index, vmwareParams):
+    """get VMs that are in scope of a protection group (selected, and not excluded)"""
+    selected = {}
+    directIds = set([o['id'] for o in vmwareParams.get('objects', None) or []])
+    # explicit and container selections
+    for protectedObject in vmwareParams.get('objects', None) or []:
+        for vm in getChildren(index, protectedObject['id']):
+            selected[vm['id']] = vm
+    # tag selections
+    for tagIds in vmwareParams.get('vmTagIds', None) or []:
+        for vm in getTaggedVMs(index, tagIds):
+            selected[vm['id']] = vm
+    # explicit and container exclusions
+    for excludedId in vmwareParams.get('excludeObjectIds', None) or []:
+        for vm in getChildren(index, excludedId):
+            # excluding a VM that is manually selected has no effect (it must be removed from the selections)
+            if vm['id'] == excludedId and excludedId in directIds:
+                continue
+            selected.pop(vm['id'], None)
+    # tag exclusions
+    for tagIds in vmwareParams.get('excludeVmTagIds', None) or []:
+        for vm in getTaggedVMs(index, tagIds):
+            selected.pop(vm['id'], None)
+    return selected
+
+
+# vCenter power state ===================================================
 
 def getPoweredOff(vCenterId, vCenterName, vms):
-    """get ids of powered off VMs for a vCenter (cached)"""
-    if vCenterId not in poweredOffCache:
-        vcenter = connect.ConnectNoSSL(vCenterName, 443, vcuser, vpassword)
-        if not vcenter:
-            print("Failed to connect to vcenter %s!" % vCenterName)
-            exit(1)
-        searcher = vcenter.content.searchIndex
-        poweredOff = set()
-        for vm in vms:
-            uuid = vm.get('vmWareProtectionSource', {}).get('id', {}).get('uuid', None)
-            if uuid is None:
-                continue
-            thisvm = searcher.FindByUuid(uuid=uuid, vmSearch=True, instanceUuid=True)
-            if thisvm is None:
-                thisvm = searcher.FindByUuid(uuid=uuid, vmSearch=True, instanceUuid=False)
-            if thisvm is not None and thisvm.runtime.powerState == 'poweredOff':
-                poweredOff.add(vm['id'])
-        poweredOffCache[vCenterId] = poweredOff
-    return poweredOffCache[vCenterId]
+    """get ids of powered off VMs from a list of VMs (cached)"""
+    if vCenterId not in vCenterConnections:
+        # Disable SSL certificate verification
+        sslContext = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)
+        sslContext.check_hostname = False
+        sslContext.verify_mode = ssl.CERT_NONE
 
+        vcenter = connect.SmartConnect(host=vCenterName,
+                                       user=vcuser,
+                                       pwd=vpassword,
+                                       sslContext=sslContext)
+        if not vcenter:
+            print("\nFailed to connect to vcenter!")
+            exit(1)
+
+        vCenterConnections[vCenterId] = vcenter.content.searchIndex
+    searcher = vCenterConnections[vCenterId]
+    poweredOff = set()
+    for vm in vms:
+        if vm['id'] not in poweredOffCache:
+            poweredOffCache[vm['id']] = False
+            uuid = (vm['source'].get('id', None) or {}).get('uuid', None)
+            if uuid is not None:
+                thisvm = searcher.FindByUuid(uuid=uuid, vmSearch=True, instanceUuid=True)
+                if thisvm is None:
+                    thisvm = searcher.FindByUuid(uuid=uuid, vmSearch=True, instanceUuid=False)
+                if thisvm is not None and thisvm.runtime.powerState == 'poweredOff':
+                    poweredOffCache[vm['id']] = True
+        if poweredOffCache[vm['id']] is True:
+            poweredOff.add(vm['id'])
+    return poweredOff
+
+
+# process protection groups =============================================
 
 for job in jobs:
     if len(jobnamesLower) > 0 and job['name'].lower() not in jobnamesLower:
@@ -177,58 +282,84 @@ for job in jobs:
     if vmwareParams is None or vmwareParams.get('sourceId', None) is None:
         continue
     vCenterId = vmwareParams['sourceId']
-    vms = getVMs(vCenterId)
+    hierarchy = getHierarchy(vCenterId)
+    index = hierarchy['index']
+    allVMs = [n for n in index.values() if n['type'] == 'kVirtualMachine']
+    excludedIds = list(vmwareParams.get('excludeObjectIds', None) or [])
     changed = False
 
     # build list of VMs (id -> (name, reason)) to act upon
     selected = {}
 
-    # VMs selected by name (or list)
+    # VMs selected by name (or list) - not subject to scope evaluation
     for vmName in vmsToExclude:
-        vm = [v for v in vms if v['name'].lower() == vmName.lower()]
-        if not vm:
+        matches = [v for v in allVMs if v['name'].lower() == vmName.lower()]
+        if not matches:
             print("VM %s not found!" % vmName)
+        for vm in matches:
+            selected[vm['id']] = (vm['name'], 'name')
+
+    # VMs selected by rules - only VMs in scope of the group
+    if useRules is True:
+        if removeexclusion is True:
+            # when removing, consider VMs that are currently excluded
+            candidates = [index[i] for i in excludedIds if i in index and index[i]['type'] == 'kVirtualMachine']
         else:
-            selected[vm[0]['id']] = (vm[0]['name'], 'name')
+            candidates = list(getScope(index, vmwareParams).values())
+        candidates = sorted(candidates, key=lambda v: v['name'].lower())
 
-    for vm in vms:
-        # VMs matching regex
-        if vmmatch is not None and re.search(vmmatch, vm['name'], re.IGNORECASE):
-            selected.setdefault(vm['id'], (vm['name'], 'match'))
-        # VMs matching substring rules
-        for excludeRule in excludeRules:
-            if excludeRule.lower() in vm['name'].lower():
-                selected.setdefault(vm['id'], (vm['name'], 'rule match'))
-        # templates
-        if excludeTemplates is True and vm.get('vmWareProtectionSource', {}).get('isVmTemplate', False) is True:
-            selected.setdefault(vm['id'], (vm['name'], 'template'))
+        # vCenter reports templates as powered off, so templates are only
+        # considered for the powered off check if -xt was also specified
+        poweredOffCandidates = [v for v in candidates if excludeTemplates is True or v['source'].get('isVmTemplate', False) is not True]
+        poweredOff = set()
+        if excludePoweredOff is True and len(poweredOffCandidates) > 0:
+            vCenterName = vmwareParams.get('sourceName', None) or hierarchy['name'] or str(vCenterId)
+            poweredOff = getPoweredOff(vCenterId, vCenterName, poweredOffCandidates)
 
-    # powered off VMs
-    if excludePoweredOff is True:
-        poweredOff = getPoweredOff(vCenterId, vmwareParams.get('sourceName', None) or str(vCenterId), vms)
-        for vm in vms:
+        for vm in candidates:
+            # VMs matching regex
+            if vmmatch is not None and re.search(vmmatch, vm['name'], re.IGNORECASE):
+                selected.setdefault(vm['id'], (vm['name'], 'match'))
+            # VMs matching substring rules
+            for excludeRule in excludeRules:
+                if excludeRule.lower() in vm['name'].lower():
+                    selected.setdefault(vm['id'], (vm['name'], 'rule match'))
+            # templates
+            if excludeTemplates is True and vm['source'].get('isVmTemplate', False) is True:
+                selected.setdefault(vm['id'], (vm['name'], 'template'))
+            # powered off VMs
             if vm['id'] in poweredOff:
                 selected.setdefault(vm['id'], (vm['name'], 'powered off'))
 
     # apply exclusions
-    excludedIds = vmwareParams.get('excludeObjectIds', None)
-    if excludedIds is None:
-        excludedIds = []
     for vmId, (vmName, reason) in selected.items():
         if removeexclusion is True:
             if vmId in excludedIds:
                 print("Removing exclusion for %s from %s (%s)" % (vmName, job['name'], reason))
                 excludedIds = [i for i in excludedIds if i != vmId]
                 changed = True
+        elif vmId in [o['id'] for o in vmwareParams.get('objects', None) or []]:
+            # VM is manually selected: remove it from the group's selections
+            remaining = [o for o in vmwareParams['objects'] if o['id'] != vmId]
+            if len(remaining) == 0 and len(vmwareParams.get('vmTagIds', None) or []) == 0:
+                print("Cannot remove %s from %s (%s): it is the only selection in the group" % (vmName, job['name'], reason))
+                continue
+            print("Removing %s from %s selections (%s)" % (vmName, job['name'], reason))
+            vmwareParams['objects'] = remaining
+            changed = True
+            # if the VM is still selected by a container or tag, exclude it as well
+            if vmId in getScope(index, dict(vmwareParams, excludeObjectIds=excludedIds)):
+                print("Excluding %s from %s (%s)" % (vmName, job['name'], reason))
+                excludedIds.append(vmId)
         else:
             if vmId not in excludedIds:
                 print("Excluding %s from %s (%s)" % (vmName, job['name'], reason))
                 excludedIds.append(vmId)
                 changed = True
-    vmwareParams['excludeObjectIds'] = excludedIds
 
     # update the job
     if changed is True:
+        vmwareParams['excludeObjectIds'] = excludedIds
         result = api('put', 'data-protect/protection-groups/%s' % job['id'], job, v=2)
         if failed(result):
             print("failed to update protection group %s" % job['name'])

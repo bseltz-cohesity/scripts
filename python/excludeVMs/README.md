@@ -4,6 +4,8 @@ Warning: this code is provided on a best effort basis and is not in any way offi
 
 This python script adds (or removes) VM exclusions on VMware protection groups, using the Cohesity v2 protection group API. VMs can be selected by name, by a list of names, by regular expression, by substring, by being a template, or by being powered off.
 
+Note: this script requires VMware's pyvmomi <https://github.com/vmware/pyvmomi>
+
 ## Components
 
 * [excludeVMs.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/excludeVMs/excludeVMs.py): the main python script
@@ -16,9 +18,6 @@ You can download the scripts using the following commands:
 # download commands
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/excludeVMs/excludeVMs.py
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py
-curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/excludeVMs/pyVmomi.tar.gz
-tar -xvf pyVmomi.tar.gz
-chmod +x excludeVMs.py
 # end download commands
 ```
 
@@ -103,8 +102,12 @@ At least one of -n, -l, -mt, -x, -xt or -xp must be specified.
 ## Notes
 
 * Exclusions are applied to the `excludeObjectIds` list of each selected protection group. VMs that are already excluded are skipped, and a group is only updated if something changed.
-* VMs are selected from all VMs in the group's vCenter, not only those under the objects the group protects. As a result, `-xt` and `-xp` will add every template or powered off VM in the vCenter to the exclusion list of each selected group, whether or not that group protects it.
-* Template status comes from the Cohesity cluster. Power state is not available from the Cohesity API, so `-xp` queries vCenter directly using pyVmomi.
+* VMs selected by `-mt`, `-x`, `-xt` and `-xp` are only excluded if they are in scope of the protection group. A VM is in scope if it is selected by name, by a container (folder, cluster, host, datastore, etc.) or by tag, and is not already excluded by name, container or tag. VMs that are not protected by the group are left alone.
+* A VM that is selected individually (not through a container or tag) cannot be excluded using the exclusion list, so it is removed from the group's selections instead. If the VM is also selected through a container or tag, it is excluded as well. If it is the only selection in the group, it is left alone and a warning is displayed. Removing exclusions (`-r`) does not add a VM back to the group's selections.
+* VMs named explicitly with `-n` or `-l` are always added to the exclusion list, even if they are not currently in scope (for example, to pre-exclude a VM that may be moved into scope later).
+* When removing exclusions (`-r`) with `-mt`, `-x`, `-xt` or `-xp`, only VMs that are currently in the group's exclusion list are considered.
+* vCenter reports VM templates as powered off, so `-xp` ignores templates unless `-xt` is also specified.
+* Template status comes from the Cohesity cluster. Power state is not available from the Cohesity API, so `-xp` queries vCenter directly using pyVmomi (only for VMs that are in scope).
 
 ## The Python Helper Module - pyhesity.py
 
@@ -124,8 +127,6 @@ sudo easy_install requests
 
 ### Attributions
 
-Thanks to VMware for the pyVmomi Python SDK for the VMware vSphere API. Located here: https://github.com/vmware/pyvmomi
+Thanks to VMware for the pyVmomi Python SDK for the VMware vSphere API. Located here: <https://github.com/vmware/pyvmomi>
 
 I'm using pyVmomi here to query vCenter for the powerState of VMs.
-
-Normally I would advise users to do a proper install of pyVmomi, which would allow the excludeVMs script to work fine, but there's a strong likelihood of excludeVMs being deployed onto a Cohesity cluster to run in a scheduled fashion, and I wouldn't advise installing pyVmomi on a Cohesity cluster (it might get wiped out during a Cohesity upgrade). So, I've decided to deliver pyVmomi as part of this script in portable form.
