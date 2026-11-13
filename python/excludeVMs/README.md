@@ -1,13 +1,12 @@
-# Apply Exclusion Rules to VM Autoprotect Protection Job using Python
+# Exclude VMs from VMware Autoprotect Protection Groups using Python
 
 Warning: this code is provided on a best effort basis and is not in any way officially supported or sanctioned by Cohesity. The code is intentionally kept simple to retain value as example code. The code in this repository is provided as-is and the author accepts no liability for damages resulting from its use.
 
-This python script applies exclusions to an autoprotect VM protection job.
+This python script adds (or removes) VM exclusions on VMware protection groups, using the Cohesity v2 protection group API. VMs can be selected by name, by a list of names, by regular expression, by substring, by being a template, or by being powered off.
 
 ## Components
 
-* [excludeVMs.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/excludeVMs/excludeVMs.py): the main python script (one job only)
-* [excludeVMsAllJobs.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/excludeVMs/excludeVMsAllJobs.py): alternate script (all jobs)
+* [excludeVMs.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/excludeVMs/excludeVMs.py): the main python script
 * [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py): the Cohesity REST API helper module
 * pyVmomi: Python SDK for the VMware vSphere API (see attribution below)
 
@@ -16,49 +15,96 @@ You can download the scripts using the following commands:
 ```bash
 # download commands
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/excludeVMs/excludeVMs.py
-curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/excludeVMs/excludeVMsAllJobs.py
-curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py
+curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity/pyhesity.py
 curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/excludeVMs/pyVmomi.tar.gz
 tar -xvf pyVmomi.tar.gz
 chmod +x excludeVMs.py
-chmod +x excludeVMsAllJobs.py
 # end download commands
 ```
 
-To set exclusions for a single job:
+## Examples
+
+Exclude templates, powered off VMs, and VMs that contain sql or ora from the 'VM Backup' group:
 
 ```bash
-# exclude templates, powered off vms, and vms that contain sql or ora from 'VM Backup' job
 ./excludeVMs.py -v mycluster -u myuser -d mydomain.net -j 'VM Backup' -xt -x sql -x ora -xp -vu administrator@vsphere.local -vp swordfish
-# end
 ```
 
-or to set exclusions for all jobs:
+Exclude templates, powered off VMs, and VMs that contain sql or ora from all VMware protection groups (omit `-j`):
 
 ```bash
-# exclude templates, powered off vms, and vms that contain sql or ora from all jobs
-./excludeVMsAllJobs.py -v mycluster -u myuser -d mydomain.net -xt -x sql -x ora -xp -vu administrator@vsphere.local -vp swordfish
-# end
+./excludeVMs.py -v mycluster -u myuser -d mydomain.net -xt -x sql -x ora -xp -vu administrator@vsphere.local -vp swordfish
 ```
+
+Exclude specific VMs by name from two groups:
+
+```bash
+./excludeVMs.py -v mycluster -u myuser -j 'VM Backup' -j 'VM Backup 2' -n mongodb -n oracle1
+```
+
+Exclude VMs listed in a text file (one name per line), or whose names match a regular expression:
+
+```bash
+./excludeVMs.py -v mycluster -u myuser -j 'VM Backup' -l ./vmlist.txt
+./excludeVMs.py -v mycluster -u myuser -j 'VM Backup' -mt '^test-'
+```
+
+Remove exclusions for the selected VMs instead of adding them:
+
+```bash
+./excludeVMs.py -v mycluster -u myuser -j 'VM Backup' -n mongodb -r
+```
+
+Connect through Helios (the cluster name is required):
+
+```bash
+./excludeVMs.py -u myuser@mydomain.net -c mycluster -j 'VM Backup' -xt
+```
+
+Sample output:
 
 ```text
-adding oracle1 to exclusions (rule match)
-adding mssql1 to exclusions (rule match)
-adding test1 to exclusions (powered off)
-addding centos7 to exclusions (template)
+Excluding oracle1 from VM Backup (rule match)
+Excluding mssql1 from VM Backup (rule match)
+Excluding test1 from VM Backup (powered off)
+Excluding centos7 from VM Backup (template)
 ```
 
-## Parameters
+## Authentication Parameters
 
-* -v, --vip: DNS or IP of the Cohesity cluster to connect to
-* -u, --username: username to authenticate to Cohesity cluster
-* -d, --domain: (optional) domain of username, defaults to local
-* -j, --jobname: name of protection job
-* -xt, --excludeTemplates: (optional) exclude templates or not
-* -x, --exclude: (optional) substring to exclude (repeat this parameter for multiple substrings)
-* -xp, --excludePoweredOff: (optional) exclude powered off VMs
-* -vu, --vcenterUserName: (optional) vCenter username
-* -vp, --vcenterPassword: (optional) vCenter password
+* -v, --vip: (optional) DNS or IP of the Cohesity cluster to connect to (default is helios.cohesity.com)
+* -u, --username: (optional) username to authenticate to Cohesity (default is helios)
+* -d, --domain: (optional) domain of username (default is local)
+* -t, --tenant: (optional) organization to impersonate
+* -c, --clustername: (optional) Helios/MCM cluster to connect to (required when connecting through Helios/MCM)
+* -mcm, --mcm: (optional) connect through MCM
+* -i, --useApiKey: (optional) use API key for authentication
+* -pwd, --password: (optional) password or API key (will be prompted for and stored if omitted)
+* -np, --noprompt: (optional) do not prompt for password
+* -m, --mfacode: (optional) MFA code for authentication
+* -e, --emailmfacode: (optional) send MFA code via email
+
+## Selection Parameters
+
+* -j, --jobname: (optional) name of protection group to update (repeat for multiple groups). If omitted, all active VMware protection groups are updated
+* -n, --vmname: (optional) name of a VM to exclude (repeat for multiple VMs)
+* -l, --vmlist: (optional) text file of VM names to exclude, one per line
+* -mt, --vmmatch: (optional) regular expression; VMs with matching names are excluded (case insensitive)
+* -pm, --prefixmatch: (optional) anchor the --vmmatch expression to the start of the VM name
+* -x, --exclude: (optional) substring of VM names to exclude (repeat for multiple substrings)
+* -xt, --excludeTemplates: (optional) exclude VM templates
+* -xp, --excludePoweredOff: (optional) exclude powered off VMs (requires -vu and -vp)
+* -vu, --vcenterUserName: (optional) vCenter username (required for -xp)
+* -vp, --vcenterPassword: (optional) vCenter password (required for -xp)
+* -r, --removeexclusion: (optional) remove the exclusions for the selected VMs instead of adding them
+
+At least one of -n, -l, -mt, -x, -xt or -xp must be specified.
+
+## Notes
+
+* Exclusions are applied to the `excludeObjectIds` list of each selected protection group. VMs that are already excluded are skipped, and a group is only updated if something changed.
+* VMs are selected from all VMs in the group's vCenter, not only those under the objects the group protects. As a result, `-xt` and `-xp` will add every template or powered off VM in the vCenter to the exclusion list of each selected group, whether or not that group protects it.
+* Template status comes from the Cohesity cluster. Power state is not available from the Cohesity API, so `-xp` queries vCenter directly using pyVmomi.
 
 ## The Python Helper Module - pyhesity.py
 
@@ -82,4 +128,4 @@ Thanks to VMware for the pyVmomi Python SDK for the VMware vSphere API. Located 
 
 I'm using pyVmomi here to query vCenter for the powerState of VMs.
 
-Normally I would advise users to do a proper install of pyVmomi, which would allow the excludeVMs script to work fine, but there's a strong likelihood of excludeVMs being deployed onto a Cohesity cluster to run in a scheduled fashion, and I wouldn't advise installing pyVmomi on a Cohesity cluster (it might get wiped out during a Cohesity upgrade). So, I've decided to deliver pyVmomi as part of this script in portable form.  
+Normally I would advise users to do a proper install of pyVmomi, which would allow the excludeVMs script to work fine, but there's a strong likelihood of excludeVMs being deployed onto a Cohesity cluster to run in a scheduled fashion, and I wouldn't advise installing pyVmomi on a Cohesity cluster (it might get wiped out during a Cohesity upgrade). So, I've decided to deliver pyVmomi as part of this script in portable form.

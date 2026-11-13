@@ -1,130 +1,237 @@
 #!/usr/bin/env python
-"""Apply Exclusion Rules to VM Autoprotect Protection Job"""
+"""Exclude VMs from VMware Protection Groups (Cohesity v2 API)"""
 
-# usage: ./excludeVMs.py -v mycluster -u myuser [-d mydomain.net -j 'VM Backup' -xt -x sql -x ora
+# usage: ./excludeVMs.py -v mycluster -u myuser -d mydomain.net -j 'vm backup' -n mongodb
+#        ./excludeVMs.py -v mycluster -u myuser -j 'vm backup' -xt -xp -vu vcuser -vp vcpassword
 
 # import pyhesity wrapper module
 from pyhesity import *
 from pyVim import connect
+import os
+import re
 
 # command line arguments
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('-v', '--vip', type=str, required=True)
-parser.add_argument('-u', '--username', type=str, required=True)
+parser.add_argument('-v', '--vip', type=str, default='helios.cohesity.com')
+parser.add_argument('-u', '--username', type=str, default='helios')
 parser.add_argument('-d', '--domain', type=str, default='local')
-parser.add_argument('-j', '--jobname', type=str, required=True)
-parser.add_argument('-x', '--exclude', action='append', type=str)
-parser.add_argument('-xt', '--excludeTemplates', action='store_true')
-parser.add_argument('-xp', '--excludePoweredOff', action='store_true')
-parser.add_argument('-vu', '--vcenterUserName', type=str)
-parser.add_argument('-vp', '--vcenterPassword', type=str)
+parser.add_argument('-t', '--tenant', type=str, default=None)
+parser.add_argument('-c', '--clustername', type=str, default=None)
+parser.add_argument('-mcm', '--mcm', action='store_true')
+parser.add_argument('-i', '--useApiKey', action='store_true')
+parser.add_argument('-pwd', '--password', type=str, default=None)
+parser.add_argument('-np', '--noprompt', action='store_true')
+parser.add_argument('-m', '--mfacode', type=str, default=None)
+parser.add_argument('-e', '--emailmfacode', action='store_true')
+parser.add_argument('-j', '--jobname', action='append', type=str)         # protection group name(s) (default: all VMware groups)
+parser.add_argument('-n', '--vmname', action='append', type=str)          # VM name(s) to exclude
+parser.add_argument('-l', '--vmlist', type=str, default='')               # text file of VM names
+parser.add_argument('-mt', '--vmmatch', type=str)                         # regex of VM names to exclude
+parser.add_argument('-pm', '--prefixmatch', action='store_true')          # anchor vmmatch to start of name
+parser.add_argument('-x', '--exclude', action='append', type=str)         # substring(s) of VM names to exclude
+parser.add_argument('-xt', '--excludeTemplates', action='store_true')     # exclude VM templates
+parser.add_argument('-xp', '--excludePoweredOff', action='store_true')    # exclude powered off VMs
+parser.add_argument('-vu', '--vcenterUserName', type=str)                 # vCenter username (for -xp)
+parser.add_argument('-vp', '--vcenterPassword', type=str)                 # vCenter password (for -xp)
+parser.add_argument('-r', '--removeexclusion', action='store_true')       # remove exclusions instead of adding
 
 args = parser.parse_args()
 
-vip = args.vip                 # cluster name/ip
-username = args.username       # username to connect to cluster
-domain = args.domain           # domain of username (e.g. local, or AD domain)
-jobname = args.jobname         # name of protection job
-excludeTemplates = args.excludeTemplates  # boolean exclude templates or not
-excludeRules = args.exclude    # list of substrings to exclude
-excludePoweredOff = args.excludePoweredOff  # boolean exclude powered off VMs
-vcuser = args.vcenterUserName  # vCenter username
-vpassword = args.vcenterPassword  # vCenter password
+vip = args.vip
+username = args.username
+domain = args.domain
+tenant = args.tenant
+clustername = args.clustername
+mcm = args.mcm
+useApiKey = args.useApiKey
+password = args.password
+noprompt = args.noprompt
+mfacode = args.mfacode
+emailmfacode = args.emailmfacode
+jobnames = args.jobname or []
+vmnames = args.vmname or []
+vmlist = args.vmlist
+vmmatch = args.vmmatch
+prefixmatch = args.prefixmatch
+excludeRules = args.exclude or []
+excludeTemplates = args.excludeTemplates
+excludePoweredOff = args.excludePoweredOff
+vcuser = args.vcenterUserName
+vpassword = args.vcenterPassword
+removeexclusion = args.removeexclusion
 
-if excludeRules is None:
-    excludeRules = []
+# authentication =========================================================
+# demand clustername if connecting to helios or mcm
+if (mcm or vip.lower() == 'helios.cohesity.com') and clustername is None:
+    print('-c, --clustername is required when connecting to Helios or MCM')
+    exit(1)
+
+# authenticate
+apiauth(vip=vip, username=username, domain=domain, password=password, useApiKey=useApiKey, helios=mcm, prompt=(not noprompt), mfaCode=mfacode, emailMfaCode=emailmfacode, tenantId=tenant)
+
+# exit if not authenticated
+if apiconnected() is False:
+    print('authentication failed')
+    exit(1)
+
+# if connected to helios or mcm, select access cluster
+if mcm or vip.lower() == 'helios.cohesity.com':
+    heliosCluster(clustername)
+    if LAST_API_ERROR() != 'OK':
+        exit(1)
+# end authentication =====================================================
 
 if excludePoweredOff is True:
     if vcuser is None or vpassword is None:
         print("vCenter UserName and Password required!")
         exit(1)
 
-# functions =============================================
+
+def failed(result):
+    """test api result for failure"""
+    return result is None or isinstance(result, str) or 'error' in result
 
 
-def getnodes(obj, parentid=0):
-    """gather list of VMs and parent/child relationships"""
-    global nodes
-    global nodeParents
-    nodes.append(obj)
-    if parentid not in nodeParents.keys():
-        nodeParents[parentid] = []
-    if obj['protectionSource']['id'] not in nodeParents.keys():
-        nodeParents[obj['protectionSource']['id']] = nodeParents[parentid] + [parentid]
+# gather list of VM names to exclude
+vmsToExclude = list(vmnames)
+if vmlist != '':
+    if os.path.isfile(vmlist):
+        with open(vmlist, 'r') as f:
+            vmsToExclude += [line.strip() for line in f.readlines() if line.strip() != '']
     else:
-        nodeParents[obj['protectionSource']['id']] = list(set(nodeParents[parentid] + [parentid] + nodeParents[obj['protectionSource']['id']]))
-    if 'nodes' in obj:
-        for node in obj['nodes']:
-            getnodes(node, obj['protectionSource']['id'])
-
-
-def exclude(node, job, reason):
-    """add exclusions to protection job"""
-    if 'excludeSourceIds' not in job:
-        job['excludeSourceIds'] = []
-    if node['protectionSource']['id'] not in job['excludeSourceIds']:
-        job['excludeSourceIds'].append(node['protectionSource']['id'])
-        print("adding %s to exclusions (%s)" % (node['protectionSource']['name'], reason))
-
-
-# end functions =========================================
-
-# authenticate
-apiauth(vip, username, domain)
-
-# get job info
-job = [job for job in api('get', 'protectionJobs') if job['name'].lower() == jobname.lower()]
-if not job:
-    print("Job '%s' not found" % jobname)
-    exit(1)
-
-job = job[0]
-parentId = job['parentSourceId']
-
-# get source info (vCenter)
-parentSource = api('get', 'protectionSources?allUnderHierarchy=true&excludeTypes=kResourcePool&id=%s&includeEntityPermissionInfo=true&includeVMFolders=true' % parentId)[0]
-
-
-if excludePoweredOff is True:
-    vcentername = parentSource['protectionSource']['vmWareProtectionSource']['name']
-    vcenter = connect.ConnectNoSSL(vcentername, 443, vcuser, vpassword)
-    if vcenter:
-        searcher = vcenter.content.searchIndex
-    else:
-        print("Failed to connect to vcenter!")
+        print("VM list %s not found!" % vmlist)
         exit(1)
 
-# gather list of VMs and parent/child relationships
-nodes = []
-parents = []
-nodeParents = {}
-getnodes(parentSource)
+if len(vmsToExclude) == 0 and vmmatch is None and len(excludeRules) == 0 and excludeTemplates is False and excludePoweredOff is False:
+    print("No VMs to add")
+    exit(0)
 
-# apply VM exclusion rules
-for sourceId in job['sourceIds']:
+if vmmatch is not None and prefixmatch is True:
+    vmmatch = '^%s' % vmmatch
 
-    for node in nodes:
+# get the protection groups
+jobs = []
+paginationCookie = None
+while True:
+    uri = 'data-protect/protection-groups?isDeleted=false&isActive=true&environments=kVMware&includeLastRunInfo=false'
+    if paginationCookie is not None:
+        uri = uri + '&paginationCookie=%s' % paginationCookie
+    result = api('get', uri, v=2)
+    if failed(result):
+        print("failed to get protection groups")
+        exit(1)
+    jobs = jobs + (result.get('protectionGroups', None) or [])
+    paginationCookie = result.get('paginationCookie', None)
+    if paginationCookie is None:
+        break
 
-        # if vm (node) is a child of the container (sourceId)
-        if sourceId in nodeParents[node['protectionSource']['id']]:
+jobnamesLower = [j.lower() for j in jobnames]
+for j in jobnames:
+    if j.lower() not in [job['name'].lower() for job in jobs]:
+        print("Job '%s' not found" % j)
 
-            # if vm is a template
-            if excludeTemplates is True and 'isVmTemplate' in node['protectionSource']['vmWareProtectionSource']:
-                if node['protectionSource']['vmWareProtectionSource']['isVmTemplate'] is True:
-                    exclude(node, job, 'template')
+vCenterCache = {}      # vCenter id -> list of VMs
+poweredOffCache = {}   # vCenter id -> set of ids of powered off VMs
+exitCode = 0
 
-            # if vm name matches an exclusion rule
-            for excludeRule in excludeRules:
-                if excludeRule.lower() in node['protectionSource']['name'].lower():
-                    exclude(node, job, 'rule match')
 
-            # if vm is powered off
-            if excludePoweredOff is True:
-                if 'uuid' in node['protectionSource']['vmWareProtectionSource']['id']:
-                    vm = searcher.FindByUuid(uuid=node['protectionSource']['vmWareProtectionSource']['id']['uuid'], vmSearch=True, instanceUuid=True)
-                    if vm is not None and vm.runtime.powerState == 'poweredOff':
-                        exclude(node, job, 'powered off')
+def getVMs(vCenterId):
+    """get VMs for a vCenter (cached)"""
+    if vCenterId not in vCenterCache:
+        vms = api('get', 'protectionSources/virtualMachines?vCenterId=%s' % vCenterId)
+        if vms is None or isinstance(vms, (str, dict)):
+            print("failed to get VMs for vCenter %s" % vCenterId)
+            exit(1)
+        vCenterCache[vCenterId] = vms
+    return vCenterCache[vCenterId]
 
-# update job with new exclusions
-updatedJob = api('put', 'protectionJobs/%s' % job['id'], job)
+
+def getPoweredOff(vCenterId, vCenterName, vms):
+    """get ids of powered off VMs for a vCenter (cached)"""
+    if vCenterId not in poweredOffCache:
+        vcenter = connect.ConnectNoSSL(vCenterName, 443, vcuser, vpassword)
+        if not vcenter:
+            print("Failed to connect to vcenter %s!" % vCenterName)
+            exit(1)
+        searcher = vcenter.content.searchIndex
+        poweredOff = set()
+        for vm in vms:
+            uuid = vm.get('vmWareProtectionSource', {}).get('id', {}).get('uuid', None)
+            if uuid is None:
+                continue
+            thisvm = searcher.FindByUuid(uuid=uuid, vmSearch=True, instanceUuid=True)
+            if thisvm is None:
+                thisvm = searcher.FindByUuid(uuid=uuid, vmSearch=True, instanceUuid=False)
+            if thisvm is not None and thisvm.runtime.powerState == 'poweredOff':
+                poweredOff.add(vm['id'])
+        poweredOffCache[vCenterId] = poweredOff
+    return poweredOffCache[vCenterId]
+
+
+for job in jobs:
+    if len(jobnamesLower) > 0 and job['name'].lower() not in jobnamesLower:
+        continue
+
+    vmwareParams = job.get('vmwareParams', None)
+    if vmwareParams is None or vmwareParams.get('sourceId', None) is None:
+        continue
+    vCenterId = vmwareParams['sourceId']
+    vms = getVMs(vCenterId)
+    changed = False
+
+    # build list of VMs (id -> (name, reason)) to act upon
+    selected = {}
+
+    # VMs selected by name (or list)
+    for vmName in vmsToExclude:
+        vm = [v for v in vms if v['name'].lower() == vmName.lower()]
+        if not vm:
+            print("VM %s not found!" % vmName)
+        else:
+            selected[vm[0]['id']] = (vm[0]['name'], 'name')
+
+    for vm in vms:
+        # VMs matching regex
+        if vmmatch is not None and re.search(vmmatch, vm['name'], re.IGNORECASE):
+            selected.setdefault(vm['id'], (vm['name'], 'match'))
+        # VMs matching substring rules
+        for excludeRule in excludeRules:
+            if excludeRule.lower() in vm['name'].lower():
+                selected.setdefault(vm['id'], (vm['name'], 'rule match'))
+        # templates
+        if excludeTemplates is True and vm.get('vmWareProtectionSource', {}).get('isVmTemplate', False) is True:
+            selected.setdefault(vm['id'], (vm['name'], 'template'))
+
+    # powered off VMs
+    if excludePoweredOff is True:
+        poweredOff = getPoweredOff(vCenterId, vmwareParams.get('sourceName', None) or str(vCenterId), vms)
+        for vm in vms:
+            if vm['id'] in poweredOff:
+                selected.setdefault(vm['id'], (vm['name'], 'powered off'))
+
+    # apply exclusions
+    excludedIds = vmwareParams.get('excludeObjectIds', None)
+    if excludedIds is None:
+        excludedIds = []
+    for vmId, (vmName, reason) in selected.items():
+        if removeexclusion is True:
+            if vmId in excludedIds:
+                print("Removing exclusion for %s from %s (%s)" % (vmName, job['name'], reason))
+                excludedIds = [i for i in excludedIds if i != vmId]
+                changed = True
+        else:
+            if vmId not in excludedIds:
+                print("Excluding %s from %s (%s)" % (vmName, job['name'], reason))
+                excludedIds.append(vmId)
+                changed = True
+    vmwareParams['excludeObjectIds'] = excludedIds
+
+    # update the job
+    if changed is True:
+        result = api('put', 'data-protect/protection-groups/%s' % job['id'], job, v=2)
+        if failed(result):
+            print("failed to update protection group %s" % job['name'])
+            exitCode = 1
+
+exit(exitCode)
