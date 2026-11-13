@@ -26,19 +26,34 @@ curl -O https://raw.githubusercontent.com/cohesity/community-automation-samples/
 Exclude templates, powered off VMs, and VMs that contain sql or ora from the 'VM Backup' group:
 
 ```bash
-./excludeVMs.py -v mycluster -u myuser -d mydomain.net -j 'VM Backup' -xt -x sql -x ora -xp -vu administrator@vsphere.local -vp swordfish
+./excludeVMs.py -v mycluster `
+                -u myuser `
+                -d mydomain.net `
+                -j 'VM Backup' `
+                -xt `
+                -x sql -x ora `
+                -xp -vu administrator@vsphere.local -vp swordfish
 ```
 
 Exclude templates, powered off VMs, and VMs that contain sql or ora from all VMware protection groups (omit `-j`):
 
 ```bash
-./excludeVMs.py -v mycluster -u myuser -d mydomain.net -xt -x sql -x ora -xp -vu administrator@vsphere.local -vp swordfish
+./excludeVMs.py -v mycluster `
+                -u myuser `
+                -d mydomain.net `
+                -xt -x sql -x ora `
+                -xp -vu administrator@vsphere.local -vp swordfish
 ```
 
 Exclude specific VMs by name from two groups:
 
 ```bash
-./excludeVMs.py -v mycluster -u myuser -j 'VM Backup' -j 'VM Backup 2' -n mongodb -n oracle1
+./excludeVMs.py -v mycluster `
+                -u myuser `
+                -j 'VM Backup' `
+                -j 'VM Backup 2' `
+                -n mongodb `
+                -n oracle1
 ```
 
 Exclude VMs listed in a text file (one name per line), or whose names match a regular expression:
