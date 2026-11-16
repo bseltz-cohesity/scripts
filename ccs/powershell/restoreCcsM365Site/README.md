@@ -35,7 +35,8 @@ Place both files in a folder together and run the main script like so:
 * -siteList: (optional) text file of site names (one per line)
 * -source: (optional) registered M365 protection source to restore from
 * -pageSize: (optional) limit number of objects returned pr page (default is 1000)
-* -useMBS:  (optional) use Microsoft 365 Backup Storage
+* -useMBS: (optional) use Microsoft 365 Backup Storage
+* -region: (optional) narrow search to specific region
 
 ## Alternate Location Parameters
 

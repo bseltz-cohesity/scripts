@@ -8,7 +8,8 @@ param (
     [Parameter()][string]$targetSource,
     [Parameter()][string]$source,
     [Parameter()][int]$pageSize = 1000,
-    [Parameter()][switch]$useMBS
+    [Parameter()][switch]$useMBS,
+    [Parameter()][string]$region
 )
 
 
@@ -56,6 +57,14 @@ $selectedRegionObject = $null
 $targetMailboxName = $null
 $targetMailboxId = $null
 $targetParentId = $null
+if($region){
+    if($region -notin @($regions.tenantRegionInfoList.regionId)){
+        Write-Host "Region $region not in configured region list: $regionList"
+        exit 1
+    }
+    $regionList = $region
+}
+
 
 foreach($objName in $objectNames){
     $search = api get -v2 "data-protect/search/objects?searchString=$objName&regionIds=$regionList&o365ObjectTypes=kSite&isProtected=true&environments=kO365&includeTenants=true&count=$pageSize"
@@ -72,6 +81,9 @@ foreach($objName in $objectNames){
             foreach($objectProtectionInfo in $result.objectProtectionInfos){
                 $objectId = $objectProtectionInfo.objectId
                 $objectRegionId = $objectProtectionInfo.regionId
+                if($region -and $region -ne $objectRegionId){
+                    continue
+                }
                 if($selectedRegion -eq $null){
                     $selectedRegion = $objectRegionId
                     $selectedRegionObject = $objName
@@ -95,13 +107,13 @@ foreach($objName in $objectNames){
                     $snapshots = api get -v2 "data-protect/objects/$objectId/snapshots?objectActionKeys=kO365Sharepoint&regionId=$objectRegionId"
                 }
                 # $snapshots = api get -v2 "data-protect/objects/$objectId/snapshots" -region $objectRegionId
-                $snapshots = $snapshots.snapshots | Sort-Object -Property runStartTimeUsecs -Descending
-                if($snapshots -and $snapshots.Count -gt 0){
+                $snapshots = @($snapshots.snapshots | Sort-Object -Property runStartTimeUsecs -Descending)
+                if($snapshots -and @($snapshots).Count -gt 0){
                     if($recoverDate){
                         $recoverDateUsecs = dateToUsecs ($recoverDate.AddMinutes(1))
                     
-                        $snapshots = $snapshots | Where-Object runStartTimeUsecs -lt $recoverDateUsecs
-                        if($snapshots -and $snapshots.Count -gt 0){
+                        $snapshots = @($snapshots | Where-Object runStartTimeUsecs -lt $recoverDateUsecs)
+                        if($snapshots -and @($snapshots).Count -gt 0){
                             $snapshot = $snapshots[0]
                             $snapshotId = $snapshot.id
                         }else{
