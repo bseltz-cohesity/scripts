@@ -2,7 +2,7 @@
 
 [← Back to Customer-Managed](README.md)
 
-Total scripts: **18**
+Total scripts: **16**
 
 ## Protection & Recovery (8)
 
@@ -23,15 +23,13 @@ Total scripts: **18**
 | --- | --- | --- | --- |
 | [nasObjectStats.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/powershell/nasObjectStats) | PowerShell | 2024-11-04 | This PowerShell script gathers protected NAS object stats. Output will be written to a CSV file. |
 
-## Views & Storage (9)
+## Views & Storage (7)
 
 | Script | Language | Date Last Updated | Use Case |
 | --- | --- | --- | --- |
 | [genericNasSources.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/genericNasSources) | PowerShell | 2025-02-11 | This powershell script lists generic NAS sources registered on Cohesity. |
 | [globalExcludeNasPath.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/globalExcludeNasPath) | PowerShell | 2024-11-04 | This powershell script adds an excludion path to all generic NAS protection jobs. |
 | [globalExcludeNasPath.py](https://github.com/cohesity/community-automation-samples/tree/main/python/globalExcludeNasPath) | Python | 2024-11-04 | This script adds/removes entries to the exclude list for all generic NAS protection groups. |
-| [importNasJobs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/importExport) | PowerShell | 2024-11-04 | This script exports various Cohesity objects to json files, to serve as documentation of cluster state and provide the possibility of re-importing some settings and objects for cluster rebuild or disaster recovery use cases. |
-| [importNasSources.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/importExport) | PowerShell | 2024-11-04 | This script exports various Cohesity objects to json files, to serve as documentation of cluster state and provide the possibility of re-importing some settings and objects for cluster rebuild or disaster recovery use cases. |
 | [nasGetRidHints.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/nasGetRidHints) | PowerShell | 2024-11-04 | This script will gather replication ancestor hints from deleted NAS protection groups. |
 | [nasMigrationRidHints.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/nasMigrationRidHints) | PowerShell | 2024-11-04 | This script will gather the incremental replication details for views recovered/migrated from protected NAS volumes/mount points, and generate the needed iris_cli commands to enable incremental first-run replication for the recovered view. |
 | [registerGenericNas.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/registerGenericNas) | PowerShell | 2025-02-08 | This powershell script registers one or more generic NAS shares as sources on Cohesity. |

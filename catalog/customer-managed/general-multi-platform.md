@@ -2,7 +2,7 @@
 
 [← Back to Customer-Managed](README.md)
 
-Total scripts: **35**
+Total scripts: **32**
 
 ## Other / Utility (5)
 
@@ -14,20 +14,17 @@ Total scripts: **35**
 | [sslFix.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/sslFix) | PowerShell | 2024-11-04 | This repository contains many examples of how to automate Cohesity using PowerShell. Common to each example is a function library that makes it easy to authenticate and make api calls. Below are details of this library. |
 | [updateJobDescriptionDate.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/updateJobDescriptionDate) | PowerShell | 2024-11-04 | This powershell script adds a date suffix to all job descriptions. |
 
-## Protection & Recovery (27)
+## Protection & Recovery (24)
 
 | Script | Language | Date Last Updated | Use Case |
 | --- | --- | --- | --- |
 | [downloadLatestWarnings.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/downloadLatestWarnings) | PowerShell | 2024-11-04 | This powershell script downloads the warning messages (if any) from each object of the last run of a protection group. Downloaded files will be named groupname-objectname-warnings.txt. |
 | [downloadLatestWarnings.py](https://github.com/cohesity/community-automation-samples/tree/main/python/downloadLatestWarnings) | Python | 2025-07-17 | This python script script downloads the warning messages (if any) from each object of the last run of a protection group. Downloaded files will be named groupname-objectname-warnings.csv |
-| [fixRedundantProtection.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/fixRedundantProtection) | PowerShell | 2025-01-07 | This script inspects the list of objects protected by a job, and removes them from all other jobs, thus eliminating redundant protection. |
 | [freeze.sh](https://github.com/cohesity/community-automation-samples/tree/main/python/freezeThawRemote) | Bash/Shell | 2024-11-04 | This example shows how to use a remote Python host to enable API driven triggering of freeze/thaw scripts on hosts (like AIX) where a viable scripting language may not be available. (contains host freeze commands, placed on the AIX host) |
 | [jobDumper.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/jobDumper) | PowerShell | 2024-11-04 | This PowerShell script dumps the specified protection groups to JSON for analysis. |
 | [jobDumper.py](https://github.com/cohesity/community-automation-samples/tree/main/python/jobDumper) | Python | 2024-11-04 | This script script dumps the specified protection groups to JSON for analysis. |
 | [jobList.py](https://github.com/cohesity/community-automation-samples/tree/main/python/jobList) | Python | 2026-08-11 | This script lists protection jobs. |
 | [jobRunning.py](https://github.com/cohesity/community-automation-samples/tree/main/python/jobRunning) | Python | 2025-07-22 | This python script determines if a protection job is running or not. If it is running, it will exit with exit code 1, otherwise it will exit with exit code 0. |
-| [linkSharesMaster.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/linkShares) | PowerShell | 2024-11-04 | This powershell script creates symbolic links to file shares on a remote computer and includes them in a physical protection job. (the main powershell script (Master role)) |
-| [linkSharesProxy.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/linkShares) | PowerShell | 2024-11-04 | This powershell script creates symbolic links to file shares on a remote computer and includes them in a physical protection job. (the main powershell script (Proxy role)) |
 | [marketplaceApps.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/marketplaceApps) | PowerShell | 2024-11-04 | This powershell script can display, pause, resume and terminate marketplace app instances. |
 | [myBackupStatus.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/myBackupStatus) | PowerShell | 2024-11-04 | This PowerShell script detects if the specified object is currently being backed up. |
 | [objectProtectionDetails.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/objectProtectionDetails) | PowerShell | 2026-10-15 | This script shows the protection details for an object. |

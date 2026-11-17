@@ -2,7 +2,7 @@
 
 [← Back to Customer-Managed](README.md)
 
-Total scripts: **69**
+Total scripts: **66**
 
 ## NFS Views (2)
 
@@ -78,7 +78,7 @@ Total scripts: **69**
 | [viewDRtest-clone.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/ViewDRtest) | PowerShell | 2024-11-04 | These powershell scripts clone replicated Views for a DR test. |
 | [viewDRtest-delete.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/ViewDRtest) | PowerShell | 2024-11-04 | These powershell scripts clone replicated Views for a DR test. |
 
-## Views & Storage (25)
+## Views & Storage (22)
 
 | Script | Language | Date Last Updated | Use Case |
 | --- | --- | --- | --- |
@@ -90,11 +90,8 @@ Total scripts: **69**
 | [deleteView.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/deleteView) | PowerShell | 2024-11-04 | This PowerShell script deletes a Cohesity view. |
 | [deleteView.py](https://github.com/cohesity/community-automation-samples/tree/main/python/deleteView) | Python | 2024-11-04 | This python script deletes a view. |
 | [directoryQuota.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/directoryQuota) | PowerShell | 2024-11-04 | This powershell script sets a quota on a directory within a Cohesity view. |
-| [exportConfiguration.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/importExport) | PowerShell | 2024-11-04 | This script exports various Cohesity objects to json files, to serve as documentation of cluster state and provide the possibility of re-importing some settings and objects for cluster rebuild or disaster recovery use cases. |
-| [exportConfigurationV2.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/importExport) | PowerShell | 2024-11-04 | This script exports various Cohesity objects to json files, to serve as documentation of cluster state and provide the possibility of re-importing some settings and objects for cluster rebuild or disaster recovery use cases. |
 | [exportedViews.py](https://github.com/cohesity/community-automation-samples/tree/main/python/exportedViews) | Python | 2024-11-04 | This python script list views and to what IP addresses they are exported. |
 | [globalWhiteList.py](https://github.com/cohesity/community-automation-samples/tree/main/python/globalWhiteList) | Python | 2024-11-04 | This python script adds, removes and lists global white list entries |
-| [importStorageDomains.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/importExport) | PowerShell | 2024-11-04 | This script exports various Cohesity objects to json files, to serve as documentation of cluster state and provide the possibility of re-importing some settings and objects for cluster rebuild or disaster recovery use cases. |
 | [listViews.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/listViews) | PowerShell | 2024-11-04 | This PowerShell script lists Cohesity views. |
 | [listViews.py](https://github.com/cohesity/community-automation-samples/tree/main/python/listViews) | Python | 2025-02-24 | This python script lists views on Cohesity |
 | [migrateDirectoryQuotas.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/migrateDirectoryQuotas) | PowerShell | 2025-08-14 | This powershell script copies directory quotas from one view to another. |

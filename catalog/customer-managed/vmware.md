@@ -2,7 +2,7 @@
 
 [← Back to Customer-Managed](README.md)
 
-Total scripts: **48**
+Total scripts: **46**
 
 ## Monitoring & Alerting (1)
 
@@ -17,7 +17,7 @@ Total scripts: **48**
 | [powerOnVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/vmware/python/powerOnVMs) | Python | 2026-03-01 | This script powers on the specified VMs. |
 | [vCenterTest.py](https://github.com/cohesity/community-automation-samples/tree/main/python/vCenterTest) | Python | 2024-11-04 | This script performs a simple authentication to vCenter to test connectivity and credentials. |
 
-## Protection & Recovery (36)
+## Protection & Recovery (34)
 
 | Script | Language | Date Last Updated | Use Case |
 | --- | --- | --- | --- |
@@ -25,10 +25,8 @@ Total scripts: **48**
 | [adHocProtectVM.py](https://github.com/cohesity/community-automation-samples/tree/main/python/adHocProtectVM) | Python | 2024-11-04 | This Python script temporarily adds VMware VMs to a new (temporary) or existing VM protection group, runs the group and then removes the VMs, to affect an ad hoc backup of the VMs. |
 | [cloneVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneVM) | PowerShell | 2026-03-24 | This powershell script clones one or more VMware VMs. |
 | [cloneVMProtectionGroup.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/cloneVMProtectionGroup) | PowerShell | 2025-10-20 | This PowerShell script clones a VMware protection group. |
-| [excludeVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/excludeVMs) | PowerShell | 2024-11-04 | This powershell script excludes one or more VMs from an existing protection job where parent containers are autoprotected. |
-| [excludeVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/excludeVMs) | Python | 2024-11-04 | This python script applies exclusions to an autoprotect VM protection job. (the main python script (one job only)) |
-| [excludeVMsAllJobs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/excludeVMs) | Python | 2024-11-04 | This python script applies exclusions to an autoprotect VM protection job. (alternate script (all jobs)) |
-| [excludeVMsByTag.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/excludeVMsByTag) | PowerShell | 2024-11-04 | This PowerShell script excludes VMs from protection jobs by vSphere tag. |
+| [excludeVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/excludeVMs) | PowerShell | 2026-11-17 | This powershell script excludes one or more VMs from an existing protection job where parent containers are autoprotected. |
+| [excludeVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/excludeVMs) | Python | 2026-11-13 | This python script adds (or removes) VM exclusions on VMware protection groups, using the Cohesity v2 protection group API. VMs can be selected by name, by a list of names, by regular expression, by substring, by being a template, or by being powered off. |
 | [expungeVM.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/expungeVM) | PowerShell | 2024-11-04 | This powershell script searches for a VM, and deletes all backups of that VM, including the local snapshots and archives. |
 | [instantVolumeMount.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/instantVolumeMount) | PowerShell | 2024-11-04 | This script demonstrates how to perform an Instant Volume Mount using PowerShell. (the main powershell script) |
 | [instantVolumeMount.py](https://github.com/cohesity/community-automation-samples/tree/main/python/instantVolumeMount) | Python | 2024-11-04 | This python script performs an Instant Volume Mount recovery to a VM or physical server. (the main python script) |

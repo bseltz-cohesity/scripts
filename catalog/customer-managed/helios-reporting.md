@@ -2,9 +2,9 @@
 
 [← Back to Customer-Managed](README.md)
 
-Total scripts: **20**
+Total scripts: **21**
 
-## Reporting & Analytics (20)
+## Reporting & Analytics (21)
 
 | Script | Language | Date Last Updated | Use Case |
 | --- | --- | --- | --- |
@@ -28,3 +28,4 @@ Total scripts: **20**
 | [heliosSlaMonitor.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/python/heliosSlaMonitor) | Python | 2024-11-04 | This python script finds missed SLAs for recent job runs |
 | [heliosUsers.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/heliosUsers) | PowerShell | 2025-03-06 | This script lists Helios users and outputs to a CSV file. |
 | [powerBI-helios-policyDataLockStatus.py](https://github.com/cohesity/community-automation-samples/tree/main/reports/powerBI/python/powerBI-helios-policyDataLockStatus) | Python | 2024-11-04 | This python script imports protection policy datalock status from all Helios connected clusters into Power BI |
+| [threatScanReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/threatScanReport) | PowerShell | 2026-11-10 | This script gathers Threat Protection (IOC) scan results, drilling down from scans, to scan runs, to the scanned objects within each run, to the individual affected files found, and outputs the file-level detail (including file hash, severity, threat family, threat source and YARA rule matched) to a CSV file. |

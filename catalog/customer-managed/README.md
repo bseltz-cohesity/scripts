@@ -2,7 +2,7 @@
 
 [← Back to catalog index](../README.md)
 
-Total scripts: **806**
+Total scripts: **796**
 
 ## Popular Scripts
 
@@ -51,7 +51,7 @@ Total scripts: **806**
 | [GCP](gcp.md) | 2 |
 | [Hyper-V](hyper-v.md) | 6 |
 | [Nutanix AHV](nutanix-ahv.md) | 7 |
-| [VMware](vmware.md) | 48 |
+| [VMware](vmware.md) | 46 |
 
 ## Other Workloads
 
@@ -59,7 +59,7 @@ Total scripts: **806**
 | --- | --- |
 | [Epic](epic.md) | 11 |
 | [Files & Folders](files-and-folders.md) | 21 |
-| [General / Multi-Platform](general-multi-platform.md) | 35 |
+| [General / Multi-Platform](general-multi-platform.md) | 32 |
 | [GitHub](github.md) | 4 |
 | [Microsoft 365](microsoft-365.md) | 22 |
 | [Remote Adapter](remote-adapter.md) | 13 |
@@ -78,7 +78,7 @@ Total scripts: **806**
 | [Archival](archival.md) | 25 |
 | [Backup Management](backup-management.md) | 19 |
 | [Clones](clones.md) | 31 |
-| [Policy Management](policy-management.md) | 9 |
+| [Policy Management](policy-management.md) | 8 |
 | [Replication](replication.md) | 14 |
 
 ## Reporting
@@ -88,16 +88,16 @@ Total scripts: **806**
 | [Capacity Reporting](capacity-reporting.md) | 15 |
 | [Custom Reporting DB](custom-reporting-db.md) | 10 |
 | [General Reporting](general-reporting.md) | 68 |
-| [Helios Reporting](helios-reporting.md) | 20 |
+| [Helios Reporting](helios-reporting.md) | 21 |
 
 ## Storage & NAS
 
 | Sub-Category | Scripts |
 | --- | --- |
 | [Flashblade (NAS)](flashblade-nas.md) | 3 |
-| [Generic NAS](generic-nas.md) | 18 |
+| [Generic NAS](generic-nas.md) | 16 |
 | [GPFS](gpfs.md) | 7 |
 | [Isilon (NAS)](isilon-nas.md) | 9 |
 | [NetApp (NAS)](netapp-nas.md) | 11 |
 | [Pure Storage](pure-storage.md) | 4 |
-| [Views & Storage](views-and-storage.md) | 69 |
+| [Views & Storage](views-and-storage.md) | 66 |
