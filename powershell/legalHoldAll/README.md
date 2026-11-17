@@ -87,3 +87,4 @@ Or remove legal hold from all backups:
 * -pushToReplica: (optional) push legal hold adds/removes to replicas
 * -startDate: (optional) only process runs on or after this date (e.g. '2024-01-01')
 * -endDate: (optional) only process runs on or before this date (e.g. '2024-03-31')
+* -includeExpired: (optional) try to process backups that are past their expiration

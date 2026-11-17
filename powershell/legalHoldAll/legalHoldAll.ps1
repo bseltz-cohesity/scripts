@@ -22,7 +22,8 @@ param (
     [Parameter()][switch]$showFalse,
     [Parameter()][switch]$pushToReplica,
     [Parameter()][string]$startDate = '',   # Only process runs on or after this date (e.g. '2024-01-01')
-    [Parameter()][string]$endDate = ''      # Only process runs on or before this date (e.g. '2024-03-31')
+    [Parameter()][string]$endDate = '',      # Only process runs on or before this date (e.g. '2024-03-31')
+    [Parameter()][switch]$includeExpired
 )
 
 # source the cohesity-api helper code
@@ -146,7 +147,11 @@ foreach($job in $jobs | Sort-Object -Property name){
     if($jobNames.Count -eq 0 -or $job.name -in $jobNames){
         "{0}" -f $job.name
         while($True){
-            $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&startTimeUsecs=$filterStartUsecs&endTimeUsecs=$endUsecs&excludeTasks=true&excludeNonRestoreableRuns=true"
+            if($includeExpired){
+                $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&startTimeUsecs=$filterStartUsecs&endTimeUsecs=$endUsecs&excludeTasks=true" # &excludeNonRestoreableRuns=true"
+            }else{
+                $runs = api get "protectionRuns?jobId=$($job.id)&numRuns=$numRuns&startTimeUsecs=$filterStartUsecs&endTimeUsecs=$endUsecs&excludeTasks=true&excludeNonRestoreableRuns=true"
+            }
             foreach($run in $runs){
                 # apply date range filter
                 $runStartUsecs = $run.backupRun.stats.startTimeUsecs
@@ -164,6 +169,9 @@ foreach($job in $jobs | Sort-Object -Property name){
                         )
                     }
                     $update = $false
+                    if($includeExpired){
+                        $update = $True
+                    }
                     foreach($copyRun in $run.copyRun){
                         if($pushToReplica -or $copyRun.target.type -in @('kLocal', 'kArchival')){
                             if($copyRun.PSObject.Properties['holdForLegalPurpose'] -and $copyRun.holdForLegalPurpose -eq $True){
