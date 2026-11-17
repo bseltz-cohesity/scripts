@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-11-17`] [excludeVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/excludeVMs) [`Update`] added support for VM tags
 * [`2026-11-13`] [excludeVMs.py](https://github.com/cohesity/community-automation-samples/tree/main/python/excludeVMs) [`Update`] modernized script
 * [`2026-11-10`] [threatScanReport.ps1](https://github.com/cohesity/community-automation-samples/tree/main/reports/helios-other/powershell/threatScanReport) [`New`] generates a threat scan affected files report
 * [`2026-11-10`] [resolveAlerts.py](https://github.com/cohesity/community-automation-samples/tree/main/python/resolveAlerts) [`Update`] modernized script
