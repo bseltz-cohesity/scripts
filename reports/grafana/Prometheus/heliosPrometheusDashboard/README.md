@@ -8,7 +8,7 @@ This Grafana dashboard displays the status of all clusters registered to Helios:
 
 Save these files to your local machine:
 
-* [heliosDashboardPrometheus.json](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/grafana/Prometheus/heliosPrometheusDashboard/heliosDashboardPrometheus.json)
+* [heliosPrometheusDashboard.json](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/grafana/Prometheus/heliosPrometheusDashboard/heliosPrometheusDashboard.json)
 * [heliosPrometheusExporter.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/reports/grafana/Prometheus/heliosPrometheusDashboard/heliosPrometheusExporter.py)
 * [pyhesity.py](https://raw.githubusercontent.com/cohesity/community-automation-samples/main/python/pyhesity.py)
 
