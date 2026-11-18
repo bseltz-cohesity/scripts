@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-11-18`] [heliosPrometheusDashboard.json](https://github.com/cohesity/community-automation-samples/tree/main/reports/grafana/Prometheus/heliosPrometheusDashboard) [`New`] Helios dashboard for Grafana/Promatheus
 * [`2026-11-18`] [updateJob.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/updateJob) [`Update`] added -resetIndexing option
 * [`2026-11-17`] [legalHoldAll.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/legalHoldAll) [`Update`] added -includeExpired option
 * [`2026-11-17`] [excludeVMs.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/excludeVMs) [`Update`] added support for VM tags
