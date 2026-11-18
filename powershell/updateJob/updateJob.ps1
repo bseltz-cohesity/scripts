@@ -305,9 +305,9 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         }
         # enable indexing
         if($enableIndexing){
-            Write-Host "    updating indexing"
             $indexingPolicy = findIndexingPolicy $job
             if($indexingPolicy){
+                Write-Host "    updating indexing"
                 if($indexingPolicy.enableIndexing -eq $false){
                     $indexingPolicy.enableIndexing = $True
                     $indexingPolicy.includePaths = $defaultIndexingPolicy.includePaths
@@ -318,9 +318,9 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         }
         # disable indexing
         if($disableIndexing){
-            Write-Host "    updating indexing"
             $indexingPolicy = findIndexingPolicy $job
             if($indexingPolicy){
+                Write-Host "    updating indexing"
                 if($indexingPolicy.enableIndexing -eq $True){
                     $indexingPolicy.enableIndexing = $false
                     $indexingPolicy.includePaths = $null
@@ -331,9 +331,9 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
         }
         # reset indexing
         if($resetIndexing){
-            Write-Host "    updating indexing"
             $indexingPolicy = findIndexingPolicy $job
             if($indexingPolicy){
+                Write-Host "    updating indexing"
                 $indexingPolicy.enableIndexing = $True
                 $indexingPolicy.includePaths = $defaultIndexingPolicy.includePaths
                 $indexingPolicy.excludePaths = $defaultIndexingPolicy.excludePaths
