@@ -96,6 +96,7 @@ Changing several properties at once:
 * -removeRecipient: (optional) one or more email addresses to remove from alert recipients (comma separated)
 * -enableIndexing: (optional) enable indexing (applies the default include and exclude paths)
 * -disableIndexing: (optional) disable indexing
+* -resetIndexing: (optional) applies the default indexing policy
 * -indexPath: (optional) one or more paths to add/remove from indexing includes/excludes (comma separated)
 * -indexList: (optional) text file of paths to add/remove from indexing includes/excludes (one per line)
 * -addIncludePath: (optional) include indexing paths (specified by -indexPath or -indexList)

@@ -25,6 +25,7 @@ param (
     [Parameter()][array]$removeRecipient,
     [Parameter()][switch]$disableIndexing,
     [Parameter()][switch]$enableIndexing,
+    [Parameter()][switch]$resetIndexing,
     [Parameter()][array]$indexPath,
     [Parameter()][string]$indexList,
     [Parameter()][switch]$addIncludePath,
@@ -326,6 +327,17 @@ foreach($job in $jobs.protectionGroups | Sort-Object -Property name){
                     $indexingPolicy.excludePaths = $null
                     $updateJob = $True
                 }
+            }
+        }
+        # reset indexing
+        if($resetIndexing){
+            Write-Host "    updating indexing"
+            $indexingPolicy = findIndexingPolicy $job
+            if($indexingPolicy){
+                $indexingPolicy.enableIndexing = $True
+                $indexingPolicy.includePaths = $defaultIndexingPolicy.includePaths
+                $indexingPolicy.excludePaths = $defaultIndexingPolicy.excludePaths
+                $updateJob = $True
             }
         }
         # add indexing include paths
