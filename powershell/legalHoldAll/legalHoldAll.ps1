@@ -23,7 +23,8 @@ param (
     [Parameter()][switch]$pushToReplica,
     [Parameter()][string]$startDate = '',   # Only process runs on or after this date (e.g. '2024-01-01')
     [Parameter()][string]$endDate = '',      # Only process runs on or before this date (e.g. '2024-03-31')
-    [Parameter()][switch]$includeExpired
+    [Parameter()][switch]$includeExpired,
+    [Parameter()][switch]$localOnly
 )
 
 # source the cohesity-api helper code
@@ -174,14 +175,16 @@ foreach($job in $jobs | Sort-Object -Property name){
                     }
                     foreach($copyRun in $run.copyRun){
                         if($pushToReplica -or $copyRun.target.type -in @('kLocal', 'kArchival')){
-                            if($copyRun.PSObject.Properties['holdForLegalPurpose'] -and $copyRun.holdForLegalPurpose -eq $True){
-                                $update = $True
-                            }
-                            if(($addHold -and $copyRun.expiryTimeUsecs -gt (dateToUsecs)) -or $update -eq $True){
-                                $update = $True
-                                $copyRunTarget = $copyRun.target
-                                setApiProperty -object $copyRunTarget -name "holdForLegalPurpose" -value $holdValue
-                                $runParams.jobRuns[0].copyRunTargets += $copyRunTarget
+                            if(!$localOnly -or $copyRun.target.type -eq 'kLocal'){
+                                if($copyRun.PSObject.Properties['holdForLegalPurpose'] -and $copyRun.holdForLegalPurpose -eq $True){
+                                    $update = $True
+                                }
+                                if(($addHold -and $copyRun.expiryTimeUsecs -gt (dateToUsecs)) -or $update -eq $True){
+                                    $update = $True
+                                    $copyRunTarget = $copyRun.target
+                                    setApiProperty -object $copyRunTarget -name "holdForLegalPurpose" -value $holdValue
+                                    $runParams.jobRuns[0].copyRunTargets += $copyRunTarget
+                                }
                             }
                         }
                     }
@@ -200,6 +203,7 @@ foreach($job in $jobs | Sort-Object -Property name){
                             "id" = $thisRun.backupJobRuns.protectionRuns[0].backupRun.base.jobUid.objectId;
                         }
                         $runParams.jobRuns[0]['jobUid'] = $jobUid
+                        # $runParams | toJson
                         $null = api put protectionRuns $runParams
                     }
                 }else{
