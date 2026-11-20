@@ -114,6 +114,28 @@ $script:protectionParams = @{
     )
 }
 
+# see if sites node already protected
+$script:updateExisting = $false
+$existing = api get -v2 "data-protect/objects?ids=$($objectsNode.protectionSource.id)&regionIds=$region"
+
+if($existing.PSObject.Properties['objects'] -and $existing.objects -ne $null -and @($existing.objects).Count -gt 0){
+    $existingObject = $existing.objects[0]
+    if($existingObject.PSObject.Properties['objectBackupConfiguration'] -and $existingObject.objectBackupConfiguration -ne $null){
+        $script:updateExisting = $True
+        $script:protectionParams = $existingObject.objectBackupConfiguration
+        $script:protectionParams.environment = 'kO365Sharepoint'
+        if($script:protectionParams.office365Params.sharepointSiteObjectProtectionParams.objects -eq $null){
+            $script:protectionParams.office365Params.sharepointSiteObjectProtectionParams.objects = @(
+                @{
+                    "id" = $objectsNode.protectionSource.id;
+                    "shouldAutoProtectObject" = $true;
+                    "excludeObjectIds" = @()
+                }
+            )
+        }
+    }
+}
+
 $script:nameIndex = @{}
 $script:webUrlIndex = @{}
 $script:idIndex = @{}
@@ -125,35 +147,21 @@ function excludeNodes($source){
             $script:nameIndex[$node.protectionSource.office365ProtectionSource.name] = $node.protectionSource.id
             $script:idIndex["$($node.protectionSource.id)"] = $node.protectionSource.office365ProtectionSource.name
             $script:webUrlIndex[$node.protectionSource.office365ProtectionSource.webUrl] = $node.protectionSource.id
-            if($node.protectionSource.office365ProtectionSource.PSObject.Properties['siteInfo']){
-                if($node.protectionSource.office365ProtectionSource.siteInfo.isGroupSite -eq $True -or $node.protectionSource.office365ProtectionSource.siteInfo.isTeamSite -eq $True){
-                    continue
-                }
+            if($script:updateExisting -eq $True){
+                $script:protectionParams.office365Params.sharepointSiteObjectProtectionParams.objects[0].excludeObjectIds = @($script:protectionParams.office365Params.sharepointSiteObjectProtectionParams.objects[0].excludeObjectIds + $node.protectionSource.id)
+            }else{
+                $script:protectionParams.objects[0].office365Params.sharepointSiteObjectProtectionParams.objects[0].excludeObjectIds = @($script:protectionParams.objects[0].office365Params.sharepointSiteObjectProtectionParams.objects[0].excludeObjectIds + $node.protectionSource.id)
             }
-            $protectionParams.objects[0].office365Params.sharepointSiteObjectProtectionParams.objects[0].excludeObjectIds = @($protectionParams.objects[0].office365Params.sharepointSiteObjectProtectionParams.objects[0].excludeObjectIds + $node.protectionSource.id)
             excludeNodes $node
         }
     }
 }
 
 function indexObject($obj){
-    if($skipIfProtectedInOtherRegion){
-        foreach($existingProtectionInfo in $obj.objectProtectionInfos){
-            if($existingProtectionInfo.objectBackupConfiguration -ne $null -and @($existingProtectionInfo.objectBackupConfiguration).Count -gt 0){
-                Write-Host "Site $($obj.sharepointParams.siteWebUrl) already protected in region $($existingProtectionInfo.regionId)" -ForegroundColor Magenta
-                return
-            }
-        }
-    }
     foreach($objectProtectionInfo in $obj.objectProtectionInfos | Where-Object {$_.regionId -eq $region -and $_.sourceId -eq $rootSourceId}){
         $script:nameIndex[$obj.name] = $objectProtectionInfo.objectId
         $script:idIndex["$($objectProtectionInfo.objectId)"] = $obj.name
         $script:webUrlIndex[$obj.sharepointParams.siteWebUrl] = $objectProtectionInfo.objectId
-        if($obj.sharepointParams.PSObject.Properties['isGroupSite'] -and $obj.sharepointParams.isGroupSite -eq $True){
-            $script:notClassic = @($script:notClassic + $objectProtectionInfo.objectId)
-        }elseif($obj.sharepointParams.PSObject.Properties['isTeamSite'] -and $obj.sharepointParams.isTeamSite -eq $True){
-            $script:notClassic = @($script:notClassic + $objectProtectionInfo.objectId)
-        }
         $source = api get "protectionSources?id=$($objectProtectionInfo.objectId)&regionId=$region"
         excludeNodes $source
     }
@@ -181,19 +189,40 @@ foreach($obj in $objectsToAdd){
         }
     }
     if($objId){
-        $protectionParams.objects[0].office365Params.sharepointSiteObjectProtectionParams.objects[0].excludeObjectIds = @($protectionParams.objects[0].office365Params.sharepointSiteObjectProtectionParams.objects[0].excludeObjectIds + $objId)
+        if($script:updateExisting -eq $True){
+            $script:protectionParams.office365Params.sharepointSiteObjectProtectionParams.objects[0].excludeObjectIds = @($script:protectionParams.office365Params.sharepointSiteObjectProtectionParams.objects[0].excludeObjectIds + $objId)
+        }else{
+            $script:protectionParams.objects[0].office365Params.sharepointSiteObjectProtectionParams.objects[0].excludeObjectIds = @($script:protectionParams.objects[0].office365Params.sharepointSiteObjectProtectionParams.objects[0].excludeObjectIds + $objId)
+        }
     }
 }
 
-if($useMBS){
-    $protectionParams.objects[0].environment = "kO365SharepointCSM"
-}else{
-    $protectionParams.policyId = $policy.id
+
+
+if($script:updateExisting -eq $false){
+    if($useMBS){
+        $script:protectionParams.objects[0].environment = "kO365SharepointCSM"
+    }else{
+        $script:protectionParams.policyId = $policy.id
+    }
 }
 
-$protectionParams.objects[0].office365Params.sharepointSiteObjectProtectionParams.objects[0].excludeObjectIds = @($protectionParams.objects[0].office365Params.sharepointSiteObjectProtectionParams.objects[0].excludeObjectIds | Sort-Object -Unique)
+if($script:updateExisting -eq $True){
+    $script:protectionParams.office365Params.sharepointSiteObjectProtectionParams.objects[0].excludeObjectIds = @($script:protectionParams.office365Params.sharepointSiteObjectProtectionParams.objects[0].excludeObjectIds | Sort-Object -Unique)
+}else{
+    $script:protectionParams.objects[0].office365Params.sharepointSiteObjectProtectionParams.objects[0].excludeObjectIds = @($script:protectionParams.objects[0].office365Params.sharepointSiteObjectProtectionParams.objects[0].excludeObjectIds | Sort-Object -Unique)
+}
 
-Write-Host "auto-protecting sites"
-# $protectionParams | toJson
-# exit
-$null = api post -v2 "data-protect/protected-objects?regionIds=$region" $protectionParams
+if($script:updateExisting -eq $True){
+    Write-Host "updating autoprotection"
+    # $script:protectionParams | toJson
+    $response = api put -v2 "data-protect/protected-objects/$($objectsNode.protectionSource.id)?regionIds=$region" $script:protectionParams
+}else{
+    Write-Host "auto-protecting sites"
+    $response = api post -v2 "data-protect/protected-objects?regionIds=$region" $script:protectionParams
+    if($response.protectedObjects[0].PSObject.Properties['error']){
+        Write-Host "$($response.protectedObjects[0].error)" -ForegroundColor Yellow
+    }
+}
+
+$response | toJson
