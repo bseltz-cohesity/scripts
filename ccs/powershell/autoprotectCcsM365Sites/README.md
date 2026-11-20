@@ -25,9 +25,9 @@ $repoURL = 'https://raw.githubusercontent.com/cohesity/community-automation-samp
 Place both files in a folder together and run the main script like so:
 
 ```powershell
-./autoprotectCcsM365SitesCSV.ps1 -region us-east-2 `
-                                 -sourceName mydomain.onmicrosoft.com `
-                                 -policyName Gold
+./autoprotectCcsM365Sites.ps1 -region us-east-2 `
+                              -sourceName mydomain.onmicrosoft.com `
+                              -policyName Gold
 ```
 
 ## Parameters
