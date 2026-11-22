@@ -1,0 +1,26 @@
+# Cohesity Prometheus exporter configuration
+listen_address: 0.0.0.0
+listen_port: 9792
+scrape_interval: 60          # seconds between polls of each target
+request_timeout: 30          # seconds per Cohesity API call
+alerts_lookback_days: 365    # open alerts older than this are not counted
+throughput_window_minutes: 15
+
+clusters:
+  # Direct connection to a cluster VIP with a cluster API key.
+  # The "cluster" label is the cluster's own name unless you set "name".
+  - vip: cohesity-dc1.example.com
+    api_key_env: COHESITY_DC1_API_KEY     # read the key from this env var (preferred)
+    # name: dc1                           # optional label override
+    # username: helios                    # default (API-key auth ignores it)
+    # domain: local
+
+  - vip: cohesity-dc2.example.com
+    api_key_env: COHESITY_DC2_API_KEY
+
+  # Helios: one API key, many clusters. Omit helios_clusters to export every
+  # cluster connected to Helios; list names to restrict.
+  # - vip: helios.cohesity.com
+  #   helios: true
+  #   api_key_env: HELIOS_API_KEY
+  #   helios_clusters: [dc3, dc4]
