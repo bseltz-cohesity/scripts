@@ -1,5 +1,6 @@
 # Change Log for cohesity/community-automation-samples
 
+* [`2026-11-22`] [cohesity_exporter.zip](https://github.com/cohesity/community-automation-samples/tree/main/reports/grafana/Prometheus/cohesity_exporter) [`New`] multi-cluster Grafana dashboard and prometheus exporter
 * [`2026-11-20`] [autoprotectCcsM365MailboxesCSV.ps1](https://github.com/cohesity/community-automation-samples/tree/main/ccs/powershell/autoprotectCcsM365MailboxesCSV) [`New`] autoprotect M365 in CCS
 * [`2026-11-18`] [heliosPrometheusDashboard.json](https://github.com/cohesity/community-automation-samples/tree/main/reports/grafana/Prometheus/heliosPrometheusDashboard) [`New`] Helios dashboard for Grafana/Promatheus
 * [`2026-11-18`] [updateJob.ps1](https://github.com/cohesity/community-automation-samples/tree/main/powershell/updateJob) [`Update`] added -resetIndexing option
