@@ -127,7 +127,20 @@
           "mappings": [],
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -194,7 +207,20 @@
           "mappings": [],
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -261,7 +287,20 @@
           "mappings": [],
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -328,7 +367,20 @@
           "mappings": [],
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -395,7 +447,20 @@
           "mappings": [],
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -462,7 +527,20 @@
           "mappings": [],
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -525,7 +603,20 @@
           "mappings": [],
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -588,7 +679,20 @@
           "mappings": [],
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -651,7 +755,20 @@
           "mappings": [],
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -724,7 +841,20 @@
           },
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -1233,6 +1363,18 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
           }
         ]
       },
@@ -1310,7 +1452,20 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {
@@ -1371,7 +1526,20 @@
           },
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {
@@ -1472,6 +1640,18 @@
                   "mode": "fixed",
                   "fixedColor": "yellow"
                 }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
               }
             ]
           }
@@ -1655,6 +1835,18 @@
                   "mode": "fixed",
                   "fixedColor": "#6b7280"
                 }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
               }
             ]
           }
@@ -1855,6 +2047,18 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
           }
         ]
       },
@@ -1976,6 +2180,18 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
           }
         ]
       },
@@ -2068,7 +2284,20 @@
           ],
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -2141,7 +2370,20 @@
           },
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -2202,7 +2444,20 @@
           "mappings": [],
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -2269,7 +2524,20 @@
           "mappings": [],
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -2336,7 +2604,20 @@
           "mappings": [],
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -2403,7 +2684,20 @@
           "mappings": [],
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -2470,7 +2764,20 @@
           "mappings": [],
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -2533,7 +2840,20 @@
           "mappings": [],
           "noValue": "\u2013"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -2635,6 +2955,18 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
           }
         ]
       },
@@ -2698,7 +3030,20 @@
           "noValue": "\u2013",
           "min": 0
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {
@@ -2880,6 +3225,18 @@
                   "mode": "fixed",
                   "fixedColor": "#6b7280"
                 }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
               }
             ]
           }
@@ -3197,6 +3554,18 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*"
+            },
+            "properties": [
+              {
+                "id": "filterable",
+                "value": false
+              }
+            ]
           }
         ]
       },
@@ -3296,6 +3665,25 @@
         },
         "hide": 0,
         "options": []
+      },
+      {
+        "type": "adhoc",
+        "name": "Filters",
+        "label": "Filters",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "hide": 2,
+        "filters": [],
+        "baseFilters": [],
+        "allowCustomValue": false,
+        "defaultKeys": [
+          {
+            "text": "(filtering disabled)",
+            "value": "__filtering_disabled__"
+          }
+        ]
       }
     ]
   },
