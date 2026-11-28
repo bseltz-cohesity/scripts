@@ -134,6 +134,30 @@ def collect_throughput(cfg, cluster_id):
     return {} if val is None else {'write_throughput': val}
 
 
+# When a run has several archival targets, report the most severe status.
+_STATUS_SEVERITY = ['Failed', 'Missed', 'Canceled', 'Canceling', 'Running', 'Accepted',
+                    'SucceededWithWarning', 'Skipped', 'Succeeded']
+
+
+def last_run_status(last_run):
+    """Status of a protection group's most recent run, or 'NoRun'.
+
+    Local backup groups report it under localBackupInfo (originalBackupInfo for
+    replicated runs). Cloud Archive Direct (CAD) groups have no local backup, so
+    their status is under archivalInfo.archivalTargetResults[].status.
+    """
+    last_run = last_run or {}
+    for key in ('localBackupInfo', 'originalBackupInfo'):
+        status = (last_run.get(key) or {}).get('status')
+        if status:
+            return status
+    found = [t.get('status') for t in ((last_run.get('archivalInfo') or {}).get('archivalTargetResults') or [])
+             if t.get('status')]
+    if found:
+        return min(found, key=lambda s: _STATUS_SEVERITY.index(s) if s in _STATUS_SEVERITY else len(_STATUS_SEVERITY))
+    return 'NoRun'
+
+
 def collect_runs(cfg):
     """Count protection groups by the status of their most recent run."""
     counts = {s: 0 for s in CORE_RUN_STATUSES}
@@ -148,9 +172,7 @@ def collect_runs(cfg):
             total += 1
             if pg.get('isPaused'):
                 paused += 1
-            lr = pg.get('lastRun') or {}
-            info = lr.get('localBackupInfo') or lr.get('originalBackupInfo') or {}
-            status = info.get('status') or 'NoRun'
+            status = last_run_status(pg.get('lastRun'))
             counts[status] = counts.get(status, 0) + 1
         cookie = res.get('paginationCookie')
         if not cookie:
